@@ -50,11 +50,9 @@
   </div>
 
   <script>
-    // 1. ตั้งค่าการเชื่อมต่อ Supabase
     const SUPABASE_URL = 'https://hcyibcqojsyldiyzperr.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjeWliY3FvanN5bGRpeXpwZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTY1MjAsImV4cCI6MjA5NDIzMjUyMH0.jTm4LkcQFHkpi64UHhCkR254KCznE4qOPyjis7lnjM0';
     
-    // เปลี่ยนชื่อตัวแปรเป็น supabaseClient เพื่อไม่ให้ Error ชนกับระบบ
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function handleApply(event) {
@@ -77,23 +75,24 @@
         const idCard = document.getElementById('idCard').value;
         const phone = document.getElementById('phone').value;
 
-        // 2. อัปโหลดไฟล์ไปที่ Storage
+        // 🛠️ กลยุทธ์ใหม่: สุ่มชื่อไฟล์เป็นภาษาอังกฤษอัตโนมัติ (ป้องกันปัญหาภาษาไทย)
         const fileExt = file.name.split('.').pop();
-        const newFileName = `${Date.now()}_${firstName}_${lastName}.${fileExt}`;
+        const randomString = Math.random().toString(36).substring(2, 10); // สุ่มตัวอักษร 8 ตัว
+        const newFileName = `cv_${Date.now()}_${randomString}.${fileExt}`;
         
+        // 1. อัปโหลดไฟล์ (เซิร์ฟเวอร์จะได้รับชื่อที่เป็นภาษาอังกฤษที่สุ่มขึ้นมา)
         const { data: uploadData, error: uploadError } = await supabaseClient.storage
           .from('recruitment_files')
           .upload(newFileName, file);
 
         if (uploadError) throw new Error('อัปโหลดไฟล์ไม่สำเร็จ: ' + uploadError.message);
 
-        // 3. ดึง URL ของไฟล์ที่อัปโหลดเสร็จแล้ว
         const { data: publicUrlData } = supabaseClient.storage
           .from('recruitment_files')
           .getPublicUrl(newFileName);
         const fileUrl = publicUrlData.publicUrl;
 
-        // 4. บันทึกข้อมูลลงตาราง Employees
+        // 2. บันทึกข้อมูลลงตาราง (ตรงนี้เก็บเป็นภาษาไทยได้เต็มที่ครับ!)
         const { data: insertData, error: insertError } = await supabaseClient
           .from('employees')
           .insert([
@@ -102,21 +101,20 @@
               last_name: lastName,
               id_card: idCard,
               phone: phone,
-              resume_url: fileUrl
+              resume_url: fileUrl // เก็บลิงก์ไฟล์ที่สุ่มชื่อแล้ว
             }
           ]);
 
         if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ: ' + insertError.message);
 
-        // 5. สำเร็จ!
         alertBox.className = 'alert alert-success mt-3';
-        alertBox.innerHTML = '✅ ส่งใบสมัครสำเร็จ! HR จะติดต่อกลับไปเร็วๆ นี้';
+        alertBox.innerHTML = '✅ ส่งใบสมัครสำเร็จ! ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว';
         alertBox.style.display = 'block';
         document.getElementById('applyForm').reset();
 
       } catch (error) {
         alertBox.className = 'alert alert-danger mt-3';
-        alertBox.innerHTML = '❌ ' + error.message;
+        alertBox.innerHTML = '❌ เกิดข้อผิดพลาด: ' + error.message;
         alertBox.style.display = 'block';
       } finally {
         btn.innerHTML = 'ส่งใบสมัคร';
