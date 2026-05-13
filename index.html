@@ -3,53 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ฟอร์มรับสมัครงาน - PRIFF HMS</title>
+  <title>ร่วมงานกับเรา - KC CLEAN TRADE</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-  
-  <!-- ดึง CSS ทรงเหลี่ยมของเรา -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config/supabase.js"></script>
 </head>
-<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+<body>
 
-  <div class="container d-flex justify-content-center">
-    <div class="card p-4" style="max-width: 500px; width: 100%;">
-      <div class="text-center mb-4">
-        <h3 class="fw-bold text-success">ฟอร์มรับสมัครงาน</h3>
-        <p class="text-muted small">กรุณากรอกข้อมูลและแนบเอกสารให้ครบถ้วน</p>
+  <nav class="navbar navbar-expand-lg" style="background-color: var(--kc-blue);">
+    <div class="container">
+      <a class="navbar-brand text-white fw-bold" href="#">
+        <span style="color: var(--kc-yellow);">KC</span> CLEAN TRADE | Careers
+      </a>
+      <div class="d-flex">
+        <a href="https://kccleantrade.com" class="btn btn-warning btn-sm">กลับสู่เว็บไซต์หลัก</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-5">
+    <div class="row align-items-center">
+      <div class="col-md-6 mb-4">
+        <h1 class="fw-bold mb-3" style="color: var(--kc-blue);">เติบโตไปพร้อมกับเรา</h1>
+        <p class="text-muted lead">KC Clean Trade ผู้นำด้านน้ำยาและอุปกรณ์ทำความสะอาดเกรดมืออาชีพ เรากำลังมองหาเพื่อนร่วมงานที่มีความมุ่งมั่น มาร่วมเป็นส่วนหนึ่งในครอบครัวของเรา</p>
+        
+        <h5 class="fw-bold mt-4 mb-3">สวัสดิการที่คุณจะได้รับ</h5>
+        <ul class="text-muted">
+          <li>เงินเดือนประจำ + เบี้ยขยัน</li>
+          <li>ประกันสังคม / ประกันอุบัติเหตุ</li>
+          <li>โบนัสประจำปี (ตามผลประกอบการ)</li>
+          <li>วันหยุดพักผ่อนประจำปี</li>
+        </ul>
       </div>
       
-      <div id="alertBox" class="alert" style="display: none;" role="alert"></div>
-
-      <form id="applyForm">
-        <div class="row">
-          <div class="col-6 mb-3">
-            <input type="text" id="firstName" class="form-control" placeholder="ชื่อจริง" required>
+      <div class="col-md-5 offset-md-1">
+        <div class="card p-4">
+          <h4 class="fw-bold mb-3" style="color: var(--kc-blue);">ตำแหน่งที่เปิดรับ</h4>
+          
+          <div class="border p-3 mb-3">
+            <h5 class="fw-bold">พนักงานทั่วไป (Operations)</h5>
+            <p class="text-muted small mb-2">ดูแลความเรียบร้อยและงานจัดการทั่วไป ไม่จำกัดวุฒิการศึกษา</p>
+            <span class="badge bg-light text-dark border">เต็มเวลา</span>
           </div>
-          <div class="col-6 mb-3">
-            <input type="text" id="lastName" class="form-control" placeholder="นามสกุล" required>
+          
+          <a href="apply.html" class="btn btn-warning w-100 fw-bold fs-5 py-2">📝 กรอกใบสมัครออนไลน์</a>
+          
+          <div class="text-center mt-3">
+            <a href="login.html" class="small text-muted text-decoration-none">สำหรับเจ้าหน้าที่ (Admin Login)</a>
           </div>
         </div>
-        <div class="mb-3">
-          <input type="text" id="idCard" class="form-control" placeholder="เลขบัตร ปชช. 13 หลัก" maxlength="13" required>
-        </div>
-        <div class="mb-3">
-          <input type="tel" id="phone" class="form-control" placeholder="เบอร์โทรศัพท์ติดต่อ" required>
-        </div>
-        <div class="mb-4">
-          <label class="form-label small fw-bold">แนบรูปถ่าย หรือ สำเนาบัตร ปชช. (1 ไฟล์)</label>
-          <input type="file" id="uploadFile" class="form-control" accept="image/*,.pdf" required>
-        </div>
-        
-        <button type="submit" id="submitBtn" class="btn btn-success w-100 fw-bold">ส่งใบสมัคร</button>
-      </form>
+      </div>
     </div>
   </div>
 
-  <!-- โยงไปหาไฟล์ประมวลผล -->
-  <script src="js/pages/apply.js"></script>
 </body>
 </html>
