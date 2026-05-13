@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฟอร์มรับสมัครงาน - KC Clean Trade</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- ดึง Supabase SDK เข้ามาใช้งาน -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card-custom { border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none; padding: 2rem; background: white; max-width: 500px; width: 100%; }
+  </style>
+</head>
+<body>
+
+  <div class="container d-flex justify-content-center">
+    <div class="card-custom">
+      <div class="text-center mb-4">
+        <h3 class="text-success fw-bold">ฟอร์มรับสมัครงาน</h3>
+        <p class="text-muted small">กรุณากรอกข้อมูลและแนบเอกสารให้ครบถ้วน (ระบบใหม่)</p>
+      </div>
+      
+      <div id="alertBox" class="alert" style="display: none;" role="alert"></div>
+
+      <form id="applyForm" onsubmit="handleApply(event)">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <input type="text" id="firstName" class="form-control" placeholder="ชื่อจริง" required>
+          </div>
+          <div class="col-6 mb-3">
+            <input type="text" id="lastName" class="form-control" placeholder="นามสกุล" required>
+          </div>
+        </div>
+        <div class="mb-3">
+          <input type="text" id="idCard" class="form-control" placeholder="เลขบัตร ปชช. 13 หลัก" maxlength="13" required>
+        </div>
+        <div class="mb-3">
+          <input type="tel" id="phone" class="form-control" placeholder="เบอร์โทรศัพท์ติดต่อ" required>
+        </div>
+        <div class="mb-4">
+          <label class="form-label small text-muted">แนบรูปถ่าย หรือ สำเนาบัตร ปชช. (1 ไฟล์)</label>
+          <input type="file" id="uploadFile" class="form-control" accept="image/*,.pdf" required>
+        </div>
+        
+        <button type="submit" id="submitBtn" class="btn btn-success w-100 fw-bold">ส่งใบสมัคร</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 1. ตั้งค่าการเชื่อมต่อ Supabase
+    const SUPABASE_URL = 'https://hcyibcqojsyldiyzperr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjeWliY3FvanN5bGRpeXpwZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTY1MjAsImV4cCI6MjA5NDIzMjUyMH0.jTm4LkcQFHkpi64UHhCkR254KCznE4qOPyjis7lnjM0';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function handleApply(event) {
+      event.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      const alertBox = document.getElementById('alertBox');
+      const fileInput = document.getElementById('uploadFile');
+      
+      if (fileInput.files.length === 0) return;
+
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังประมวลผล...';
+      btn.disabled = true;
+      alertBox.style.display = 'none';
+
+      try {
+        const file = fileInput.files[0];
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const idCard = document.getElementById('idCard').value;
+        const phone = document.getElementById('phone').value;
+
+        // 2. อัปโหลดไฟล์ไปที่ Storage (recruitment_files)
+        // เปลี่ยนชื่อไฟล์ป้องกันชื่อซ้ำ
+        const fileExt = file.name.split('.').pop();
+        const newFileName = `${Date.now()}_${firstName}_${lastName}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('recruitment_files')
+          .upload(newFileName, file);
+
+        if (uploadError) throw new Error('อัปโหลดไฟล์ไม่สำเร็จ: ' + uploadError.message);
+
+        // 3. ดึง URL ของไฟล์ที่อัปโหลดเสร็จแล้ว
+        const { data: publicUrlData } = supabase.storage
+          .from('recruitment_files')
+          .getPublicUrl(newFileName);
+        const fileUrl = publicUrlData.publicUrl;
+
+        // 4. บันทึกข้อมูลลงตาราง Employees
+        const { data: insertData, error: insertError } = await supabase
+          .from('employees')
+          .insert([
+            {
+              first_name: firstName,
+              last_name: lastName,
+              id_card: idCard,
+              phone: phone,
+              resume_url: fileUrl
+            }
+          ]);
+
+        if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ: ' + insertError.message);
+
+        // 5. สำเร็จ!
+        alertBox.className = 'alert alert-success mt-3';
+        alertBox.innerHTML = '✅ ส่งใบสมัครสำเร็จ! HR จะติดต่อกลับไปเร็วๆ นี้';
+        alertBox.style.display = 'block';
+        document.getElementById('applyForm').reset();
+
+      } catch (error) {
+        alertBox.className = 'alert alert-danger mt-3';
+        alertBox.innerHTML = '❌ ' + error.message;
+        alertBox.style.display = 'block';
+      } finally {
+        btn.innerHTML = 'ส่งใบสมัคร';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
