@@ -4,34 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - PRIFF HMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config/supabase.js"></script>
-  <link rel="stylesheet" href="dist/output.css">
+    <link rel="stylesheet" href="dist/output.css">
 </head>
-<body>
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container-fluid">
-            <span class="navbar-brand fw-bold">PRIFF HMS | ADMIN PANEL</span>
-            <button class="btn btn-outline-light btn-sm" onclick="handleLogout()">ออกจากระบบ</button>
+<body class="bg-gray-100 font-sans min-h-screen">
+    <nav class="bg-kcblue text-white p-4 shadow-none border-b-4 border-kcyellow">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold uppercase">PRIFF HMS | Admin Panel</h1>
+            <button onclick="handleLogout()" class="border-2 border-white px-4 py-1 text-sm font-bold hover:bg-white hover:text-kcblue transition-colors rounded-none cursor-pointer">
+                ออกจากระบบ
+            </button>
         </div>
     </nav>
 
-    <div class="container-fluid">
-        <div class="card p-4">
-            <h4 class="fw-bold mb-4">รายชื่อผู้สมัครงานใหม่</h4>
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>วันที่สมัคร</th>
-                            <th>ชื่อ-นามสกุล</th>
-                            <th>เลขบัตร ปชช.</th>
-                            <th>เบอร์โทรศัพท์</th>
-                            <th>เอกสาร</th>
-                            <th>สถานะ</th>
+    <div class="max-w-7xl mx-auto p-6 mt-4">
+        <div class="bg-white border border-gray-300 p-6 shadow-none rounded-none">
+            
+            <div class="flex gap-2 mb-6 border-b-2 border-gray-200 pb-4">
+                <button id="tab-applied" class="px-4 py-2 bg-kcblue text-white font-bold rounded-none border-0 cursor-pointer">ผู้สมัครงานใหม่</button>
+                <button id="tab-hired" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-none border-0 cursor-pointer hover:bg-gray-300">พนักงานบริษัท</button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-800 text-white text-sm">
+                            <th class="p-3 border border-gray-700 font-bold">วันที่สมัคร</th>
+                            <th class="p-3 border border-gray-700 font-bold">ชื่อ-นามสกุล</th>
+                            <th class="p-3 border border-gray-700 font-bold">กลุ่มงาน</th>
+                            <th class="p-3 border border-gray-700 font-bold">เบอร์โทรศัพท์</th>
+                            <th class="p-3 border border-gray-700 font-bold">สถานะ</th>
+                            <th class="p-3 border border-gray-700 font-bold">เอกสาร</th>
+                            <th class="p-3 border border-gray-700 font-bold">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody id="employeeTableBody">
