@@ -71,9 +71,14 @@ document.getElementById('applyForm').addEventListener('submit', async function(e
       if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ');
 
       alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-green-500 bg-green-50 text-green-700 rounded-none block';
-      alertBox.innerHTML = 'ส่งใบสมัครสำเร็จ! ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว';
+      alertBox.innerHTML = 'ส่งใบสมัครสำเร็จ! ระบบกำลังพากลับไปหน้าหลักใน 2 วินาที...';
       document.getElementById('applyForm').reset();
       clearFileBtn.classList.add('hidden');
+
+      // พากลับหน้าหลัก
+      setTimeout(() => {
+          window.location.href = 'index.html';
+      }, 2000);
 
     } catch (error) {
       alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-red-500 bg-red-50 text-red-700 rounded-none block';
