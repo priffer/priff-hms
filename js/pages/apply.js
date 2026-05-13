@@ -1,6 +1,35 @@
+const jobGroupSelect = document.getElementById('jobGroup');
+const officeFields = document.getElementById('officeFields');
+const opsFields = document.getElementById('opsFields');
+const emailInput = document.getElementById('email');
+const fileLabel = document.getElementById('fileLabel');
+
 const fileInput = document.getElementById('uploadFile');
 const clearFileBtn = document.getElementById('clearFileBtn');
 
+// Logic สลับฟอร์มตามกลุ่มงาน
+jobGroupSelect.addEventListener('change', function() {
+    const val = this.value;
+    
+    if (val === 'office') {
+        officeFields.classList.remove('hidden');
+        opsFields.classList.add('hidden');
+        emailInput.required = true; // บังคับกรอกอีเมล
+        fileLabel.innerHTML = 'แนบเอกสาร (Resume หรือ CV) *';
+    } else if (val === 'operations') {
+        opsFields.classList.remove('hidden');
+        officeFields.classList.add('hidden');
+        emailInput.required = false; // ไม่บังคับอีเมล
+        emailInput.value = ''; 
+        fileLabel.innerHTML = 'แนบรูปถ่ายบัตรประชาชน หรือ รูปถ่ายตัวเอง *';
+    } else {
+        officeFields.classList.add('hidden');
+        opsFields.classList.add('hidden');
+        emailInput.required = false;
+    }
+});
+
+// Logic ปุ่มลบไฟล์
 fileInput.addEventListener('change', function() {
     if (this.files.length > 0) {
         clearFileBtn.classList.remove('hidden');
@@ -14,6 +43,7 @@ clearFileBtn.addEventListener('click', function() {
     this.classList.add('hidden');
 });
 
+// จัดการ Submit
 document.getElementById('applyForm').addEventListener('submit', async function(event) {
     event.preventDefault();
     
@@ -29,20 +59,17 @@ document.getElementById('applyForm').addEventListener('submit', async function(e
 
     try {
       const file = fileInput.files[0];
-      const fullName = document.getElementById('fullName').value;
-      const gender = document.getElementById('gender').value;
-      const idCard = document.getElementById('idCard').value;
-      const phone = document.getElementById('phone').value;
-      const jobGroup = document.getElementById('jobGroup').value;
-      const interestedPosition = document.getElementById('interestedPosition').value;
-      const expectedSalary = document.getElementById('expectedSalary').value;
-      const availableStartDate = document.getElementById('availableStartDate').value;
+      const jobGroup = jobGroupSelect.value;
+      
+      // ดึงค่าตาม Logic
+      const finalEmail = jobGroup === 'office' ? document.getElementById('email').value : document.getElementById('opsEmail').value;
+      const educationLevel = jobGroup === 'office' ? document.getElementById('educationLevel').value : null;
+      const preferredZone = jobGroup === 'operations' ? document.getElementById('preferredZone').value : null;
 
       const fileExt = file.name.split('.').pop();
-      const randomString = Math.random().toString(36).substring(2, 10);
-      const newFileName = `cv_${Date.now()}_${randomString}.${fileExt}`;
+      const newFileName = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
       
-      const { data: uploadData, error: uploadError } = await supabaseClient.storage
+      const { error: uploadError } = await supabaseClient.storage
         .from('recruitment_files')
         .upload(newFileName, file);
 
@@ -51,34 +78,32 @@ document.getElementById('applyForm').addEventListener('submit', async function(e
       const { data: publicUrlData } = supabaseClient.storage
         .from('recruitment_files')
         .getPublicUrl(newFileName);
-      const fileUrl = publicUrlData.publicUrl;
 
       const { error: insertError } = await supabaseClient
         .from('employees')
         .insert([{
-            full_name: fullName,
-            gender: gender,
-            id_card_number: idCard,
-            phone_number: phone,
-            job_group: jobGroup,
-            interested_position: interestedPosition,
-            expected_salary: expectedSalary,
-            available_start_date: availableStartDate,
-            resume_url: fileUrl,
+            full_name: document.getElementById('fullName').value,
+            gender: document.getElementById('gender').value,
+            id_card_number: document.getElementById('idCard').value,
+            phone_number: document.getElementById('phone').value,
+            job_group: jobGroup === 'office' ? 'ออฟฟิศ/ฝ่ายขาย' : 'ปฏิบัติการ/ทำความสะอาด',
+            email: finalEmail,
+            education_level: educationLevel,
+            preferred_zone: preferredZone,
+            interested_position: document.getElementById('interestedPosition').value,
+            expected_salary: document.getElementById('expectedSalary').value,
+            resume_url: publicUrlData.publicUrl,
             status: 'applied'
         }]);
 
       if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ');
 
       alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-green-500 bg-green-50 text-green-700 rounded-none block';
-      alertBox.innerHTML = 'ส่งใบสมัครสำเร็จ! ระบบกำลังพากลับไปหน้าหลักใน 2 วินาที...';
+      alertBox.innerHTML = 'ส่งใบสมัครสำเร็จ! ระบบกำลังพากลับไปหน้าหลัก...';
       document.getElementById('applyForm').reset();
       clearFileBtn.classList.add('hidden');
 
-      // พากลับหน้าหลัก
-      setTimeout(() => {
-          window.location.href = 'index.html';
-      }, 2000);
+      setTimeout(() => { window.location.href = 'index.html'; }, 2000);
 
     } catch (error) {
       alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-red-500 bg-red-50 text-red-700 rounded-none block';
