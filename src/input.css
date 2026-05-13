@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-kcblue: #0B2B5E;
+  --color-kcyellow: #FFD600;
+  --font-sarabun: "Sarabun", sans-serif;
+}
+
+@layer base {
+  /* กฎเหล็ก: ทรงเหลี่ยม 100% ทั่วทั้งโปรเจกต์ */
+  * {
+    border-radius: 0px !important;
+  }
+  body {
+    @apply font-sarabun bg-gray-50 text-gray-800;
+  }
+}
