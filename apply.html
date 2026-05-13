@@ -9,84 +9,119 @@
   <script src="js/config/supabase.js"></script>
   <link rel="stylesheet" href="dist/output.css">
 </head>
-<body class="bg-gray-50 font-sans min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-50 font-sans min-h-screen p-4 md:p-8">
 
-  <div class="w-full max-w-3xl bg-white border-0 shadow-none p-8 border-t-8 border-t-kcblue">
+  <div class="max-w-4xl mx-auto bg-white border-0 shadow-none p-6 md:p-10 border-t-8 border-t-kcblue">
     <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold text-kcblue">ฟอร์มใบสมัครงาน (Job Application)</h2>
-      <p class="text-gray-500 mt-2">KC Clean Trade Co., Ltd.</p>
+      <h2 class="text-3xl font-bold text-kcblue">ใบสมัครงาน (Application Form)</h2>
+      <p class="text-gray-500 mt-2 font-bold">KC Clean Trade Co., Ltd.</p>
     </div>
 
     <div id="alertBox" class="hidden mb-6 p-4 border-2 font-bold text-center" role="alert"></div>
 
-    <form id="applyForm" class="space-y-6">
+    <form id="applyForm" class="space-y-8">
       
-      <div class="p-4 border-2 border-gray-200">
-        <h3 class="text-lg font-bold text-kcblue mb-4 border-b-2 border-kcyellow pb-2">1. ข้อมูลส่วนตัวพื้นฐาน</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="text" id="fullName" placeholder="ชื่อ-นามสกุล (เต็ม)" required class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none">
-          <select id="gender" required class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none bg-white">
-            <option value="">-- เลือกเพศ --</option>
-            <option value="ชาย">ชาย</option>
-            <option value="หญิง">หญิง</option>
-            <option value="อื่นๆ">อื่นๆ</option>
-          </select>
-          <input type="text" id="idCard" placeholder="เลขบัตร ปชช. 13 หลัก" maxlength="13" required class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none">
-          <input type="tel" id="phone" placeholder="เบอร์โทรศัพท์ติดต่อ" required class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none">
-        </div>
-      </div>
-
-      <div class="p-4 border-2 border-kcblue bg-blue-50">
-        <label class="block text-md font-bold text-kcblue mb-2">กรุณาเลือกกลุ่มตำแหน่งงานที่ต้องการสมัคร:</label>
-        <select id="jobGroup" required class="w-full border-2 border-kcblue p-3 focus:outline-none focus:border-kcyellow rounded-none bg-white font-bold text-kcblue">
+      <div class="p-5 border-2 border-kcblue bg-blue-50">
+        <label class="block text-lg font-bold text-kcblue mb-3">1. เลือกกลุ่มตำแหน่งงานที่ต้องการสมัคร *</label>
+        <select id="jobGroup" required class="w-full border-2 border-kcblue p-3 focus:outline-none focus:border-kcyellow rounded-none bg-white font-bold text-kcblue text-lg cursor-pointer">
           <option value="">-- คลิกเพื่อเลือกกลุ่มงาน --</option>
           <option value="office">ฝ่ายออฟฟิศ / บริหาร / ฝ่ายขาย</option>
           <option value="operations">ฝ่ายปฏิบัติการ / แม่บ้าน / ทำความสะอาด</option>
         </select>
       </div>
 
-      <div id="officeFields" class="hidden p-4 border-2 border-gray-200 bg-gray-50">
-        <h3 class="text-lg font-bold text-kcblue mb-4 border-b-2 border-kcyellow pb-2">ข้อมูลสำหรับฝ่ายออฟฟิศ</h3>
+      <div class="space-y-4">
+        <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">2. ข้อมูลส่วนตัว (Personal Information)</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="email" id="email" placeholder="อีเมล (Email) *" class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none">
-          <select id="educationLevel" class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none bg-white">
-            <option value="">-- วุฒิการศึกษาสูงสุด --</option>
-            <option value="ปริญญาตรี">ปริญญาตรี</option>
-            <option value="ปริญญาโท">ปริญญาโท</option>
-            <option value="ต่ำกว่าปริญญาตรี">ต่ำกว่าปริญญาตรี</option>
+          <input type="text" id="fullName" placeholder="ชื่อ-นามสกุล (เต็ม) *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+          <input type="text" id="idCard" placeholder="เลขบัตร ปชช. 13 หลัก *" maxlength="13" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+          <select id="gender" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- เพศ * --</option><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option><option value="อื่นๆ">อื่นๆ</option>
           </select>
+          <div class="flex flex-col">
+            <label class="text-xs font-bold text-gray-500 mb-1">วัน/เดือน/ปีเกิด *</label>
+            <input type="date" id="birthDate" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+          </div>
+          <select id="maritalStatus" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- สถานภาพ * --</option><option value="โสด">โสด</option><option value="สมรส">สมรส</option><option value="หย่าร้าง">หย่าร้าง</option>
+          </select>
+          <input type="tel" id="phone" placeholder="เบอร์โทรศัพท์ติดต่อ *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+        </div>
+        <input type="email" id="email" placeholder="อีเมล (ถ้ามี)" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+        <textarea id="currentAddress" placeholder="ที่อยู่ปัจจุบัน *" required rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+        <input type="text" id="emergencyContact" placeholder="บุคคลติดต่อฉุกเฉิน (ชื่อ-นามสกุล, ความสัมพันธ์, เบอร์โทร) *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">3. ประวัติการศึกษาและการทำงาน</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <select id="educationLevel" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- วุฒิการศึกษาสูงสุด * --</option>
+            <option value="ปริญญาโทขึ้นไป">ปริญญาโทขึ้นไป</option>
+            <option value="ปริญญาตรี">ปริญญาตรี</option>
+            <option value="ปวส./ปวช.">ปวส./ปวช.</option>
+            <option value="ม.6 หรือต่ำกว่า">ม.6 หรือต่ำกว่า</option>
+          </select>
+          <input type="text" id="drivingAbility" placeholder="การขับขี่ (เช่น ขับรถยนต์ได้ มีใบขับขี่)" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+        </div>
+        <textarea id="workExperience" placeholder="ประวัติการทำงานที่ผ่านมา (ล่าสุด) *" required rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+        
+        <div id="officeSkills" class="hidden grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="text" id="techAiSkills" placeholder="ทักษะด้านเทคโนโลยี / AI (ถ้ามี)" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+          <input type="text" id="specialSkills" placeholder="ความชำนาญพิเศษอื่นๆ" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
         </div>
       </div>
 
-      <div id="opsFields" class="hidden p-4 border-2 border-gray-200 bg-gray-50">
-        <h3 class="text-lg font-bold text-kcblue mb-4 border-b-2 border-kcyellow pb-2">ข้อมูลสำหรับฝ่ายปฏิบัติการ</h3>
+      <div class="space-y-4">
+        <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">4. ข้อมูลการสมัครงาน</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <select id="preferredZone" class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none bg-white">
-            <option value="">-- โซนพื้นที่ที่สะดวกทำงาน --</option>
+          <input type="text" id="interestedPosition" placeholder="ตำแหน่งที่ต้องการสมัคร *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+          <input type="number" id="expectedSalary" placeholder="เงินเดือนที่คาดหวัง (บาท) *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+          <select id="workMode" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- รูปแบบการทำงาน * --</option>
+            <option value="Full-time">ประจำ (Full-time)</option>
+            <option value="Part-time">พาร์ทไทม์ (Part-time)</option>
+          </select>
+          <div class="flex flex-col">
+            <label class="text-xs font-bold text-gray-500 mb-1">วันที่พร้อมเริ่มงาน *</label>
+            <input type="date" id="availableStartDate" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
+          </div>
+        </div>
+
+        <div id="opsSpecific" class="hidden grid-cols-1 md:grid-cols-2 gap-4 bg-gray-100 p-4 border-2 border-gray-200">
+          <select id="preferredZone" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- โซนพื้นที่ทำงานที่สะดวก --</option>
             <option value="กรุงเทพฯ">กรุงเทพฯ</option>
             <option value="ปริมณฑล">ปริมณฑล</option>
-            <option value="ต่างจังหวัด">ต่างจังหวัด (ระบุในนัดสัมภาษณ์)</option>
+            <option value="ต่างจังหวัด">ต่างจังหวัด</option>
           </select>
-          <input type="text" id="opsEmail" placeholder="อีเมล (ถ้ามี)" class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none">
+          <select id="shiftWork" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- สามารถทำงานเป็นกะได้หรือไม่? --</option>
+            <option value="ได้">ทำเป็นกะได้</option>
+            <option value="ไม่ได้">ทำเวลาปกติเท่านั้น</option>
+          </select>
         </div>
       </div>
 
-      <div class="p-4 border-2 border-gray-200">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <input type="text" id="interestedPosition" placeholder="ตำแหน่งที่สนใจ (เช่น พนักงานขาย, แม่บ้านประจำไซต์)" required class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none">
-            <input type="number" id="expectedSalary" placeholder="เงินเดือนที่คาดหวัง (บาท)" required class="w-full border-2 border-gray-300 p-3 focus:outline-none focus:border-kcblue rounded-none">
+      <div class="space-y-4">
+        <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">5. เอกสารแนบ</h3>
+        <div class="p-4 border-2 border-gray-200">
+            <label class="block text-sm font-bold text-kcblue mb-2" id="fileLabel">อัปโหลด Resume หรือ รูปถ่ายหน้าตรง *</label>
+            <input type="file" id="uploadResume" accept="image/*,.pdf" required class="w-full text-gray-700 border-2 border-gray-300 p-2 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-kcblue file:text-white file:font-bold file:rounded-none hover:file:bg-kcyellow hover:file:text-kcblue cursor-pointer rounded-none">
         </div>
-        
-        <label class="block text-sm font-bold text-kcblue mb-2" id="fileLabel">แนบเอกสาร (Resume หรือ รูปถ่ายบัตร ปชช.)</label>
-        <div class="flex gap-2 items-center">
-            <input type="file" id="uploadFile" accept="image/*,.pdf" required class="w-full text-gray-700 border-2 border-gray-300 p-2 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-kcblue file:text-white file:font-bold file:rounded-none hover:file:bg-kcyellow hover:file:text-kcblue file:cursor-pointer cursor-pointer rounded-none">
-            <button type="button" id="clearFileBtn" class="hidden px-4 py-3 bg-red-600 text-white font-bold rounded-none border-0 hover:bg-red-700 cursor-pointer">ลบไฟล์</button>
-        </div>
+      </div>
+
+      <div class="p-4 bg-gray-50 border-2 border-gray-300 flex items-start gap-3">
+        <input type="checkbox" id="pdpaConsent" required class="mt-1 w-5 h-5 cursor-pointer accent-kcblue rounded-none">
+        <label for="pdpaConsent" class="text-sm text-gray-700 cursor-pointer">
+          <strong id="pdpaTitle">ความยินยอมการประมวลผลข้อมูลส่วนบุคคล (PDPA) *</strong><br>
+          <span id="pdpaBody">กำลังโหลดข้อกำหนด...</span>
+        </label>
       </div>
 
       <div class="pt-4 space-y-3">
-        <button type="submit" id="submitBtn" class="w-full bg-kcblue text-white font-bold py-3 hover:bg-kcyellow hover:text-kcblue transition-colors border-0 cursor-pointer rounded-none text-lg">ส่งใบสมัคร</button>
-        <a href="index.html" class="block w-full text-center bg-gray-100 text-gray-700 font-bold py-3 hover:bg-gray-200 transition-colors border-0 rounded-none">กลับไปหน้าหลัก</a>
+        <button type="submit" id="submitBtn" class="w-full bg-kcblue text-white font-bold py-4 hover:bg-kcyellow hover:text-kcblue transition-colors border-0 cursor-pointer rounded-none text-xl">ส่งใบสมัครงาน</button>
+        <a href="index.html" class="block w-full text-center bg-gray-200 text-gray-700 font-bold py-3 hover:bg-gray-300 transition-colors border-0 rounded-none">กลับสู่หน้าหลัก</a>
       </div>
     </form>
   </div>

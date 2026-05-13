@@ -1,116 +1,138 @@
+// 1. Initial Configuration & DOM Elements
+const form = document.getElementById('applyForm');
 const jobGroupSelect = document.getElementById('jobGroup');
-const officeFields = document.getElementById('officeFields');
-const opsFields = document.getElementById('opsFields');
+const officeSkills = document.getElementById('officeSkills');
+const opsSpecific = document.getElementById('opsSpecific');
 const emailInput = document.getElementById('email');
 const fileLabel = document.getElementById('fileLabel');
+const fileInput = document.getElementById('uploadResume');
+const btn = document.getElementById('submitBtn');
+const alertBox = document.getElementById('alertBox');
 
-const fileInput = document.getElementById('uploadFile');
-const clearFileBtn = document.getElementById('clearFileBtn');
-
-// Logic สลับฟอร์มตามกลุ่มงาน
-jobGroupSelect.addEventListener('change', function() {
-    const val = this.value;
+// 2. UI Logic Functions
+function toggleJobFields(val) {
+    // Reset classes
+    officeSkills.classList.add('hidden');
+    officeSkills.classList.remove('grid');
+    opsSpecific.classList.add('hidden');
+    opsSpecific.classList.remove('grid');
     
     if (val === 'office') {
-        officeFields.classList.remove('hidden');
-        opsFields.classList.add('hidden');
-        emailInput.required = true; // บังคับกรอกอีเมล
-        fileLabel.innerHTML = 'แนบเอกสาร (Resume หรือ CV) *';
+        officeSkills.classList.remove('hidden');
+        officeSkills.classList.add('grid');
+        emailInput.required = true;
+        emailInput.placeholder = "อีเมล (Email) *ต้องระบุ";
+        fileLabel.innerHTML = 'อัปโหลด Resume / CV (PDF หรือ รูปภาพ) *';
     } else if (val === 'operations') {
-        opsFields.classList.remove('hidden');
-        officeFields.classList.add('hidden');
-        emailInput.required = false; // ไม่บังคับอีเมล
-        emailInput.value = ''; 
-        fileLabel.innerHTML = 'แนบรูปถ่ายบัตรประชาชน หรือ รูปถ่ายตัวเอง *';
-    } else {
-        officeFields.classList.add('hidden');
-        opsFields.classList.add('hidden');
+        opsSpecific.classList.remove('hidden');
+        opsSpecific.classList.add('grid');
         emailInput.required = false;
+        emailInput.placeholder = "อีเมล (ถ้ามี)";
+        fileLabel.innerHTML = 'อัปโหลดรูปถ่ายหน้าตรง หรือ รูปถ่ายบัตรประชาชน *';
     }
-});
+}
 
-// Logic ปุ่มลบไฟล์
-fileInput.addEventListener('change', function() {
-    if (this.files.length > 0) {
-        clearFileBtn.classList.remove('hidden');
+async function loadPdpaContent() {
+    const { data, error } = await supabaseClient
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'PDPA_CONTENT')
+        .single();
+
+    const pdpaBody = document.getElementById('pdpaBody');
+    if (!error && data) {
+        pdpaBody.innerText = data.setting_value;
     } else {
-        clearFileBtn.classList.add('hidden');
+        console.error('Error loading PDPA:', error);
+        pdpaBody.innerText = "กรุณากดยอมรับเงื่อนไขการสมัครงานตามนโยบายของบริษัท";
     }
-});
+}
 
-clearFileBtn.addEventListener('click', function() {
-    fileInput.value = ''; 
-    this.classList.add('hidden');
-});
-
-// จัดการ Submit
-document.getElementById('applyForm').addEventListener('submit', async function(event) {
+// 3. Form Handling Functions
+async function handleFormSubmit(event) {
     event.preventDefault();
-    
-    const btn = document.getElementById('submitBtn');
-    const alertBox = document.getElementById('alertBox');
-    
+
+    if (!document.getElementById('pdpaConsent').checked) {
+        alert("กรุณากดยอมรับเงื่อนไข PDPA ก่อนส่งใบสมัคร");
+        return;
+    }
+
     if (fileInput.files.length === 0) return;
 
-    btn.innerHTML = 'กำลังประมวลผล...';
+    // UI Loading State
+    btn.innerHTML = 'กำลังประมวลผลข้อมูล...';
     btn.disabled = true;
     btn.classList.add('opacity-70', 'cursor-not-allowed');
     alertBox.classList.add('hidden');
 
     try {
-      const file = fileInput.files[0];
-      const jobGroup = jobGroupSelect.value;
-      
-      // ดึงค่าตาม Logic
-      const finalEmail = jobGroup === 'office' ? document.getElementById('email').value : document.getElementById('opsEmail').value;
-      const educationLevel = jobGroup === 'office' ? document.getElementById('educationLevel').value : null;
-      const preferredZone = jobGroup === 'operations' ? document.getElementById('preferredZone').value : null;
+        const file = fileInput.files[0];
+        const jobGroup = jobGroupSelect.value;
+        const fileExt = file.name.split('.').pop();
+        const newFileName = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
 
-      const fileExt = file.name.split('.').pop();
-      const newFileName = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
-      
-      const { error: uploadError } = await supabaseClient.storage
-        .from('recruitment_files')
-        .upload(newFileName, file);
+        // Step 1: Upload File
+        const { error: uploadError } = await supabaseClient.storage
+            .from('recruitment_files')
+            .upload(newFileName, file);
 
-      if (uploadError) throw new Error('อัปโหลดไฟล์ไม่สำเร็จ');
+        if (uploadError) throw new Error('อัปโหลดไฟล์ไม่สำเร็จ');
 
-      const { data: publicUrlData } = supabaseClient.storage
-        .from('recruitment_files')
-        .getPublicUrl(newFileName);
+        const { data: publicUrlData } = supabaseClient.storage
+            .from('recruitment_files')
+            .getPublicUrl(newFileName);
 
-      const { error: insertError } = await supabaseClient
-        .from('employees')
-        .insert([{
-            full_name: document.getElementById('fullName').value,
-            gender: document.getElementById('gender').value,
-            id_card_number: document.getElementById('idCard').value,
-            phone_number: document.getElementById('phone').value,
-            job_group: jobGroup === 'office' ? 'ออฟฟิศ/ฝ่ายขาย' : 'ปฏิบัติการ/ทำความสะอาด',
-            email: finalEmail,
-            education_level: educationLevel,
-            preferred_zone: preferredZone,
-            interested_position: document.getElementById('interestedPosition').value,
-            expected_salary: document.getElementById('expectedSalary').value,
-            resume_url: publicUrlData.publicUrl,
-            status: 'applied'
-        }]);
+        // Step 2: Save Data to Database
+        const { error: insertError } = await supabaseClient
+            .from('employees')
+            .insert([{
+                job_group: jobGroup === 'office' ? 'ออฟฟิศ/ฝ่ายขาย' : 'ปฏิบัติการ/ทำความสะอาด',
+                full_name: document.getElementById('fullName').value,
+                id_card_number: document.getElementById('idCard').value,
+                gender: document.getElementById('gender').value,
+                birth_date: document.getElementById('birthDate').value,
+                marital_status: document.getElementById('maritalStatus').value,
+                phone_number: document.getElementById('phone').value,
+                email: emailInput.value,
+                current_address: document.getElementById('currentAddress').value,
+                emergency_contact: document.getElementById('emergencyContact').value,
+                education_level: document.getElementById('educationLevel').value,
+                driving_ability: document.getElementById('drivingAbility').value,
+                work_experience: document.getElementById('workExperience').value,
+                tech_ai_skills: jobGroup === 'office' ? document.getElementById('techAiSkills').value : null,
+                special_skills: jobGroup === 'office' ? document.getElementById('specialSkills').value : null,
+                interested_position: document.getElementById('interestedPosition').value,
+                expected_salary: document.getElementById('expectedSalary').value,
+                work_mode: document.getElementById('workMode').value,
+                available_start_date: document.getElementById('availableStartDate').value,
+                preferred_zone: jobGroup === 'operations' ? document.getElementById('preferredZone').value : null,
+                shift_work: jobGroup === 'operations' ? document.getElementById('shiftWork').value : null,
+                resume_url: publicUrlData.publicUrl,
+                status: 'applied'
+            }]);
 
-      if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ');
+        if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ: ' + insertError.message);
 
-      alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-green-500 bg-green-50 text-green-700 rounded-none block';
-      alertBox.innerHTML = 'ส่งใบสมัครสำเร็จ! ระบบกำลังพากลับไปหน้าหลัก...';
-      document.getElementById('applyForm').reset();
-      clearFileBtn.classList.add('hidden');
-
-      setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+        // Step 3: Success State
+        alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-green-500 bg-green-50 text-green-700 rounded-none block';
+        alertBox.innerHTML = 'ส่งใบสมัครสำเร็จ! ระบบกำลังพากลับไปหน้าหลัก...';
+        form.reset();
+        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
 
     } catch (error) {
-      alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-red-500 bg-red-50 text-red-700 rounded-none block';
-      alertBox.innerHTML = error.message;
+        alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-red-500 bg-red-50 text-red-700 rounded-none block';
+        alertBox.innerHTML = error.message;
     } finally {
-      btn.innerHTML = 'ส่งใบสมัคร';
-      btn.disabled = false;
-      btn.classList.remove('opacity-70', 'cursor-not-allowed');
+        btn.innerHTML = 'ส่งใบสมัครงาน';
+        btn.disabled = false;
+        btn.classList.remove('opacity-70', 'cursor-not-allowed');
     }
+}
+
+// 4. Event Listeners
+jobGroupSelect.addEventListener('change', (e) => toggleJobFields(e.target.value));
+form.addEventListener('submit', handleFormSubmit);
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadPdpaContent();
 });
