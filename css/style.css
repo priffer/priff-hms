@@ -1,0 +1,28 @@
+/* css/style.css */
+
+/* กฎเหล็ก: ยกเลิกความโค้งมนทั้งหมดในระบบ */
+* {
+    border-radius: 0 !important;
+}
+
+body {
+    font-family: 'Sarabun', sans-serif;
+    background-color: #f0f2f5;
+    color: #1a1a1a;
+}
+
+/* ปรับแต่งปุ่มและฟอร์มให้ดูคมและทันสมัย */
+.btn, .form-control, .card, .alert, .modal-content {
+    border-radius: 0 !important;
+    border: 1px solid #333; /* เพิ่มขอบให้ดูคมชัด */
+}
+
+.btn-primary { background-color: #000; border-color: #000; color: #fff; }
+.btn-primary:hover { background-color: #333; }
+
+.btn-success { background-color: #1a7f37; border-color: #1a7f37; }
+
+.card {
+    box-shadow: 8px 8px 0px #000; /* ใช้ Shadow แบบเหลี่ยมเพื่อความเท่ */
+    border: 2px solid #000;
+}

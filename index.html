@@ -5,26 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ฟอร์มรับสมัครงาน - PRIFF HMS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <!-- ดึง Supabase SDK เข้ามาใช้งาน -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- ดึง CSS ทรงเหลี่ยมของเรา -->
+  <link rel="stylesheet" href="css/style.css">
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .card-custom { border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: none; padding: 2rem; background: white; max-width: 500px; width: 100%; }
-  </style>
+  <script src="js/config/supabase.js"></script>
 </head>
-<body>
+<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
 
   <div class="container d-flex justify-content-center">
-    <div class="card-custom">
+    <div class="card p-4" style="max-width: 500px; width: 100%;">
       <div class="text-center mb-4">
-        <h3 class="text-success fw-bold">ฟอร์มรับสมัครงาน</h3>
+        <h3 class="fw-bold text-success">ฟอร์มรับสมัครงาน</h3>
         <p class="text-muted small">กรุณากรอกข้อมูลและแนบเอกสารให้ครบถ้วน</p>
       </div>
       
       <div id="alertBox" class="alert" style="display: none;" role="alert"></div>
 
-      <form id="applyForm" onsubmit="handleApply(event)">
+      <form id="applyForm">
         <div class="row">
           <div class="col-6 mb-3">
             <input type="text" id="firstName" class="form-control" placeholder="ชื่อจริง" required>
@@ -40,7 +40,7 @@
           <input type="tel" id="phone" class="form-control" placeholder="เบอร์โทรศัพท์ติดต่อ" required>
         </div>
         <div class="mb-4">
-          <label class="form-label small text-muted">แนบรูปถ่าย หรือ สำเนาบัตร ปชช. (1 ไฟล์)</label>
+          <label class="form-label small fw-bold">แนบรูปถ่าย หรือ สำเนาบัตร ปชช. (1 ไฟล์)</label>
           <input type="file" id="uploadFile" class="form-control" accept="image/*,.pdf" required>
         </div>
         
@@ -49,78 +49,7 @@
     </div>
   </div>
 
-  <script>
-    const SUPABASE_URL = 'https://hcyibcqojsyldiyzperr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjeWliY3FvanN5bGRpeXpwZXJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTY1MjAsImV4cCI6MjA5NDIzMjUyMH0.jTm4LkcQFHkpi64UHhCkR254KCznE4qOPyjis7lnjM0';
-    
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    async function handleApply(event) {
-      event.preventDefault();
-      
-      const btn = document.getElementById('submitBtn');
-      const alertBox = document.getElementById('alertBox');
-      const fileInput = document.getElementById('uploadFile');
-      
-      if (fileInput.files.length === 0) return;
-
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> กำลังประมวลผล...';
-      btn.disabled = true;
-      alertBox.style.display = 'none';
-
-      try {
-        const file = fileInput.files[0];
-        const firstName = document.getElementById('firstName').value;
-        const lastName = document.getElementById('lastName').value;
-        const idCard = document.getElementById('idCard').value;
-        const phone = document.getElementById('phone').value;
-
-        // 🛠️ กลยุทธ์ใหม่: สุ่มชื่อไฟล์เป็นภาษาอังกฤษอัตโนมัติ (ป้องกันปัญหาภาษาไทย)
-        const fileExt = file.name.split('.').pop();
-        const randomString = Math.random().toString(36).substring(2, 10); // สุ่มตัวอักษร 8 ตัว
-        const newFileName = `cv_${Date.now()}_${randomString}.${fileExt}`;
-        
-        // 1. อัปโหลดไฟล์ (เซิร์ฟเวอร์จะได้รับชื่อที่เป็นภาษาอังกฤษที่สุ่มขึ้นมา)
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-          .from('recruitment_files')
-          .upload(newFileName, file);
-
-        if (uploadError) throw new Error('อัปโหลดไฟล์ไม่สำเร็จ: ' + uploadError.message);
-
-        const { data: publicUrlData } = supabaseClient.storage
-          .from('recruitment_files')
-          .getPublicUrl(newFileName);
-        const fileUrl = publicUrlData.publicUrl;
-
-        // 2. บันทึกข้อมูลลงตาราง (ตรงนี้เก็บเป็นภาษาไทยได้เต็มที่ครับ!)
-        const { data: insertData, error: insertError } = await supabaseClient
-          .from('employees')
-          .insert([
-            {
-              first_name: firstName,
-              last_name: lastName,
-              id_card: idCard,
-              phone: phone,
-              resume_url: fileUrl // เก็บลิงก์ไฟล์ที่สุ่มชื่อแล้ว
-            }
-          ]);
-
-        if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ: ' + insertError.message);
-
-        alertBox.className = 'alert alert-success mt-3';
-        alertBox.innerHTML = '✅ ส่งใบสมัครสำเร็จ! ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว';
-        alertBox.style.display = 'block';
-        document.getElementById('applyForm').reset();
-
-      } catch (error) {
-        alertBox.className = 'alert alert-danger mt-3';
-        alertBox.innerHTML = '❌ เกิดข้อผิดพลาด: ' + error.message;
-        alertBox.style.display = 'block';
-      } finally {
-        btn.innerHTML = 'ส่งใบสมัคร';
-        btn.disabled = false;
-      }
-    }
-  </script>
+  <!-- โยงไปหาไฟล์ประมวลผล -->
+  <script src="js/pages/apply.js"></script>
 </body>
 </html>

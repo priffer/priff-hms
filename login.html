@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - PRIFF HMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- ดึง CSS ทรงเหลี่ยมของเรา -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- ดึง Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config/supabase.js"></script>
+</head>
+<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+
+  <div class="container d-flex justify-content-center">
+    <!-- ใช้ card มาตรฐาน ซึ่งจะถูกบังคับให้เหลี่ยมด้วย style.css -->
+    <div class="card p-4" style="max-width: 400px; width: 100%;">
+      <div class="text-center mb-4">
+        <h3 class="fw-bold">ADMIN LOGIN</h3>
+        <p class="text-muted small">ระบบจัดการทรัพยากรบุคคล PRIFF HMS</p>
+      </div>
+      
+      <div id="alertBox" class="alert" style="display: none;" role="alert"></div>
+
+      <form id="loginForm">
+        <div class="mb-3">
+          <label class="form-label small fw-bold">อีเมล</label>
+          <input type="email" id="email" class="form-control" placeholder="admin@kccleantrade.com" required>
+        </div>
+        <div class="mb-4">
+          <label class="form-label small fw-bold">รหัสผ่าน</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <!-- เปลี่ยนปุ่มเป็นสีดำล้วน ทรงเหลี่ยม -->
+        <button type="submit" id="loginBtn" class="btn btn-dark w-100 fw-bold">เข้าสู่ระบบ</button>
+      </form>
+      <div class="text-center mt-3">
+        <a href="index.html" class="text-decoration-none small text-muted">กลับไปหน้าฟอร์มรับสมัครงาน</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/pages/login.js"></script>
+</body>
+</html>
