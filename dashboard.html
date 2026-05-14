@@ -12,41 +12,63 @@
 <body class="bg-gray-100 font-sans min-h-screen">
     <nav class="bg-kcblue text-white p-4 shadow-none border-b-4 border-kcyellow">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold uppercase">PRIFF HMS | Admin Panel</h1>
-            <button onclick="handleLogout()" class="border-2 border-white px-4 py-1 text-sm font-bold hover:bg-white hover:text-kcblue transition-colors rounded-none cursor-pointer">
-                ออกจากระบบ
-            </button>
+            <h1 class="text-xl font-bold uppercase tracking-tight">PRIFF HMS | Management</h1>
+            <button onclick="handleLogout()" class="border-2 border-white px-4 py-1 text-sm font-bold hover:bg-white hover:text-kcblue transition-colors rounded-none cursor-pointer">ออกจากระบบ</button>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto p-6 mt-4">
-        <div class="bg-white border border-gray-300 p-6 shadow-none rounded-none">
+    <div class="max-w-7xl mx-auto p-4 md:p-6 mt-4">
+        <div class="bg-white border border-gray-300 p-4 md:p-6 shadow-none rounded-none">
             
-            <div class="flex gap-2 mb-6 border-b-2 border-gray-200 pb-4">
-                <button id="tab-applied" class="px-4 py-2 bg-kcblue text-white font-bold rounded-none border-0 cursor-pointer">ผู้สมัครงานใหม่</button>
-                <button id="tab-hired" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-none border-0 cursor-pointer hover:bg-gray-300">พนักงานบริษัท</button>
+            <div class="flex flex-wrap gap-1 mb-6 border-b-2 border-gray-200 pb-2">
+                <button onclick="switchTab('applied')" id="tab-applied" class="px-4 py-2 bg-kcblue text-white font-bold rounded-none border-0 cursor-pointer">ผู้สมัครใหม่</button>
+                <button onclick="switchTab('interview')" id="tab-interview" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-none border-0 cursor-pointer hover:bg-gray-300">นัดสัมภาษณ์</button>
+                <button onclick="switchTab('hired')" id="tab-hired" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-none border-0 cursor-pointer hover:bg-gray-300">รับเข้าทำงาน</button>
+                <button onclick="switchTab('rejected')" id="tab-rejected" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-none border-0 cursor-pointer hover:bg-gray-300">ไม่ผ่านเกณฑ์</button>
+                <button onclick="switchTab('settings')" id="tab-settings" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-none border-0 cursor-pointer hover:bg-gray-300 ml-auto">⚙️ ตั้งค่าระบบ</button>
             </div>
 
-            <div class="overflow-x-auto">
+            <div id="tableView" class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-800 text-white text-sm">
-                            <th class="p-3 border border-gray-700 font-bold">วันที่สมัคร</th>
-                            <th class="p-3 border border-gray-700 font-bold">ชื่อ-นามสกุล</th>
-                            <th class="p-3 border border-gray-700 font-bold">กลุ่มงาน</th>
-                            <th class="p-3 border border-gray-700 font-bold">เบอร์โทรศัพท์</th>
-                            <th class="p-3 border border-gray-700 font-bold">สถานะ</th>
-                            <th class="p-3 border border-gray-700 font-bold">เอกสาร</th>
-                            <th class="p-3 border border-gray-700 font-bold">จัดการ</th>
+                            <th class="p-3 border border-gray-700">วันที่สมัคร</th>
+                            <th class="p-3 border border-gray-700">ชื่อ-นามสกุล</th>
+                            <th class="p-3 border border-gray-700">กลุ่มงาน/ตำแหน่ง</th>
+                            <th class="p-3 border border-gray-700 text-center">จัดการ</th>
                         </tr>
                     </thead>
-                    <tbody id="employeeTableBody">
-                        </tbody>
+                    <tbody id="employeeTableBody"></tbody>
                 </table>
             </div>
+
+            <div id="settingsView" class="hidden space-y-6">
+                <h2 class="text-2xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">ตั้งค่าระบบ (System Settings)</h2>
+                <div>
+                    <label class="block font-bold text-kcblue mb-2">ข้อความยินยอม PDPA (หน้าฟอร์มสมัครงาน)</label>
+                    <textarea id="pdpaInput" rows="5" class="w-full border-2 border-gray-300 p-3 outline-none focus:border-kcblue rounded-none"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-1">รหัสพนักงานล่าสุด (Running No.)</label>
+                        <input type="text" id="lastEmpNo" class="w-full border-2 border-gray-300 p-2 rounded-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-1">ภาษีหัก ณ ที่จ่าย (%)</label>
+                        <input type="number" id="taxRate" class="w-full border-2 border-gray-300 p-2 rounded-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-1">ประกันสังคม (%)</label>
+                        <input type="number" id="ssoRate" class="w-full border-2 border-gray-300 p-2 rounded-none">
+                    </div>
+                </div>
+                <button onclick="saveSettings()" class="bg-kcblue text-white font-bold px-8 py-3 hover:bg-kcyellow hover:text-kcblue transition-colors border-0 cursor-pointer rounded-none">บันทึกการตั้งค่าทั้งหมด</button>
+            </div>
+
         </div>
     </div>
 
+    <div id="modalContainer"></div>
     <script src="js/pages/dashboard.js"></script>
 </body>
 </html>
