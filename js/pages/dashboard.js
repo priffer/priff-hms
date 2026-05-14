@@ -89,7 +89,11 @@ async function viewDetails(id) {
                     <p><strong>อีเมล:</strong> ${emp.email || '-'}</p>
                     <p><strong>ตำแหน่ง:</strong> ${emp.interested_position}</p>
                     <p><strong>เงินเดือนที่ต้องการ:</strong> ${emp.expected_salary} บาท</p>
-                    <p><strong>ไฟล์แนบ:</strong> <a href="${emp.resume_url}" target="_blank" class="text-blue-600 underline">คลิกดูเอกสาร</a></p>
+                    <p class="col-span-2"><strong>ไฟล์แนบ (ถ้ามี):</strong> 
+                        ${emp.resume_url ? `<a href="${emp.resume_url}" target="_blank" class="text-blue-600 underline ml-2">Resume</a>` : ''}
+                        ${emp.profile_photo_url ? `<a href="${emp.profile_photo_url}" target="_blank" class="text-blue-600 underline ml-2">รูปถ่าย</a>` : ''}
+                        ${emp.id_card_url ? `<a href="${emp.id_card_url}" target="_blank" class="text-blue-600 underline ml-2">บัตร ปชช.</a>` : ''}
+                    </p>
                 </div>
 
                 <div class="mb-6">
@@ -123,11 +127,53 @@ async function updateRemarks(id) {
     if (!error) alert('บันทึกโน้ตเรียบร้อย');
 }
 
+// ฟังก์ชันรับคนเข้าทำงานและ Gen รหัสออโต้ตามฟอร์แมต KC
 async function processHiring(id) {
-    if (!confirm('ยืนยันรับคนนี้เข้าทำงาน? ระบบจะออกรหัสพนักงานให้ทันที')) return;
-    const newId = `EMP-${Date.now().toString().slice(-6)}`; // ตัวอย่าง Simple Gen
-    const { error } = await supabaseClient.from('employees').update({ status: 'hired', emp_id: newId }).eq('id', id);
-    if (!error) { closeModal(); fetchEmployees(); }
+    if (!confirm('ยืนยันรับคนนี้เข้าทำงาน? ระบบจะออกรหัสพนักงานให้อัตโนมัติ')) return;
+    
+    try {
+        // 1. ดึงเลข Running No. ล่าสุดจากตารางตั้งค่า
+        const { data: settings, error: fetchErr } = await supabaseClient
+            .from('system_settings')
+            .select('setting_value')
+            .eq('setting_key', 'LAST_EMP_RUN_NO')
+            .single();
+            
+        if (fetchErr) throw new Error('ไม่สามารถดึงข้อมูล Running No. ได้');
+
+        // 2. สร้าง Format รหัส (KC + YY + MM + DD + RunningNo 3 หลัก)
+        let currentRun = parseInt(settings.setting_value || '0', 10);
+        currentRun += 1; // บวกเลขรันขึ้น 1
+        const runStr = currentRun.toString().padStart(3, '0'); // ทำให้เป็น 3 หลัก (เช่น 001, 012)
+        
+        const now = new Date();
+        const yy = now.getFullYear().toString().slice(-2); // เอาแค่ 2 ตัวท้าย เช่น 26
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0'); // เดือน 01-12
+        const dd = now.getDate().toString().padStart(2, '0'); // วันที่ 01-31
+
+        const newEmpId = `KC${yy}${mm}${dd}${runStr}`; // ผลลัพธ์: KC260505001
+
+        // 3. อัปเดตสถานะผู้สมัคร พร้อมใส่รหัสพนักงาน
+        const { error: updateEmpErr } = await supabaseClient
+            .from('employees')
+            .update({ status: 'hired', emp_id: newEmpId })
+            .eq('id', id);
+        if (updateEmpErr) throw new Error('อัปเดตข้อมูลพนักงานไม่สำเร็จ');
+
+        // 4. บันทึกเลข Running No. ใหม่กลับไปที่ตารางตั้งค่า (เพื่อใช้รันคนต่อไป)
+        const { error: updateSetErr } = await supabaseClient
+            .from('system_settings')
+            .update({ setting_value: runStr })
+            .eq('setting_key', 'LAST_EMP_RUN_NO');
+        if (updateSetErr) console.error('แจ้งเตือน: อัปเดต Running No. ไม่สำเร็จ แต่ออกรหัสผ่านแล้ว');
+
+        alert(`รับเข้าทำงานเรียบร้อย!\nรหัสพนักงานใหม่คือ: ${newEmpId}`);
+        closeModal(); 
+        fetchEmployees();
+        
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 // 4. ระบบตั้งค่า (Settings Management)
