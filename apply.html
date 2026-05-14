@@ -32,14 +32,15 @@
 
       <div class="space-y-4">
         <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">2. ข้อมูลส่วนตัว (Personal Information)</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           <input type="text" id="fullName" placeholder="ชื่อ-นามสกุล (เต็ม) *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
           <input type="text" id="idCard" placeholder="เลขบัตร ปชช. 13 หลัก *" maxlength="13" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
           <select id="gender" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
             <option value="">-- เพศ * --</option><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option><option value="อื่นๆ">อื่นๆ</option>
           </select>
-          <div class="flex flex-col">
-            <label class="text-xs font-bold text-gray-500 mb-1">วัน/เดือน/ปีเกิด *</label>
+          <div class="w-full">
+            <label class="block text-xs font-bold text-gray-500 mb-1">วัน/เดือน/ปีเกิด *</label>
             <input type="date" id="birthDate" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
           </div>
           <select id="maritalStatus" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
@@ -61,6 +62,7 @@
             <option value="ปริญญาตรี">ปริญญาตรี</option>
             <option value="ปวส./ปวช.">ปวส./ปวช.</option>
             <option value="ม.6 หรือต่ำกว่า">ม.6 หรือต่ำกว่า</option>
+            <option value="ไม่ระบุวุฒิ">ไม่ระบุวุฒิ</option>
           </select>
           <input type="text" id="drivingAbility" placeholder="การขับขี่ (เช่น ขับรถยนต์ได้ มีใบขับขี่)" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
         </div>
@@ -74,7 +76,8 @@
 
       <div class="space-y-4">
         <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">4. ข้อมูลการสมัครงาน</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           <input type="text" id="interestedPosition" placeholder="ตำแหน่งที่ต้องการสมัคร *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
           <input type="number" id="expectedSalary" placeholder="เงินเดือนที่คาดหวัง (บาท) *" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
           <select id="workMode" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none bg-white">
@@ -82,8 +85,8 @@
             <option value="Full-time">ประจำ (Full-time)</option>
             <option value="Part-time">พาร์ทไทม์ (Part-time)</option>
           </select>
-          <div class="flex flex-col">
-            <label class="text-xs font-bold text-gray-500 mb-1">วันที่พร้อมเริ่มงาน *</label>
+          <div class="w-full">
+            <label class="block text-xs font-bold text-gray-500 mb-1">วันที่พร้อมเริ่มงาน *</label>
             <input type="date" id="availableStartDate" required class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none">
           </div>
         </div>
@@ -110,28 +113,50 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="p-4 border-2 border-gray-200 bg-white">
                 <label class="block text-sm font-bold text-kcblue mb-2">1. รูปถ่ายหน้าตรง / ครึ่งตัว *</label>
-                <input type="file" id="profilePhoto" accept="image/*" required class="w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <input type="file" id="profilePhoto" accept="image/*" required class="file-input-trigger w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                    <button type="button" onclick="clearFile('profilePhoto')" id="btn-clear-profilePhoto" class="hidden px-3 py-2 bg-gray-200 text-gray-700 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors cursor-pointer border-0 rounded-none">ลบ</button>
+                </div>
             </div>
+            
             <div class="p-4 border-2 border-gray-200 bg-white">
                 <label class="block text-sm font-bold text-kcblue mb-2">2. สำเนาบัตรประชาชน *</label>
-                <input type="file" id="idCardFile" accept="image/*,.pdf" required class="w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <input type="file" id="idCardFile" accept="image/*,.pdf" required class="file-input-trigger w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                    <button type="button" onclick="clearFile('idCardFile')" id="btn-clear-idCardFile" class="hidden px-3 py-2 bg-gray-200 text-gray-700 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors cursor-pointer border-0 rounded-none">ลบ</button>
+                </div>
             </div>
+            
             <div class="p-4 border-2 border-gray-200 bg-white">
                 <label class="block text-sm font-bold text-kcblue mb-2">3. สำเนาทะเบียนบ้าน *</label>
-                <input type="file" id="houseRegFile" accept="image/*,.pdf" required class="w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <input type="file" id="houseRegFile" accept="image/*,.pdf" required class="file-input-trigger w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                    <button type="button" onclick="clearFile('houseRegFile')" id="btn-clear-houseRegFile" class="hidden px-3 py-2 bg-gray-200 text-gray-700 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors cursor-pointer border-0 rounded-none">ลบ</button>
+                </div>
             </div>
+            
             <div class="p-4 border-2 border-gray-200 bg-white">
-                <label class="block text-sm font-bold text-kcblue mb-2">4. สำเนาวุฒิการศึกษา *</label>
-                <input type="file" id="educationFile" accept="image/*,.pdf" required class="w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                <label class="block text-sm font-bold text-kcblue mb-2">4. สำเนาวุฒิการศึกษา <span class="text-red-500 font-normal text-xs">(ถ้ามี / บังคับสำหรับออฟฟิศ)</span></label>
+                <div class="flex items-center gap-2">
+                    <input type="file" id="educationFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                    <button type="button" onclick="clearFile('educationFile')" id="btn-clear-educationFile" class="hidden px-3 py-2 bg-gray-200 text-gray-700 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors cursor-pointer border-0 rounded-none">ลบ</button>
+                </div>
             </div>
 
             <div class="p-4 border-2 border-gray-200 bg-blue-50">
-                <label class="block text-sm font-bold text-kcblue mb-2" id="resumeLabel">5. Resume / CV (บังคับสำหรับออฟฟิศ)</label>
-                <input type="file" id="resumeFile" accept="image/*,.pdf" class="w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                <label class="block text-sm font-bold text-kcblue mb-2" id="resumeLabel">5. Resume / CV <span class="text-red-500 font-normal text-xs">(ถ้ามี / บังคับสำหรับออฟฟิศ)</span></label>
+                <div class="flex items-center gap-2">
+                    <input type="file" id="resumeFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                    <button type="button" onclick="clearFile('resumeFile')" id="btn-clear-resumeFile" class="hidden px-3 py-2 bg-gray-200 text-gray-700 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors cursor-pointer border-0 rounded-none">ลบ</button>
+                </div>
             </div>
+            
             <div class="p-4 border-2 border-gray-200 bg-gray-50">
-                <label class="block text-sm font-bold text-kcblue mb-2">6. ใบผ่านงาน / ใบเซอร์ / ใบขับขี่ (ถ้ามี)</label>
-                <input type="file" id="certificateFile" accept="image/*,.pdf" class="w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                <label class="block text-sm font-bold text-kcblue mb-2">6. ใบเซอร์ / ใบผ่านงาน / ใบขับขี่ <span class="text-gray-500 font-normal text-xs">(ถ้ามี)</span></label>
+                <div class="flex items-center gap-2">
+                    <input type="file" id="certificateFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs text-gray-700 border border-gray-300 p-2 rounded-none cursor-pointer">
+                    <button type="button" onclick="clearFile('certificateFile')" id="btn-clear-certificateFile" class="hidden px-3 py-2 bg-gray-200 text-gray-700 text-xs font-bold hover:bg-red-500 hover:text-white transition-colors cursor-pointer border-0 rounded-none">ลบ</button>
+                </div>
             </div>
         </div>
       </div>
@@ -139,8 +164,8 @@
       <div class="p-4 bg-gray-50 border-2 border-gray-300 flex items-start gap-3">
         <input type="checkbox" id="pdpaConsent" required class="mt-1 w-5 h-5 cursor-pointer accent-kcblue rounded-none">
         <label for="pdpaConsent" class="text-sm text-gray-700 cursor-pointer">
-          <strong id="pdpaTitle">ความยินยอมการประมวลผลข้อมูลส่วนบุคคล (PDPA) *</strong><br>
-          <span id="pdpaBody">กำลังโหลดข้อกำหนด...</span>
+          <strong>ความยินยอมการประมวลผลข้อมูลส่วนบุคคล (PDPA) *</strong><br>
+          <span id="pdpaBody" class="text-gray-600">กำลังโหลดข้อกำหนด...</span>
         </label>
       </div>
 

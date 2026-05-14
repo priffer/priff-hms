@@ -7,7 +7,24 @@ const emailInput = document.getElementById('email');
 const btn = document.getElementById('submitBtn');
 const alertBox = document.getElementById('alertBox');
 
-// 2. UI Logic Functions
+// 2. UI Logic Functions (แสดง/ซ่อน ปุ่มลบไฟล์)
+document.querySelectorAll('.file-input-trigger').forEach(input => {
+    input.addEventListener('change', function() {
+        const clearBtn = document.getElementById(`btn-clear-${this.id}`);
+        if (this.files.length > 0) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+        }
+    });
+});
+
+window.clearFile = function(inputId) {
+    const input = document.getElementById(inputId);
+    input.value = ''; // เคลียร์ไฟล์ทิ้ง
+    document.getElementById(`btn-clear-${inputId}`).classList.add('hidden');
+};
+
 function toggleJobFields(val) {
     officeSkills.classList.add('hidden');
     officeSkills.classList.remove('grid');
@@ -19,13 +36,11 @@ function toggleJobFields(val) {
         officeSkills.classList.add('grid');
         emailInput.required = true;
         emailInput.placeholder = "อีเมล (Email) *ต้องระบุ";
-        document.getElementById('resumeLabel').innerText = "5. Resume / CV (บังคับสำหรับออฟฟิศ) *";
     } else if (val === 'operations') {
         opsSpecific.classList.remove('hidden');
         opsSpecific.classList.add('grid');
         emailInput.required = false;
         emailInput.placeholder = "อีเมล (ถ้ามี)";
-        document.getElementById('resumeLabel').innerText = "5. Resume / CV (ถ้ามี)";
     }
 }
 
@@ -40,12 +55,11 @@ async function loadPdpaContent() {
     if (!error && data) {
         pdpaBody.innerText = data.setting_value;
     } else {
-        console.error('Error loading PDPA:', error);
         pdpaBody.innerText = "กรุณากดยอมรับเงื่อนไขการสมัครงานตามนโยบายของบริษัท";
     }
 }
 
-// ฟังก์ชันช่วยอัปโหลดไฟล์ (Reusable)
+// ฟังก์ชันช่วยอัปโหลดไฟล์
 async function uploadFileToStorage(fileInputId) {
     const fileInput = document.getElementById(fileInputId);
     if (!fileInput || fileInput.files.length === 0) return null;
@@ -55,7 +69,7 @@ async function uploadFileToStorage(fileInputId) {
     const newFileName = `${fileInputId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}.${fileExt}`;
     
     const { error } = await supabaseClient.storage.from('recruitment_files').upload(newFileName, file);
-    if (error) throw new Error(`อัปโหลดไฟล์ ${fileInputId} ไม่สำเร็จ`);
+    if (error) throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ`);
     
     const { data } = supabaseClient.storage.from('recruitment_files').getPublicUrl(newFileName);
     return data.publicUrl;
@@ -70,20 +84,27 @@ async function handleFormSubmit(event) {
         return;
     }
 
+    const jobGroup = jobGroupSelect.value;
+
+    // ตรวจสอบความถูกต้อง (Validation) แยกตามสายงาน
+    if (jobGroup === 'office') {
+        if (document.getElementById('educationFile').files.length === 0) {
+            alert('กรุณาอัปโหลด "สำเนาวุฒิการศึกษา" สำหรับตำแหน่งออฟฟิศ');
+            return;
+        }
+        if (document.getElementById('resumeFile').files.length === 0) {
+            alert('กรุณาอัปโหลด "Resume / CV" สำหรับตำแหน่งออฟฟิศ');
+            return;
+        }
+    }
+
     btn.innerHTML = 'กำลังอัปโหลดเอกสาร และประมวลผล...';
     btn.disabled = true;
     btn.classList.add('opacity-70', 'cursor-not-allowed');
     alertBox.classList.add('hidden');
 
     try {
-        const jobGroup = jobGroupSelect.value;
-        
-        // เช็ค Resume สำหรับออฟฟิศ
-        if (jobGroup === 'office' && document.getElementById('resumeFile').files.length === 0) {
-            throw new Error('กรุณาอัปโหลด Resume สำหรับตำแหน่งออฟฟิศ');
-        }
-
-        // 1. อัปโหลดไฟล์ทั้งหมดพร้อมกัน (Parallel Uploads)
+        // อัปโหลดไฟล์ทั้งหมดพร้อมกัน
         const [
             profile_photo_url, id_card_url, house_reg_url, 
             education_cert_url, resume_url, certificate_url
@@ -96,7 +117,7 @@ async function handleFormSubmit(event) {
             uploadFileToStorage('certificateFile')
         ]);
 
-        // 2. Save Data to Database
+        // บันทึกข้อมูลลงฐานข้อมูล
         const { error: insertError } = await supabaseClient.from('employees').insert([{
             job_group: jobGroup === 'office' ? 'ออฟฟิศ/ฝ่ายขาย' : 'ปฏิบัติการ/ทำความสะอาด',
             full_name: document.getElementById('fullName').value,
@@ -120,7 +141,6 @@ async function handleFormSubmit(event) {
             preferred_zone: jobGroup === 'operations' ? document.getElementById('preferredZone').value : null,
             shift_work: jobGroup === 'operations' ? document.getElementById('shiftWork').value : null,
             
-            // ใส่ URL ของไฟล์แต่ละประเภท
             profile_photo_url: profile_photo_url,
             id_card_url: id_card_url,
             house_reg_url: house_reg_url,
@@ -133,10 +153,13 @@ async function handleFormSubmit(event) {
 
         if (insertError) throw new Error('บันทึกข้อมูลไม่สำเร็จ: ' + insertError.message);
 
-        // 3. Success State
         alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-green-500 bg-green-50 text-green-700 rounded-none block';
         alertBox.innerHTML = 'ส่งใบสมัครและเอกสารสำเร็จ! ระบบกำลังพากลับไปหน้าหลัก...';
         form.reset();
+        
+        // ซ่อนปุ่มลบไฟล์ทั้งหมดหลังส่งสำเร็จ
+        document.querySelectorAll('[id^="btn-clear-"]').forEach(btn => btn.classList.add('hidden'));
+
         setTimeout(() => { window.location.href = 'index.html'; }, 2000);
 
     } catch (error) {
