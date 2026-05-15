@@ -19,8 +19,8 @@
     --color-green-600: oklch(62.7% 0.194 149.214);
     --color-green-700: oklch(52.7% 0.154 150.069);
     --color-blue-50: oklch(97% 0.014 254.604);
+    --color-blue-200: oklch(88.2% 0.059 254.128);
     --color-blue-600: oklch(54.6% 0.245 262.881);
-    --color-blue-900: oklch(37.9% 0.146 265.522);
     --color-gray-50: oklch(98.5% 0.002 247.839);
     --color-gray-100: oklch(96.7% 0.003 264.542);
     --color-gray-200: oklch(92.8% 0.006 264.531);
@@ -35,9 +35,8 @@
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-sm: 24rem;
-    --container-lg: 32rem;
+    --container-md: 28rem;
     --container-2xl: 42rem;
-    --container-3xl: 48rem;
     --container-4xl: 56rem;
     --container-7xl: 80rem;
     --text-xs: 0.75rem;
@@ -55,15 +54,14 @@
     --text-4xl: 2.25rem;
     --text-4xl--line-height: calc(2.5 / 2.25);
     --font-weight-normal: 400;
-    --font-weight-semibold: 600;
     --font-weight-bold: 700;
     --font-weight-extrabold: 800;
     --tracking-tighter: -0.05em;
     --tracking-tight: -0.025em;
     --tracking-wide: 0.025em;
-    --tracking-wider: 0.05em;
     --tracking-widest: 0.1em;
     --leading-relaxed: 1.625;
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --blur-md: 12px;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -226,6 +224,9 @@
   .fixed {
     position: fixed;
   }
+  .relative {
+    position: relative;
+  }
   .sticky {
     position: sticky;
   }
@@ -343,8 +344,14 @@
   .h-5 {
     height: calc(var(--spacing) * 5);
   }
+  .h-6 {
+    height: calc(var(--spacing) * 6);
+  }
   .h-12 {
     height: calc(var(--spacing) * 12);
+  }
+  .h-14 {
+    height: calc(var(--spacing) * 14);
   }
   .max-h-\[90vh\] {
     max-height: 90vh;
@@ -354,6 +361,9 @@
   }
   .w-5 {
     width: calc(var(--spacing) * 5);
+  }
+  .w-6 {
+    width: calc(var(--spacing) * 6);
   }
   .w-8 {
     width: calc(var(--spacing) * 8);
@@ -373,11 +383,17 @@
   .max-w-7xl {
     max-width: var(--container-7xl);
   }
+  .max-w-md {
+    max-width: var(--container-md);
+  }
   .max-w-sm {
     max-width: var(--container-sm);
   }
   .border-collapse {
     border-collapse: collapse;
+  }
+  .transform {
+    transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
   }
   .cursor-not-allowed {
     cursor: not-allowed;
@@ -542,6 +558,9 @@
     --tw-border-style: dashed;
     border-style: dashed;
   }
+  .border-blue-200 {
+    border-color: var(--color-blue-200);
+  }
   .border-gray-100 {
     border-color: var(--color-gray-100);
   }
@@ -652,6 +671,9 @@
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-white) 95%, transparent);
     }
+  }
+  .p-1 {
+    padding: calc(var(--spacing) * 1);
   }
   .p-2 {
     padding: calc(var(--spacing) * 2);
@@ -906,6 +928,10 @@
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
+  .ease-in-out {
+    --tw-ease: var(--ease-in-out);
+    transition-timing-function: var(--ease-in-out);
+  }
   .outline-none {
     --tw-outline-style: none;
     outline-style: none;
@@ -950,48 +976,6 @@
       @media (hover: hover) {
         opacity: 100%;
       }
-    }
-  }
-  .file\:mr-4 {
-    &::file-selector-button {
-      margin-right: calc(var(--spacing) * 4);
-    }
-  }
-  .file\:rounded-none {
-    &::file-selector-button {
-      border-radius: 0;
-    }
-  }
-  .file\:border-0 {
-    &::file-selector-button {
-      border-style: var(--tw-border-style);
-      border-width: 0px;
-    }
-  }
-  .file\:bg-kcblue {
-    &::file-selector-button {
-      background-color: var(--color-kcblue);
-    }
-  }
-  .file\:px-4 {
-    &::file-selector-button {
-      padding-inline: calc(var(--spacing) * 4);
-    }
-  }
-  .file\:py-2 {
-    &::file-selector-button {
-      padding-block: calc(var(--spacing) * 2);
-    }
-  }
-  .file\:font-bold {
-    &::file-selector-button {
-      --tw-font-weight: var(--font-weight-bold);
-      font-weight: var(--font-weight-bold);
-    }
-  }
-  .file\:text-white {
-    &::file-selector-button {
-      color: var(--color-white);
     }
   }
   .hover\:bg-black {
@@ -1057,24 +1041,6 @@
       }
     }
   }
-  .hover\:file\:bg-kcyellow {
-    &:hover {
-      @media (hover: hover) {
-        &::file-selector-button {
-          background-color: var(--color-kcyellow);
-        }
-      }
-    }
-  }
-  .hover\:file\:text-kcblue {
-    &:hover {
-      @media (hover: hover) {
-        &::file-selector-button {
-          color: var(--color-kcblue);
-        }
-      }
-    }
-  }
   .focus\:border-kcblue {
     &:focus {
       border-color: var(--color-kcblue);
@@ -1125,6 +1091,11 @@
   .md\:hidden {
     @media (width >= 48rem) {
       display: none;
+    }
+  }
+  .md\:w-1\/2 {
+    @media (width >= 48rem) {
+      width: calc(1 / 2 * 100%);
     }
   }
   .md\:grid-cols-2 {
@@ -1203,6 +1174,26 @@
     font-family: var(--font-sarabun);
     color: var(--color-gray-800);
   }
+}
+@property --tw-rotate-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-y {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-z {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-y {
+  syntax: "*";
+  inherits: false;
 }
 @property --tw-space-y-reverse {
   syntax: "*";
@@ -1332,9 +1323,18 @@
   syntax: "*";
   inherits: false;
 }
+@property --tw-ease {
+  syntax: "*";
+  inherits: false;
+}
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
     *, ::before, ::after, ::backdrop {
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
       --tw-space-y-reverse: 0;
       --tw-border-style: solid;
       --tw-leading: initial;
@@ -1364,6 +1364,7 @@
       --tw-backdrop-opacity: initial;
       --tw-backdrop-saturate: initial;
       --tw-backdrop-sepia: initial;
+      --tw-ease: initial;
     }
   }
 }
