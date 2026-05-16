@@ -43,7 +43,7 @@
           <select id="maritalStatus" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
             <option value="">-- สถานภาพ * --</option>
             <option value="โสด">โสด</option>
-            <option value="มีแฟน">มีแฟน</option>
+            <option value="มีแฟนแล้ว">มีแฟนแล้ว / มีคู่ครอง</option>
             <option value="สมรส">สมรส</option>
             <option value="หย่าร้าง">หย่าร้าง</option>
           </select>
@@ -91,7 +91,7 @@
                 </div>
             </div>
             <div class="p-3 border-2 border-gray-200 bg-white">
-                <label class="block text-sm font-bold text-kcblue mb-2" id="eduLabel">4. สำเนาวุฒิการศึกษา <span class="text-xs font-normal text-gray-500">(ถ้ามี)</span></label>
+                <label class="block text-sm font-bold text-kcblue mb-2" id="eduLabel">4. สำเนาวุฒิการศึกษา</label>
                 <div class="flex items-center gap-2">
                     <input type="file" id="educationFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1">
                     <button type="button" onclick="clearFile('educationFile')" id="btn-clear-educationFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
@@ -142,17 +142,31 @@
 
           <div id="officeFields" class="hidden space-y-4 bg-gray-50 p-4 border-2 border-gray-200">
             <div class="p-3 border-2 border-kcblue bg-blue-50 mb-4">
-                <label class="block text-sm font-bold text-kcblue mb-2">อัปโหลด Resume / CV (บังคับสำหรับออฟฟิศ) *</label>
+                <label class="block text-sm font-bold text-kcblue mb-2">อัปโหลด Resume / CV *</label>
                 <div class="flex items-center gap-2">
                     <input type="file" id="resumeFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1 bg-white">
                     <button type="button" onclick="clearFile('resumeFile')" id="btn-clear-resumeFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
                 </div>
             </div>
-            <textarea id="workExperience" placeholder="ประวัติการทำงานที่ผ่านมา (ชื่อบริษัท, ระยะเวลา, หน้าที่รับผิดชอบ) *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-            <textarea id="techAiSkills" placeholder="ทักษะด้านเทคโนโลยีและ AI ที่เชี่ยวชาญ (และมันช่วยงานคุณได้อย่างไร?) *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-            <textarea id="selfLearning" placeholder="สิ่งใหม่ล่าสุดที่คุณเรียนรู้ด้วยตัวเองในรอบ 6 เดือนที่ผ่านมา? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-            <textarea id="problemSolving" placeholder="ปัญหาที่ยากที่สุดในการทำงานที่เคยเจอ และวิธีแก้ไขของคุณ? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-            <textarea id="reasonForJoining" placeholder="ทำไมถึงสนใจร่วมงานกับเรา และจุดแข็งของคุณจะช่วยบริษัทได้อย่างไร? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+            
+            <input type="text" id="latestJob" placeholder="ตำแหน่งล่าสุด และ ชื่อบริษัทล่าสุด (เช่น เจ้าหน้าที่บัญชี - บริษัท ABC จำกัด) *" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+            
+            <textarea id="drivingAndTravel" placeholder="การเดินทางและใบอนุญาตขับขี่ (สามารถนำรถยนต์ส่วนตัวมาใช้ทำงาน หรือเดินทางไปปฏิบัติงานนอกสถานที่/ไซต์งานลูกค้า ได้หรือไม่?) *" rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+
+            <textarea id="techAiSkills" placeholder="ทักษะด้านเทคโนโลยีและ AI ที่เชี่ยวชาญ (และสิ่งเหล่านั้นช่วยให้คุณทำงานได้รวดเร็วหรือมีประสิทธิภาพขึ้นได้อย่างไร?) *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+            
+            <textarea id="selfLearning" placeholder="สิ่งใหม่ล่าสุดที่คุณขวนขวายเรียนรู้ด้วยตัวเองในรอบ 6 เดือนที่ผ่านมาคืออะไร? และทำไมถึงสนใจเรื่องนี้? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+            
+            <textarea id="latestMistake" placeholder="เล่าถึงความผิดพลาดล่าสุดในการทำงานที่คุณเคยทำ คุณมีวิธีแก้ปัญหาเฉพาะหน้าอย่างไร และได้เรียนรู้อะไรจากเหตุการณ์นั้น? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+
+            <textarea id="problemSolving" placeholder="เล่าประสบการณ์ปัญหาที่ยากที่สุดที่คุณเคยเจอในการทำงาน และคุณแก้ไขมันอย่างไร? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+
+            <textarea id="teamworkAttitude" placeholder="เมื่อต้องทำงานร่วมกับคนที่มีความคิดเห็นไม่ตรงกัน หรือทำงานด้วยยาก คุณมีวิธีรับมือและหาทางออกอย่างไร? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+
+            <textarea id="reasonForJoining" placeholder="ทำไมเราถึงเป็นตัวเลือกของคุณ? (เล่าถึงมุมมอง เป้าหมาย หรือความคาดหวังในการทำงาน นอกเหนือจากเรื่องผลตอบแทน) *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+
+            <textarea id="careerGoal" placeholder="เป้าหมายในการทำงานของคุณในอีก 3-5 ปีข้างหน้าคืออะไร? *" rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+            
             <input type="text" id="referencePerson" placeholder="บุคคลอ้างอิงจากที่ทำงานเก่า (ชื่อ/ตำแหน่ง/เบอร์โทร - ถ้ามี)" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
           </div>
 

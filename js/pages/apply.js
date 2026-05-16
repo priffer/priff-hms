@@ -4,68 +4,64 @@ const specificFieldsContainer = document.getElementById('specificFieldsContainer
 const officeFields = document.getElementById('officeFields');
 const opsFields = document.getElementById('opsFields');
 
-// 1. โหลดข้อมูล PDPA
+// 1. โหลดข้อมูล PDPA จากฐานข้อมูลมารอแสดงผล
 async function loadPdpaContent() {
     const { data } = await supabaseClient.from('system_settings').select('setting_value').eq('setting_key', 'PDPA_CONTENT').single();
     if (data) document.getElementById('pdpaBody').innerText = data.setting_value;
 }
 document.addEventListener('DOMContentLoaded', loadPdpaContent);
 
-// 2. ระบบสลับฟอร์ม (Progressive Disclosure)
+// 2. ระบบสลับฟอร์มตามประเภทงาน (Progressive Disclosure)
 jobGroupSelect.addEventListener('change', function() {
     const val = this.value;
     if(val) specificFieldsContainer.classList.remove('hidden');
     else specificFieldsContainer.classList.add('hidden');
 
-    const officeReq = ['workExperience', 'techAiSkills', 'selfLearning', 'problemSolving', 'reasonForJoining'];
+    // รายชื่อ ID ฟิลด์ที่บังคับกรอกแยกประเภท
+    const officeReq = ['latestJob', 'drivingAndTravel', 'techAiSkills', 'selfLearning', 'latestMistake', 'problemSolving', 'teamworkAttitude', 'reasonForJoining', 'careerGoal'];
     const opsReq = ['workMode', 'preferredZone', 'shiftWork', 'commuteMethod', 'healthAndShape'];
 
     if (val === 'office') {
         officeFields.classList.remove('hidden');
         opsFields.classList.add('hidden');
         
-        // บังคับกรอกช่อง Text ของออฟฟิศ
         officeReq.forEach(id => document.getElementById(id).required = true);
         opsReq.forEach(id => document.getElementById(id).required = false);
         
         document.getElementById('email').required = true;
-        
-        // เปลี่ยนข้อความแนะนำ (แต่ไม่บังคับระบบ)
         document.getElementById('eduLabel').innerHTML = '4. สำเนาวุฒิการศึกษา <span class="text-xs font-normal text-red-500">(ควรแนบสำหรับตำแหน่งออฟฟิศ)</span>';
     } else if (val === 'operations') {
         opsFields.classList.remove('hidden');
         officeFields.classList.add('hidden');
         
-        // บังคับกรอกช่อง Text ของปฏิบัติการ
         opsReq.forEach(id => document.getElementById(id).required = true);
         officeReq.forEach(id => document.getElementById(id).required = false);
         
         document.getElementById('email').required = false;
-        
-        // เปลี่ยนข้อความแนะนำ
         document.getElementById('eduLabel').innerHTML = '4. สำเนาวุฒิการศึกษา <span class="text-xs font-normal text-gray-500">(ถ้ามี)</span>';
     }
 });
 
-// 3. ระบบโชว์/ซ่อน ปุ่มลบไฟล์ และฟังก์ชันลบไฟล์
+// 3. ระบบโชว์/ซ่อน ปุ่มลบไฟล์แบบ Dynamic
 document.querySelectorAll('.file-input-trigger').forEach(input => {
     input.addEventListener('change', function() {
         const clearBtn = document.getElementById(`btn-clear-${this.id}`);
-        if (this.files.length > 0) {
-            clearBtn.classList.remove('hidden');
-        } else {
-            clearBtn.classList.add('hidden');
+        if (clearBtn) {
+            if (this.files.length > 0) clearBtn.classList.remove('hidden');
+            else clearBtn.classList.add('hidden');
         }
     });
 });
 
+// ฟังก์ชันลบไฟล์แบบมินิมอลเมื่อกดคลิก
 window.clearFile = function(inputId) {
     const input = document.getElementById(inputId);
-    input.value = ''; // เคลียร์ไฟล์ที่เลือกไว้ทิ้ง
-    document.getElementById(`btn-clear-${inputId}`).classList.add('hidden'); // ซ่อนปุ่มลบ
+    if (input) input.value = ''; 
+    const clearBtn = document.getElementById(`btn-clear-${inputId}`);
+    if (clearBtn) clearBtn.classList.add('hidden');
 };
 
-// จำกัดจำนวนไฟล์ใบเซอร์ไม่เกิน 5
+// จำกัดจำนวนไฟล์ใบเซอร์ห้ามเกิน 5 ไฟล์
 document.getElementById('otherCertsFiles').addEventListener('change', function() {
     if (this.files.length > 5) {
         alert("คุณสามารถอัปโหลดใบเซอร์เพิ่มเติมได้สูงสุดเพียง 5 ไฟล์เท่านั้นครับ");
@@ -74,7 +70,7 @@ document.getElementById('otherCertsFiles').addEventListener('change', function()
     }
 });
 
-// 4. ฟังก์ชันอัปโหลดไฟล์ไปยัง Supabase Storage
+// 4. ฟังก์ชันจัดการอัปโหลดไฟล์ (Helper)
 async function uploadFile(fileInputId) {
     const fileInput = document.getElementById(fileInputId);
     if (!fileInput || fileInput.files.length === 0) return null;
@@ -102,7 +98,7 @@ async function uploadMultipleCerts() {
     return urls.length > 0 ? urls.join(',') : null;
 }
 
-// 5. จัดการตอนกด Submit (บันทึกข้อมูล)
+// 5. จัดการการ Submit และส่งข้อมูลเข้าฐานข้อมูล
 form.addEventListener('submit', async function(event) {
     event.preventDefault();
     const btn = document.getElementById('submitBtn');
@@ -110,14 +106,10 @@ form.addEventListener('submit', async function(event) {
     const jobGroup = jobGroupSelect.value;
     const eduLevel = document.getElementById('educationLevel').value;
 
-    // Validation ป้องกันด่านสุดท้าย
-    if (!document.getElementById('pdpaConsent').checked) return alert("กรุณากดยอมรับเงื่อนไข PDPA");
+    if (!document.getElementById('pdpaConsent').checked) return alert("กรุณากดยอมรับเงื่อนไข PDPA ก่อนส่งใบสมัคร");
     
     if (jobGroup === 'office') {
         if (eduLevel === 'ไม่มีวุฒิการศึกษา') return alert('ตำแหน่งออฟฟิศ จำเป็นต้องระบุวุฒิการศึกษาสูงสุดครับ');
-        
-        // หมายเหตุ: ลบการบังคับไฟล์ educationFile ออกแล้ว (ส่งฟอร์มผ่านได้เลยแม้ไม่แนบไฟล์)
-        // บังคับแค่ Resume อย่างเดียวสำหรับออฟฟิศ
         if (document.getElementById('resumeFile').files.length === 0) return alert('กรุณาอัปโหลด "Resume/CV" สำหรับตำแหน่งออฟฟิศ');
     }
 
@@ -127,14 +119,14 @@ form.addEventListener('submit', async function(event) {
     alertBox.classList.add('hidden');
 
     try {
-        // อัปโหลดไฟล์ทุกช่องที่เลือกมาแบบขนาน (Parallel) เพื่อความรวดเร็ว
+        // ทำการอัปโหลดไฟล์ทั้งหมดขนานพร้อมๆ กัน
         const [ profile, idcard, house, edu, resume, driving, workcert, multipleCerts ] = await Promise.all([
             uploadFile('profilePhoto'), uploadFile('idCardFile'), uploadFile('houseRegFile'),
             uploadFile('educationFile'), uploadFile('resumeFile'),
             uploadFile('drivingLicenseFile'), uploadFile('workCertFile'), uploadMultipleCerts()
         ]);
 
-        // นำข้อมูลทั้งหมดส่งเข้า Database
+        // บันทึกข้อมูลลงตาราง employees
         const { error: insertError } = await supabaseClient.from('employees').insert([{
             job_group: jobGroup === 'office' ? 'ออฟฟิศ/ฝ่ายขาย' : 'ปฏิบัติการ/ทำความสะอาด',
             full_name: document.getElementById('fullName').value,
@@ -152,12 +144,16 @@ form.addEventListener('submit', async function(event) {
             expected_salary: document.getElementById('expectedSalary').value,
             available_start_date: document.getElementById('availableStartDate').value,
 
-            // เฉพาะออฟฟิศ
-            work_experience: jobGroup === 'office' ? document.getElementById('workExperience').value : null,
+            // แมปฟิลด์เฉพาะออฟฟิศตัวใหม่
+            latest_job: jobGroup === 'office' ? document.getElementById('latestJob').value : null,
+            driving_and_travel: jobGroup === 'office' ? document.getElementById('drivingAndTravel').value : null,
             tech_ai_skills: jobGroup === 'office' ? document.getElementById('techAiSkills').value : null,
             self_learning: jobGroup === 'office' ? document.getElementById('selfLearning').value : null,
+            latest_mistake: jobGroup === 'office' ? document.getElementById('latestMistake').value : null,
             problem_solving: jobGroup === 'office' ? document.getElementById('problemSolving').value : null,
+            teamwork_attitude: jobGroup === 'office' ? document.getElementById('teamworkAttitude').value : null,
             reason_for_joining: jobGroup === 'office' ? document.getElementById('reasonForJoining').value : null,
+            career_goal: jobGroup === 'office' ? document.getElementById('careerGoal').value : null,
             reference_person: jobGroup === 'office' ? document.getElementById('referencePerson').value : null,
             
             // เฉพาะปฏิบัติการ
@@ -167,7 +163,6 @@ form.addEventListener('submit', async function(event) {
             commute_method: jobGroup === 'operations' ? document.getElementById('commuteMethod').value : null,
             health_and_shape: jobGroup === 'operations' ? document.getElementById('healthAndShape').value : null,
             
-            // ลิงก์ไฟล์เอกสารทั้งหมด
             profile_photo_url: profile, id_card_url: idcard, house_reg_url: house,
             education_cert_url: edu, resume_url: resume, 
             driving_license_url: driving, work_certificate_url: workcert, other_certificates: multipleCerts,
@@ -178,17 +173,15 @@ form.addEventListener('submit', async function(event) {
         if (insertError) throw new Error(insertError.message);
 
         alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-green-500 bg-green-50 text-green-700 block';
-        alertBox.innerHTML = 'ส่งใบสมัครสำเร็จ! ระบบกำลังพากลับไปหน้าหลัก...';
+        alertBox.innerHTML = 'ส่งใบสมัครงานและเอกสารสำเร็จเรียบร้อยแล้ว! ระบบกำลังพากลับหน้าหลัก...';
         form.reset();
-        
-        // ซ่อนปุ่มลบไฟล์ทั้งหมดหลังส่งฟอร์มสำเร็จ
         document.querySelectorAll('[id^="btn-clear-"]').forEach(btn => btn.classList.add('hidden'));
 
         setTimeout(() => { window.location.href = 'index.html'; }, 2000);
 
     } catch (error) {
         alertBox.className = 'mb-6 p-4 border-2 font-bold text-center border-red-500 bg-red-50 text-red-700 block';
-        alertBox.innerHTML = 'เกิดข้อผิดพลาด: ' + error.message;
+        alertBox.innerHTML = 'เกิดข้อผิดพลาดในการบันทึก: ' + error.message;
         btn.innerHTML = 'ยืนยันและส่งใบสมัครงาน';
         btn.disabled = false;
         btn.classList.remove('opacity-70', 'cursor-not-allowed');
