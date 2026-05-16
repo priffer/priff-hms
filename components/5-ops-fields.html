@@ -1,0 +1,96 @@
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+  <select id="workMode" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
+    <option value="">-- รูปแบบการทำงาน * --</option>
+    <option value="รายเดือน (Full-time)">รายเดือน (Full-time / สวัสดิการครบ)</option>
+    <option value="รายวัน (Part-time)">รายวัน (Part-time)</option>
+  </select>
+  <select id="shiftWork" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
+    <option value="">-- ทำงานเป็นกะ * --</option>
+    <option value="ได้">ทำได้</option>
+    <option value="ไม่ได้">ทำเวลาปกติเท่านั้น</option>
+  </select>
+  <select id="commuteMethod" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
+    <option value="">-- การเดินทางมาทำงาน * --</option>
+    <option value="มอเตอร์ไซค์ส่วนตัว">มอเตอร์ไซค์ส่วนตัว</option>
+    <option value="รถยนต์ส่วนตัว">รถยนต์ส่วนตัว</option>
+    <option value="รถสาธารณะ/รถรับส่ง">รถสาธารณะ / รถรับส่ง</option>
+  </select>
+</div>
+
+<div class="col-span-1 md:col-span-3 border-2 border-kcblue bg-white mt-4">
+    <div class="bg-kcblue p-3 text-white">
+        <label class="block text-sm font-bold">📍 โซนพื้นที่ทำงานที่ท่านสะดวก (เพิ่มได้หลายพื้นที่) *</label>
+        <p class="text-[11px] text-blue-200 mt-1">กรุณาเลือกจังหวัด รูปแบบพื้นที่ และกดปุ่ม "เพิ่มโซน"</p>
+    </div>
+    <div class="p-4 bg-blue-50 border-b border-gray-300">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">1. จังหวัด</label>
+                <select id="zoneProvince" class="w-full h-10 border border-gray-300 pl-2 pr-8 text-sm focus:border-kcblue outline-none bg-white font-bold text-kcblue"><option value="">- เลือกจังหวัด -</option><option value="ระยอง">ระยอง (Rayong)</option><option value="ชลบุรี">ชลบุรี (Chonburi)</option></select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">2. ประเภทพื้นที่</label>
+                <select id="zoneType" class="w-full h-10 border border-gray-300 pl-2 pr-8 text-sm focus:border-kcblue outline-none bg-white disabled:bg-gray-200" disabled><option value="">- เลือกประเภท -</option><option value="นิคมอุตสาหกรรม">โรงงานในนิคมอุตสาหกรรม</option><option value="เขตอำเภอ/ตำบล">เขตอำเภอ / ตำบล (ทั่วไป)</option></select>
+            </div>
+            <div class="md:col-span-2 flex gap-2">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">3. ระบุพื้นที่ย่อย</label>
+                    <select id="zoneLocation" class="w-full h-10 border border-gray-300 pl-2 pr-8 text-sm focus:border-kcblue outline-none bg-white disabled:bg-gray-200" disabled><option value="">- เลือกพื้นที่ -</option></select>
+                </div>
+                <button type="button" id="btnAddZone" class="h-10 px-4 bg-kcblue text-white font-bold text-sm border-0 hover:bg-kcyellow hover:text-kcblue transition-colors rounded-none mt-auto disabled:opacity-50" disabled>เพิ่มโซน</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-4 bg-white">
+        <label class="block text-xs font-bold text-gray-500 mb-2">โซนพื้นที่ที่ท่านเลือกแล้ว:</label>
+        <div id="selectedZonesTags" class="flex flex-wrap gap-2 min-h-[44px] p-2 border-2 border-dashed border-gray-300">
+            <span class="text-sm text-gray-400 italic mt-1" id="emptyZoneText">ยังไม่ได้เลือกพื้นที่...</span>
+        </div>
+    </div>
+    
+    <div class="p-3 bg-gray-100 border-t border-gray-300 flex flex-wrap items-center gap-3">
+        <label class="flex items-center gap-2 cursor-pointer font-bold text-kcblue"><input type="checkbox" id="checkOtherZone" class="w-5 h-5 accent-kcblue rounded-none"> พื้นที่อื่นๆ (พิมพ์ระบุเอง):</label>
+        <input type="text" id="inputOtherZone" disabled placeholder="พิมพ์ชื่อโรงงาน / อาคาร / พื้นที่..." class="flex-1 min-w-[250px] h-10 border border-gray-300 px-3 text-sm focus:border-kcblue outline-none disabled:bg-gray-200">
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <input type="number" id="height" placeholder="ส่วนสูง (ซม.) *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+    <input type="number" id="weight" placeholder="น้ำหนัก (กก.) *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+    <input type="text" id="medicalCondition" placeholder="โรคประจำตัว (ถ้าไม่มีพิมพ์ 'ไม่มี') *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+</div>
+<input type="text" id="criminalRecord" placeholder="ประวัติอาชญากรรม หรือ ประวัติยาเสพติด (หากไม่เคยให้พิมพ์ว่า 'ไม่เคย' หากเคยโปรดระบุ) *" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+
+<div class="col-span-1 md:col-span-3 p-4 border-2 border-gray-300 bg-white">
+    <label class="block text-sm font-bold text-kcblue mb-3">ทักษะความชำนาญการทำงาน (เลือกข้อที่ทำเป็น / ทำได้มากกว่า 1 ข้อ)</label>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-4 text-sm text-gray-700">
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="เครื่องขัดพื้น (Swing)" class="w-4 h-4 accent-kcblue rounded-none"> เครื่องขัดพื้น (Swing)</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="เครื่องขัดพื้นอัตโนมัติ (Scrubber)" class="w-4 h-4 accent-kcblue rounded-none"> เครื่องขัดพื้นอัตโนมัติ (Scrubber / Ride-on)</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="เครื่องฉีดน้ำแรงดันสูง" class="w-4 h-4 accent-kcblue rounded-none"> เครื่องฉีดน้ำแรงดันสูง</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="ผสมน้ำยาเคมี" class="w-4 h-4 accent-kcblue rounded-none"> ผสมน้ำยาเคมี (รู้สัดส่วนและความปลอดภัย)</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="ซักพรม/ซักโซฟา" class="w-4 h-4 accent-kcblue rounded-none"> ซักพรม / ซักโซฟาผ้า</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="เก็บงานหลังก่อสร้าง" class="w-4 h-4 accent-kcblue rounded-none"> เคลียร์ริ่งหลังก่อสร้าง (ขจัดคราบปูน/สี/กาว)</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="ลงแว็กซ์/เคลือบเงา" class="w-4 h-4 accent-kcblue rounded-none"> ลงแว็กซ์ / เคลือบเงาพื้นผิว</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="งานสวน/ตัดหญ้า" class="w-4 h-4 accent-kcblue rounded-none"> งานสวน: ตัดหญ้า / ตกแต่งสนามหญ้า</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="งานช่างเบื้องต้น" class="w-4 h-4 accent-kcblue rounded-none"> งานช่างเบื้องต้น (เปลี่ยนหลอดไฟ / ระบบประปา)</label>
+        
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="บริการเครื่องดื่ม/จัดห้องประชุม" class="w-4 h-4 accent-kcblue rounded-none"> บริการเสิร์ฟเครื่องดื่ม / จัดเตรียมห้องประชุม</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="งานซักรีดและรีดผ้า" class="w-4 h-4 accent-kcblue rounded-none"> งานซักรีด / รีดผ้าผู้บริหารอย่างระมัดระวัง</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="ทำอาหารไทย" class="w-4 h-4 accent-kcblue rounded-none"> ทำอาหารไทยพื้นฐานได้</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="ทำอาหารจีน/ต่างชาติ" class="w-4 h-4 accent-kcblue rounded-none"> ทำอาหารต่างชาติ / อาหารจีนง่ายๆ ได้</label>
+        <label class="flex items-center gap-2 cursor-pointer hover:text-kcblue"><input type="checkbox" name="opsSkills" value="ดูแลสัตว์เลี้ยง" class="w-4 h-4 accent-kcblue rounded-none"> คุ้นเคยกับสัตว์เลี้ยง / ช่วยดูแลหมา-แมวได้</label>
+
+        <div class="col-span-1 md:col-span-2 mt-2 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 font-bold">
+            <p class="text-[11px] text-yellow-600 mb-2 border-b border-yellow-200 pb-1">⭐ ทักษะเฉพาะทาง (กรุณาแนบใบประกาศนียบัตร / ใบผ่านการอบรม ในช่องแนบเอกสารด้านบน)</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 mt-2">
+                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="opsSkills" value="ขับรถโฟล์คลิฟท์ (Forklift)" class="w-5 h-5 accent-yellow-600 rounded-none"> ขับรถโฟล์คลิฟท์ (Forklift)</label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="opsSkills" value="ทำงานบนที่สูง" class="w-5 h-5 accent-yellow-600 rounded-none"> ทำงานบนที่สูง (Rope Access/กระเช้า)</label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="opsSkills" value="ทำงานในพื้นที่อับอากาศ" class="w-5 h-5 accent-yellow-600 rounded-none"> ทำงานในพื้นที่อับอากาศ (Confined Space)</label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="opsSkills" value="พี่เลี้ยงเด็ก/ดูแลเด็กพิเศษ" class="w-5 h-5 accent-yellow-600 rounded-none"> พี่เลี้ยงเด็ก / ดูแลเด็กพิเศษ (ออทิสติก)</label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="opsSkills" value="ดูแลผู้สูงอายุ/ผู้ป่วยติดเตียง" class="w-5 h-5 accent-yellow-600 rounded-none"> ดูแลผู้สูงอายุ / ผู้ป่วยติดเตียง</label>
+            </div>
+        </div>
+    </div>
+</div>

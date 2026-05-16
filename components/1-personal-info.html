@@ -1,0 +1,24 @@
+<div class="space-y-4">
+    <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">1. ข้อมูลส่วนตัว (Personal Info)</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+        <input type="text" id="fullName" placeholder="ชื่อ-นามสกุล (เต็ม) *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+        <input type="text" id="idCard" placeholder="เลขบัตร ปชช. 13 หลัก *" maxlength="13" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+        <select id="gender" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- เพศ * --</option><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option><option value="อื่นๆ">อื่นๆ</option>
+        </select>
+        <div class="w-full">
+            <label class="block text-xs font-bold text-gray-500 mb-1">วัน/เดือน/ปีเกิด *</label>
+            <input type="date" id="birthDate" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none text-gray-700">
+        </div>
+        <select id="maritalStatus" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- สถานภาพ * --</option><option value="โสด">โสด</option><option value="มีแฟนแล้ว">มีแฟนแล้ว / มีคู่ครอง</option><option value="สมรส">สมรส</option><option value="หย่าร้าง">หย่าร้าง</option>
+        </select>
+        <input type="tel" id="phone" placeholder="เบอร์โทรศัพท์ติดต่อ *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+        <input type="email" id="email" placeholder="อีเมล (ถ้ามี)" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+        <input type="text" id="emergencyContact" placeholder="บุคคลติดต่อฉุกเฉิน (ชื่อ, ความสัมพันธ์, เบอร์โทร) *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+        <select id="educationLevel" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
+            <option value="">-- ระบุวุฒิการศึกษาสูงสุด * --</option><option value="ปริญญาโทขึ้นไป">ปริญญาโทขึ้นไป</option><option value="ปริญญาตรี">ปริญญาตรี</option><option value="ปวส./ปวช.">ปวส./ปวช.</option><option value="ม.6 หรือต่ำกว่า">ม.6 หรือต่ำกว่า</option><option value="ไม่มีวุฒิการศึกษา">ไม่มีวุฒิการศึกษา</option>
+        </select>
+    </div>
+    <textarea id="currentAddress" placeholder="ที่อยู่ปัจจุบัน (โปรดระบุให้ชัดเจน) *" required rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+</div>

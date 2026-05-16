@@ -1,0 +1,16 @@
+<div class="space-y-4 pt-4 border-t-2 border-gray-200">
+  <div class="w-full md:w-1/2">
+      <label class="block text-sm font-bold text-kcblue mb-1">พร้อมเริ่มงานวันที่ *</label>
+      <input type="date" id="availableStartDate" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none text-gray-700">
+  </div>
+  
+  <div class="p-4 bg-blue-50 border-2 border-kcblue flex items-start gap-3">
+    <input type="checkbox" id="pdpaConsent" required class="mt-1 w-6 h-6 cursor-pointer accent-kcblue rounded-none">
+    <label for="pdpaConsent" class="text-sm text-gray-800 cursor-pointer">
+      <strong>คำรับรองและคำยินยอม (PDPA) *</strong><br>
+      <span id="pdpaBody" class="text-gray-600">กำลังโหลดข้อกำหนด...</span>
+    </label>
+  </div>
+
+  <button type="submit" id="submitBtn" class="w-full bg-kcblue text-white font-bold py-4 hover:bg-kcyellow hover:text-kcblue transition-colors border-0 cursor-pointer rounded-none text-xl">ยืนยันและส่งใบสมัครงาน</button>
+</div>

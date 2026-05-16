@@ -1,0 +1,60 @@
+<div class="space-y-4">
+  <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">2. เอกสารประจำตัวและการศึกษา</h3>
+  <p class="text-sm text-red-500 font-bold">* รองรับรูปภาพหรือ PDF ขนาดไม่เกิน 5MB</p>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="p-3 border-2 border-gray-200 bg-white">
+          <label class="block text-sm font-bold text-kcblue mb-2">1. รูปถ่ายหน้าตรง / ครึ่งตัว *</label>
+          <div class="flex items-center gap-2">
+              <input type="file" id="profilePhoto" accept="image/*" required class="file-input-trigger w-full text-xs border border-gray-300 p-1">
+              <button type="button" onclick="clearFile('profilePhoto')" id="btn-clear-profilePhoto" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 rounded-none">ลบ</button>
+          </div>
+      </div>
+      <div class="p-3 border-2 border-gray-200 bg-white">
+          <label class="block text-sm font-bold text-kcblue mb-2">2. สำเนาบัตรประชาชน *</label>
+          <div class="flex items-center gap-2">
+              <input type="file" id="idCardFile" accept="image/*,.pdf" required class="file-input-trigger w-full text-xs border border-gray-300 p-1">
+              <button type="button" onclick="clearFile('idCardFile')" id="btn-clear-idCardFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 rounded-none">ลบ</button>
+          </div>
+      </div>
+      <div class="p-3 border-2 border-gray-200 bg-white">
+          <label class="block text-sm font-bold text-kcblue mb-2">3. สำเนาทะเบียนบ้าน *</label>
+          <div class="flex items-center gap-2">
+              <input type="file" id="houseRegFile" accept="image/*,.pdf" required class="file-input-trigger w-full text-xs border border-gray-300 p-1">
+              <button type="button" onclick="clearFile('houseRegFile')" id="btn-clear-houseRegFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 rounded-none">ลบ</button>
+          </div>
+      </div>
+      <div class="p-3 border-2 border-gray-200 bg-white">
+          <label class="block text-sm font-bold text-kcblue mb-2" id="eduLabel">4. สำเนาวุฒิการศึกษา</label>
+          <div class="flex items-center gap-2">
+              <input type="file" id="educationFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1">
+              <button type="button" onclick="clearFile('educationFile')" id="btn-clear-educationFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 rounded-none">ลบ</button>
+          </div>
+      </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+      <div class="p-3 border-2 border-gray-200 bg-gray-50">
+          <label class="block text-xs font-bold text-gray-700 mb-2">ใบขับขี่รถยนต์/จักรยานยนต์ (ถ้ามี)</label>
+          <div class="flex items-center gap-2">
+              <input type="file" id="drivingLicenseFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1">
+              <button type="button" onclick="clearFile('drivingLicenseFile')" id="btn-clear-drivingLicenseFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 rounded-none">ลบ</button>
+          </div>
+      </div>
+      <div class="p-3 border-2 border-gray-200 bg-gray-50">
+          <label class="block text-xs font-bold text-gray-700 mb-2">ใบผ่านงานจากที่เก่า (ถ้ามี)</label>
+          <div class="flex items-center gap-2">
+              <input type="file" id="workCertFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1">
+              <button type="button" onclick="clearFile('workCertFile')" id="btn-clear-workCertFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 rounded-none">ลบ</button>
+          </div>
+      </div>
+      <div class="p-3 border-2 border-blue-200 bg-blue-50 relative">
+          <label class="block text-xs font-bold text-kcblue mb-1">ใบเซอร์อื่นๆ (สูงสุด 5 ไฟล์)</label>
+          <div class="flex items-center gap-2">
+              <input type="file" id="otherCertsFiles" accept="image/*,.pdf" multiple class="file-input-trigger w-full text-xs border border-gray-300 p-1 bg-white">
+              <button type="button" onclick="clearFile('otherCertsFiles')" id="btn-clear-otherCertsFiles" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 rounded-none">ลบ</button>
+          </div>
+          <p class="text-[10px] text-red-500 mt-1">* กด Ctrl ค้างเพื่อเลือกหลายไฟล์</p>
+      </div>
+  </div>
+</div>

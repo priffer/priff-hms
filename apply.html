@@ -16,6 +16,7 @@
 <body class="bg-gray-50 font-sans min-h-screen p-4 md:p-8">
 
   <div class="max-w-4xl mx-auto bg-white border-0 shadow-sm p-6 md:p-10 border-t-8 border-t-kcblue">
+    
     <div class="text-center mb-8">
       <h2 class="text-3xl font-bold text-kcblue">ใบสมัครงาน (Application Form)</h2>
       <p class="text-gray-500 mt-2 font-bold">KC Clean Trade Co., Ltd.</p>
@@ -25,188 +26,47 @@
 
     <form id="applyForm" class="space-y-8">
       
-      <div class="space-y-4">
-        <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">1. ข้อมูลส่วนตัว (Personal Info)</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-          <input type="text" id="fullName" placeholder="ชื่อ-นามสกุล (เต็ม) *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
-          <input type="text" id="idCard" placeholder="เลขบัตร ปชช. 13 หลัก *" maxlength="13" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
-          
-          <select id="gender" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
-            <option value="">-- เพศ * --</option><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option><option value="อื่นๆ">อื่นๆ</option>
-          </select>
-          
-          <div class="w-full">
-            <label class="block text-xs font-bold text-gray-500 mb-1">วัน/เดือน/ปีเกิด *</label>
-            <input type="date" id="birthDate" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none text-gray-700">
-          </div>
-          
-          <select id="maritalStatus" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
-            <option value="">-- สถานภาพ * --</option>
-            <option value="โสด">โสด</option>
-            <option value="มีแฟนแล้ว">มีแฟนแล้ว / มีคู่ครอง</option>
-            <option value="สมรส">สมรส</option>
-            <option value="หย่าร้าง">หย่าร้าง</option>
-          </select>
-          
-          <input type="tel" id="phone" placeholder="เบอร์โทรศัพท์ติดต่อ *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
-          <input type="email" id="email" placeholder="อีเมล (ถ้ามี)" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
-          <input type="text" id="emergencyContact" placeholder="บุคคลติดต่อฉุกเฉิน (ชื่อ, ความสัมพันธ์, เบอร์โทร) *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
-          
-          <select id="educationLevel" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
-             <option value="">-- ระบุวุฒิการศึกษาสูงสุด * --</option>
-             <option value="ปริญญาโทขึ้นไป">ปริญญาโทขึ้นไป</option>
-             <option value="ปริญญาตรี">ปริญญาตรี</option>
-             <option value="ปวส./ปวช.">ปวส./ปวช.</option>
-             <option value="ม.6 หรือต่ำกว่า">ม.6 หรือต่ำกว่า</option>
-             <option value="ไม่มีวุฒิการศึกษา">ไม่มีวุฒิการศึกษา</option>
-          </select>
-        </div>
-        <textarea id="currentAddress" placeholder="ที่อยู่ปัจจุบัน (โปรดระบุให้ชัดเจน) *" required rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-      </div>
-
-      <div class="space-y-4">
-        <h3 class="text-xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">2. เอกสารประจำตัวและการศึกษา</h3>
-        <p class="text-sm text-red-500 font-bold">* รองรับรูปภาพหรือ PDF ขนาดไม่เกิน 5MB</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="p-3 border-2 border-gray-200 bg-white">
-                <label class="block text-sm font-bold text-kcblue mb-2">1. รูปถ่ายหน้าตรง / ครึ่งตัว *</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="profilePhoto" accept="image/*" required class="file-input-trigger w-full text-xs border border-gray-300 p-1">
-                    <button type="button" onclick="clearFile('profilePhoto')" id="btn-clear-profilePhoto" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-            </div>
-            <div class="p-3 border-2 border-gray-200 bg-white">
-                <label class="block text-sm font-bold text-kcblue mb-2">2. สำเนาบัตรประชาชน *</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="idCardFile" accept="image/*,.pdf" required class="file-input-trigger w-full text-xs border border-gray-300 p-1">
-                    <button type="button" onclick="clearFile('idCardFile')" id="btn-clear-idCardFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-            </div>
-            <div class="p-3 border-2 border-gray-200 bg-white">
-                <label class="block text-sm font-bold text-kcblue mb-2">3. สำเนาทะเบียนบ้าน *</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="houseRegFile" accept="image/*,.pdf" required class="file-input-trigger w-full text-xs border border-gray-300 p-1">
-                    <button type="button" onclick="clearFile('houseRegFile')" id="btn-clear-houseRegFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-            </div>
-            <div class="p-3 border-2 border-gray-200 bg-white">
-                <label class="block text-sm font-bold text-kcblue mb-2" id="eduLabel">4. สำเนาวุฒิการศึกษา</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="educationFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1">
-                    <button type="button" onclick="clearFile('educationFile')" id="btn-clear-educationFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div class="p-3 border-2 border-gray-200 bg-gray-50">
-                <label class="block text-xs font-bold text-gray-700 mb-2">ใบขับขี่รถยนต์/จักรยานยนต์ (ถ้ามี)</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="drivingLicenseFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1">
-                    <button type="button" onclick="clearFile('drivingLicenseFile')" id="btn-clear-drivingLicenseFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-            </div>
-            <div class="p-3 border-2 border-gray-200 bg-gray-50">
-                <label class="block text-xs font-bold text-gray-700 mb-2">ใบผ่านงานจากที่เก่า (ถ้ามี)</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="workCertFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1">
-                    <button type="button" onclick="clearFile('workCertFile')" id="btn-clear-workCertFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-            </div>
-            <div class="p-3 border-2 border-blue-200 bg-blue-50 relative">
-                <label class="block text-xs font-bold text-kcblue mb-1">ใบเซอร์อื่นๆ (สูงสุด 5 ไฟล์)</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="otherCertsFiles" accept="image/*,.pdf" multiple class="file-input-trigger w-full text-xs border border-gray-300 p-1 bg-white">
-                    <button type="button" onclick="clearFile('otherCertsFiles')" id="btn-clear-otherCertsFiles" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-                <p class="text-[10px] text-red-500 mt-1">* กด Ctrl ค้างเพื่อเลือกหลายไฟล์</p>
-            </div>
-        </div>
-      </div>
-
-      <div class="p-6 border-2 border-kcblue bg-kcblue text-white text-center mt-8">
-        <label class="block text-xl font-bold mb-4">3. กรุณาเลือกกลุ่มตำแหน่งงานที่ต้องการสมัคร *</label>
-        <select id="jobGroup" required class="w-full max-w-md mx-auto h-14 border-2 border-white px-4 focus:outline-none rounded-none bg-white font-bold text-kcblue text-lg cursor-pointer text-center">
-          <option value="">-- คลิกเพื่อเลือกสายงาน --</option>
-          <option value="office">ฝ่ายออฟฟิศ / บริหาร / ฝ่ายขาย</option>
-          <option value="operations">ฝ่ายปฏิบัติการ / แม่บ้าน / ทำความสะอาด</option>
-        </select>
-      </div>
-
+      <div id="comp-personal-info"></div>
+      <div id="comp-documents"></div>
+      <div id="comp-job-selection"></div>
+      
       <div id="specificFieldsContainer" class="hidden space-y-4 fade-in">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <input type="text" id="interestedPosition" placeholder="ตำแหน่งที่สนใจสมัครอย่างระบุชัดเจน *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
             <input type="number" id="expectedSalary" placeholder="เงินเดือนที่คาดหวัง (บาท/เดือน) *" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
           </div>
-
-          <div id="officeFields" class="hidden space-y-4 bg-gray-50 p-4 border-2 border-gray-200">
-            <div class="p-3 border-2 border-kcblue bg-blue-50 mb-4">
-                <label class="block text-sm font-bold text-kcblue mb-2">อัปโหลด Resume / CV *</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="resumeFile" accept="image/*,.pdf" class="file-input-trigger w-full text-xs border border-gray-300 p-1 bg-white">
-                    <button type="button" onclick="clearFile('resumeFile')" id="btn-clear-resumeFile" class="hidden px-3 py-1 bg-gray-200 text-gray-700 hover:bg-red-500 hover:text-white text-xs font-bold border-0 cursor-pointer rounded-none">ลบ</button>
-                </div>
-            </div>
-            
-            <input type="text" id="latestJob" placeholder="ตำแหน่งล่าสุด และ ชื่อบริษัทล่าสุด (เช่น เจ้าหน้าที่บัญชี - บริษัท ABC จำกัด) *" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
-            
-            <textarea id="drivingAndTravel" placeholder="การเดินทางและใบอนุญาตขับขี่ (สามารถนำรถยนต์ส่วนตัวมาใช้ทำงาน หรือเดินทางไปปฏิบัติงานนอกสถานที่/ไซต์งานลูกค้า ได้หรือไม่?) *" rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-
-            <textarea id="techAiSkills" placeholder="ทักษะด้านเทคโนโลยีและ AI ที่เชี่ยวชาญ (และสิ่งเหล่านั้นช่วยให้คุณทำงานได้รวดเร็วหรือมีประสิทธิภาพขึ้นได้อย่างไร?) *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-            
-            <textarea id="selfLearning" placeholder="สิ่งใหม่ล่าสุดที่คุณขวนขวายเรียนรู้ด้วยตัวเองในรอบ 6 เดือนที่ผ่านมาคืออะไร? และทำไมถึงสนใจเรื่องนี้? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-            
-            <textarea id="latestMistake" placeholder="เล่าถึงความผิดพลาดล่าสุดในการทำงานที่คุณเคยทำ คุณมีวิธีแก้ปัญหาเฉพาะหน้าอย่างไร และได้เรียนรู้อะไรจากเหตุการณ์นั้น? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-
-            <textarea id="problemSolving" placeholder="เล่าประสบการณ์ปัญหาที่ยากที่สุดที่คุณเคยเจอในการทำงาน และคุณแก้ไขมันอย่างไร? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-
-            <textarea id="teamworkAttitude" placeholder="เมื่อต้องทำงานร่วมกับคนที่มีความคิดเห็นไม่ตรงกัน หรือทำงานด้วยยาก คุณมีวิธีรับมือและหาทางออกอย่างไร? *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-
-            <textarea id="reasonForJoining" placeholder="ทำไมเราถึงเป็นตัวเลือกของคุณ? (เล่าถึงมุมมอง เป้าหมาย หรือความคาดหวังในการทำงาน นอกเหนือจากเรื่องผลตอบแทน) *" rows="3" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-
-            <textarea id="careerGoal" placeholder="เป้าหมายในการทำงานของคุณในอีก 3-5 ปีข้างหน้าคืออะไร? *" rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
-            
-            <input type="text" id="referencePerson" placeholder="บุคคลอ้างอิงจากที่ทำงานเก่า (ชื่อ/ตำแหน่ง/เบอร์โทร - ถ้ามี)" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
+          
+          <div id="officeFields" class="hidden">
+              <div id="comp-office-fields" class="space-y-4 bg-gray-50 p-4 border-2 border-gray-200"></div>
           </div>
-
-          <div id="opsFields" class="hidden space-y-4 bg-gray-50 p-4 border-2 border-gray-200">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-              <select id="workMode" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
-                <option value="">-- รูปแบบการทำงาน * --</option><option value="Full-time">ประจำ (Full-time)</option><option value="Part-time">พาร์ทไทม์ (Part-time)</option>
-              </select>
-              <select id="preferredZone" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
-                <option value="">-- โซนพื้นที่ทำงานที่สะดวก * --</option><option value="กรุงเทพฯ">กรุงเทพฯ</option><option value="ปริมณฑล">ปริมณฑล</option><option value="ต่างจังหวัด">ต่างจังหวัด</option>
-              </select>
-              <select id="shiftWork" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none bg-white">
-                <option value="">-- ทำงานเป็นกะ (กลางวัน/คืน) ได้หรือไม่? * --</option><option value="ได้">ทำได้</option><option value="ไม่ได้">ทำเวลาปกติเท่านั้น</option>
-              </select>
-              <input type="text" id="commuteMethod" placeholder="การเดินทางมาทำงาน (เช่น รถเมล์, มอเตอร์ไซค์) *" class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none">
-            </div>
-            <textarea id="healthAndShape" placeholder="ข้อมูลสุขภาพ (ส่วนสูง, น้ำหนัก, และโรคประจำตัวถ้ามี) *" rows="2" class="w-full border-2 border-gray-300 p-3 focus:border-kcblue outline-none rounded-none"></textarea>
+          
+          <div id="opsFields" class="hidden">
+              <div id="comp-ops-fields" class="space-y-4 bg-gray-50 p-4 border-2 border-gray-200"></div>
           </div>
       </div>
 
-      <div class="space-y-4 pt-4 border-t-2 border-gray-200">
-        <div class="w-full md:w-1/2">
-            <label class="block text-sm font-bold text-kcblue mb-1">พร้อมเริ่มงานวันที่ *</label>
-            <input type="date" id="availableStartDate" required class="w-full h-12 border-2 border-gray-300 px-3 focus:border-kcblue outline-none rounded-none text-gray-700">
-        </div>
-        
-        <div class="p-4 bg-blue-50 border-2 border-kcblue flex items-start gap-3">
-          <input type="checkbox" id="pdpaConsent" required class="mt-1 w-6 h-6 cursor-pointer accent-kcblue rounded-none">
-          <label for="pdpaConsent" class="text-sm text-gray-800 cursor-pointer">
-            <strong>คำรับรองและคำยินยอม (PDPA) *</strong><br>
-            <span id="pdpaBody" class="text-gray-600">กำลังโหลดข้อกำหนด...</span>
-          </label>
-        </div>
-
-        <button type="submit" id="submitBtn" class="w-full bg-kcblue text-white font-bold py-4 hover:bg-kcyellow hover:text-kcblue transition-colors border-0 cursor-pointer rounded-none text-xl">ยืนยันและส่งใบสมัครงาน</button>
-      </div>
+      <div id="comp-submit-section"></div>
 
     </form>
   </div>
 
-  <script src="js/pages/apply.js"></script>
+  <script src="js/data/locations.js"></script>
+  <script src="js/core/loader.js"></script> 
+  
+  <script>
+    document.addEventListener('ComponentsLoaded', () => {
+        const scriptZone = document.createElement('script');
+        scriptZone.src = 'js/components/zonePicker.js';
+        document.body.appendChild(scriptZone);
+
+        const scriptMain = document.createElement('script');
+        scriptMain.src = 'js/pages/apply.js';
+        document.body.appendChild(scriptMain);
+        
+        scriptZone.onload = () => {
+            if(typeof ZonePicker !== 'undefined') ZonePicker.init();
+        };
+    });
+  </script>
 </body>
 </html>
