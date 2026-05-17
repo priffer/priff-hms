@@ -55,10 +55,17 @@ function filterJobs() {
     const p3 = document.getElementById('dd3') ? document.getElementById('dd3').value : '';
 
     filteredJobs = allJobs.filter(job => {
-        const matchKeyword = !keyword || job.title.toLowerCase().includes(keyword) || job.zone_name.toLowerCase().includes(keyword);
+        // ป้องกัน Error กรณีที่แอดมินไม่ได้ใส่ชื่อตำแหน่งหรือโซน 
+        const title = job.title ? job.title.toLowerCase() : '';
+        const zone = job.zone_name ? job.zone_name.toLowerCase() : '';
+        
+        const matchKeyword = !keyword || title.includes(keyword) || zone.includes(keyword);
+        
         let matchLocation = true;
         if (p1) {
-            matchLocation = job.zone_name.includes(p1) && (p2 ? job.zone_name.includes(p2) : true) && (p3 ? job.zone_name.includes(p3) : true);
+            matchLocation = zone.includes(p1.toLowerCase()) && 
+                            (p2 ? zone.includes(p2.toLowerCase()) : true) && 
+                            (p3 ? zone.includes(p3.toLowerCase()) : true);
         }
         return matchKeyword && matchLocation;
     });
