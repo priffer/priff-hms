@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadSiteSettings();
-    initLocationFilters();
     fetchActiveJobs();
 });
 
@@ -14,7 +13,6 @@ async function fetchActiveJobs() {
         filteredJobs = [...allJobs];
         renderJobGrid();
     } catch (err) {
-        console.error('Error fetching jobs:', err);
         grid.innerHTML = '<div class="col-span-full text-center p-8 text-red-500 font-bold">ไม่สามารถดึงข้อมูลตำแหน่งงานได้</div>';
     }
 }
