@@ -56,15 +56,15 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-600 mb-1">ชื่อบริษัท (แสดงบน Navbar ข้างโลโก้)</label>
-                            <input type="text" id="cmsCompanyName" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+                            <input type="text" id="cmsCompanyName" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-600 mb-1">หัวข้อหลัก (Headline)</label>
-                            <input type="text" id="cmsHeadline" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+                            <input type="text" id="cmsHeadline" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-600 mb-1">คำบรรยาย (Sub-headline)</label>
-                            <textarea id="cmsSubhead" rows="3" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue"></textarea>
+                            <textarea id="cmsSubhead" rows="3" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue"></textarea>
                         </div>
                     </div>
 
@@ -94,7 +94,7 @@
                             <tr class="bg-gray-900 text-white text-sm uppercase tracking-wider">
                                 <th class="p-3 border-b border-gray-300 font-bold">ตำแหน่งงาน</th>
                                 <th class="p-3 border-b border-gray-300 font-bold">สถานที่ / โซน</th>
-                                <th class="p-3 border-b border-gray-300 font-bold text-center">สถานะเปิดรับ</th>
+                                <th class="p-3 border-b border-gray-300 font-bold text-center">暗態เปิดรับ</th>
                                 <th class="p-3 border-b border-gray-300 font-bold text-center">จัดการ</th>
                             </tr>
                         </thead>
@@ -131,28 +131,28 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">ตำแหน่งงาน <span class="text-red-500">*</span></label>
-                        <input type="text" id="jobTitle" required class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+                        <input type="text" id="jobTitle" required class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue">
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">รายได้ / อัตราจ้าง <span class="text-red-500">*</span></label>
-                        <input type="text" id="jobSalary" placeholder="เช่น 450 - 500 บาท/วัน" required class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+                        <input type="text" id="jobSalary" placeholder="เช่น 450 - 500 บาท/วัน" required class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">ชื่อสถานที่ / โรงงาน</label>
-                        <input type="text" id="jobCompanyName" placeholder="ปล่อยว่างได้ถ้ารับในนาม KC" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+                        <input type="text" id="jobCompanyName" placeholder="ปล่อยว่างได้ถ้ารับในนาม KC" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue">
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">โซนพื้นที่ปฏิบัติงาน <span class="text-red-500">*</span></label>
-                        <input type="text" id="jobZone" placeholder="เช่น อมตะซิตี้ ชลบุรี" required class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+                        <input type="text" id="jobZone" placeholder="เช่น อมตะซิตี้ ชลบุรี" required class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">รายละเอียดงานเพิ่มเติม</label>
-                    <textarea id="jobContent" rows="5" placeholder="พิมพ์รายละเอียดงาน หรือสวัสดิการของตำแหน่งนี้..." class="w-full border border-gray-300 p-3 outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue text-sm leading-relaxed"></textarea>
+                    <textarea id="jobContent" rows="5" placeholder="พิมพ์รายละเอียดงาน หรือสวัสดิการของตำแหน่งนี้..." class="w-full border border-gray-300 p-3 outline-none focus:border-kcblue text-sm leading-relaxed"></textarea>
                 </div>
             </div>
 
@@ -163,7 +163,36 @@
             
         </div>
     </div>
-
+    
+    <script src="js/services/jobService.js"></script>
+    <script src="js/services/cmsService.js"></script> 
+    <script src="js/pages/admin-cms.js"></script>
     <script src="js/pages/admin-jobs.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            loadCmsSettings();
+        });
+        function checkAuth() {}
+        function handleLogout() { window.location.href = 'login.html'; }
+        function switchAdminTab(tabName) {
+            const viewCms = document.getElementById('view-cms');
+            const viewJobs = document.getElementById('view-jobs');
+            const btnCms = document.getElementById('tab-cms');
+            const btnJobs = document.getElementById('tab-jobs');
+            if (tabName === 'cms') {
+                viewCms.classList.remove('hidden');
+                viewJobs.classList.add('hidden');
+                btnCms.className = 'px-6 py-2 font-bold border tab-active cursor-pointer transition-colors';
+                btnJobs.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-gray-200';
+            } else {
+                viewCms.classList.add('hidden');
+                viewJobs.classList.remove('hidden');
+                btnCms.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-gray-200';
+                btnJobs.className = 'px-6 py-2 font-bold border tab-active cursor-pointer transition-colors';
+                fetchJobs();
+            }
+        }
+    </script>
 </body>
 </html>

@@ -7,7 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <script src="js/config/supabase.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -52,7 +54,7 @@
         <aside class="lg:w-[30%] xl:w-1/4 bg-white border-b lg:border-b-0 lg:border-r border-gray-300 p-5 lg:p-8 flex flex-col lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] overflow-y-auto no-scrollbar shrink-0">
             <h1 id="mainHeadline" class="text-2xl lg:text-3xl font-bold text-kcblue mb-2">ร่วมงานกับเรา</h1>
             <p id="subHeadline" class="text-sm text-gray-500 mb-6 leading-relaxed border-b border-gray-200 pb-6">
-                เปิดรับสมัครทีมงานคุณภาพ เพื่อรองรับการขยายงานในนิคมอุตสาหกรรมชั้นนำ พร้อมสวัสดิการที่มั่นคง
+                กำลังโหลดเนื้อหา...
             </p>
             
             <div class="mb-8">
@@ -66,26 +68,24 @@
                 <p class="font-bold text-kcblue mb-4 flex items-center gap-2 text-sm">ค้นหาตำแหน่งงาน</p>
                 <div class="space-y-4">
                     <div>
-                        <input type="text" id="searchKeyword" placeholder="พิมพ์ชื่อตำแหน่งงาน..." class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue focus:ring-1 focus:ring-kcblue outline-none">
+                        <input type="text" id="searchKeyword" placeholder="พิมพ์ชื่อตำแหน่งงาน..." class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue outline-none">
                     </div>
                     
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">สถานที่ปฏิบัติงาน</label>
-                        <select id="dd1" onchange="handleDd1Change()" class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue focus:ring-1 focus:ring-kcblue outline-none font-bold text-kcblue bg-white">
+                        <select id="dd1" onchange="handleDd1Change()" class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue outline-none font-bold text-kcblue bg-white">
                             <option value="">-- สถานที่ทั้งหมด --</option>
                         </select>
                     </div>
 
                     <div id="boxDd2" class="hidden">
                         <label id="lblDd2" class="block text-xs font-bold text-gray-500 mb-1">...</label>
-                        <select id="dd2" onchange="handleDd2Change()" class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue focus:ring-1 focus:ring-kcblue outline-none bg-white">
-                        </select>
+                        <select id="dd2" onchange="handleDd2Change()" class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue outline-none bg-white"></select>
                     </div>
 
                     <div id="boxDd3" class="hidden">
                         <label id="lblDd3" class="block text-xs font-bold text-gray-500 mb-1">...</label>
-                        <select id="dd3" class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue focus:ring-1 focus:ring-kcblue outline-none bg-white">
-                        </select>
+                        <select id="dd3" class="w-full h-10 border border-gray-300 px-3 text-sm focus:border-kcblue outline-none bg-white"></select>
                     </div>
 
                     <button onclick="filterJobs()" class="w-full bg-kcblue text-white font-bold py-2 mt-2 text-sm hover:bg-kcyellow hover:text-kcblue transition-colors border border-kcblue">
@@ -110,7 +110,6 @@
             </div>
 
             <div id="jobGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5"></div>
-
             <div id="paginationControls" class="mt-12 flex justify-center items-center gap-1"></div>
         </main>
     </div>
@@ -153,14 +152,15 @@
         </div>
     </div>
 
-    <div class="lg:hidden fixed bottom-0 left-0 w-full bg-white border-t-2 border-kcblue p-3 z-40 shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.15)] flex justify-center">
-        <a href="apply.html" class="w-full max-w-sm bg-kcyellow border-2 border-kcyellow text-kcblue text-center font-bold py-3 px-4 shadow-sm text-base hover:bg-kcblue hover:text-white transition-colors">
-            📝 สมัครงาน / ฝากประวัติ
-        </a>
-    </div>
-
     <script src="js/data/locations.js"></script>
-    <script src="js/data/jobs.js"></script>
-    <script src="js/pages/index.js"></script>
+    <script src="js/services/cmsService.js"></script>
+    <script src="js/services/jobService.js"></script>
+    
+    <script src="js/pages/home/state.js"></script>
+    <script src="js/pages/home/cms.js"></script>
+    <script src="js/pages/home/filters.js"></script>
+    <script src="js/pages/home/modal.js"></script>
+    <script src="js/pages/home/main.js"></script>
+
 </body>
 </html>
