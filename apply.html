@@ -11,6 +11,7 @@
   <style>
     .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    * { border-radius: 0 !important; }
   </style>
 </head>
 <body class="bg-gray-50 font-sans min-h-screen p-4 md:p-8">
@@ -62,20 +63,6 @@
   <script src="js/data/locations.js"></script>
   <script src="js/core/loader.js"></script> 
   
-  <script>
-    document.addEventListener('ComponentsLoaded', () => {
-        const scriptZone = document.createElement('script');
-        scriptZone.src = 'js/components/zonePicker.js';
-        document.body.appendChild(scriptZone);
-
-        const scriptMain = document.createElement('script');
-        scriptMain.src = 'js/pages/apply.js';
-        document.body.appendChild(scriptMain);
-        
-        scriptZone.onload = () => {
-            if(typeof ZonePicker !== 'undefined') ZonePicker.init();
-        };
-    });
-  </script>
+  <script src="js/pages/apply/main.js"></script>
 </body>
 </html>

@@ -1,6 +1,10 @@
 const CURRENT_JOB_COMPANY_ID = localStorage.getItem('current_company_id') || 'comp_kc_clean';
 let targetJobIdToDelete = null;
 
+// ตัวแปรเก็บประวัติลิงก์ไฟล์เดิม ป้องกันการหายหากแอดมินแก้ไขเฉพาะข้อความ
+let currentFlyerUrl = null;
+let currentPdfUrl = null;
+
 async function fetchJobs() {
     const tbody = document.getElementById('jobTableBody');
     tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 font-bold">กำลังโหลดข้อมูลประกาศงาน...</td></tr>';
@@ -90,6 +94,16 @@ function openJobModal(id = null) {
     document.getElementById('jobCompanyName').value = '';
     document.getElementById('jobZone').value = '';
     document.getElementById('jobContent').value = '';
+    
+    // เคลียร์ค่าช่องอัปโหลดไฟล์ใหม่และข้อความระบุสถานะพรีวิวเดิม
+    document.getElementById('jobFlyer').value = '';
+    document.getElementById('jobPdf').value = '';
+    document.getElementById('jobFlyerPreviewInfo').classList.add('hidden');
+    document.getElementById('jobPdfPreviewInfo').classList.add('hidden');
+    
+    currentFlyerUrl = null;
+    currentPdfUrl = null;
+    
     document.getElementById('jobModalTitle').innerText = id ? 'แก้ไขประกาศงาน' : 'สร้างประกาศงานใหม่';
     
     if (id) fetchJobForEdit(id);
@@ -114,6 +128,19 @@ async function fetchJobForEdit(id) {
         document.getElementById('jobCompanyName').value = data.company_name || '';
         document.getElementById('jobZone').value = data.zone_name || '';
         document.getElementById('jobContent').value = data.content || '';
+        
+        // ดึงลิงก์ไฟล์เก่ามาพรีวิวแสดงผล
+        currentFlyerUrl = data.flyer_url || null;
+        currentPdfUrl = data.pdf_url || null;
+        
+        if (currentFlyerUrl) {
+            document.getElementById('jobFlyerPreviewInfo').innerText = "📎 มีรูปภาพโบรชัวร์เดิมในระบบแล้ว";
+            document.getElementById('jobFlyerPreviewInfo').classList.remove('hidden');
+        }
+        if (currentPdfUrl) {
+            document.getElementById('jobPdfPreviewInfo').innerText = "📎 มีไฟล์ PDF เดิมในระบบแล้ว";
+            document.getElementById('jobPdfPreviewInfo').classList.remove('hidden');
+        }
     } catch (err) {
         alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + err.message);
         closeJobModal();
@@ -127,19 +154,61 @@ async function saveJob() {
     const company_name = document.getElementById('jobCompanyName').value.trim();
     const zone_name = document.getElementById('jobZone').value.trim();
     const content = document.getElementById('jobContent').value.trim();
+    
+    // ดึงข้อมูลไฟล์จาก Input
+    const flyerFile = document.getElementById('jobFlyer').files[0];
+    const pdfFile = document.getElementById('jobPdf').files[0];
 
     if (!title || !salary_text || !zone_name) {
         alert('กรุณากรอกข้อมูลที่มีเครื่องหมายดอกจัน (*) ให้ครบถ้วน');
         return;
     }
 
-    const payload = { title, salary_text, company_name, zone_name, content };
+    const btn = document.querySelector('button[onclick="saveJob()"]');
+    const originalText = btn.innerText;
+    btn.innerText = 'กำลังบันทึกข้อมูล...';
+    btn.disabled = true;
 
     try {
+        let flyer_url = currentFlyerUrl;
+        let pdf_url = currentPdfUrl;
+        
+        // ใช้รหัสเวลาเป็น ID จำลองในการตั้งชื่อโฟลเดอร์ไฟล์ประจำประกาศงานเพื่อไม่ให้ชื่อไฟล์ซ้ำกัน
+        const fileTargetId = id || `new-${Date.now()}`;
+
+        // จัดการอัปโหลดไฟล์ภาพโบรชัวร์ (ถ้ามีการเลือกไฟล์ใหม่)
+        if (flyerFile) {
+            const fileExt = flyerFile.name.split('.').pop();
+            const fileName = `companies/${CURRENT_JOB_COMPANY_ID}/jobs/job-${fileTargetId}-flyer.${fileExt}`;
+            await JobService.uploadJobFile(flyerFile, fileName);
+            flyer_url = JobService.getJobFilePublicUrl(fileName);
+        }
+
+        // จัดการอัปโหลดไฟล์เอกสาร PDF (ถ้ามีการเลือกไฟล์ใหม่)
+        if (pdfFile) {
+            const fileExt = pdfFile.name.split('.').pop();
+            const fileName = `companies/${CURRENT_JOB_COMPANY_ID}/jobs/job-${fileTargetId}-doc.${fileExt}`;
+            await JobService.uploadJobFile(pdfFile, fileName);
+            pdf_url = JobService.getJobFilePublicUrl(fileName);
+        }
+
+        const payload = { 
+            title, 
+            salary_text, 
+            company_name, 
+            zone_name, 
+            content,
+            flyer_url,
+            pdf_url
+        };
+
         await JobService.saveJob(payload, id, CURRENT_JOB_COMPANY_ID);
         closeJobModal();
         fetchJobs(); 
     } catch (err) {
         alert('บันทึกข้อมูลไม่สำเร็จ: ' + err.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
 }

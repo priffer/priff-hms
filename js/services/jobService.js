@@ -20,6 +20,33 @@ const JobService = {
         return data;
     },
 
+    async getActiveJobs(companyId) {
+        const { data, error } = await supabaseClient
+            .from('jobs')
+            .select('*')
+            .eq('is_active', true)
+            .eq('company_id', companyId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    // 🌟 ฟังก์ชันจัดการอัปโหลดไฟล์ประจำประกาศงาน เข้าสู่ Storage
+    async uploadJobFile(file, fileName) {
+        const { error } = await supabaseClient.storage
+            .from('public-assets')
+            .upload(fileName, file, { upsert: true });
+        if (error) throw error;
+    },
+
+    // 🌟 ฟังก์ชันขอดึง URL สาธารณะของไฟล์ประจำประกาศงาน
+    getJobFilePublicUrl(fileName) {
+        const { data } = supabaseClient.storage
+            .from('public-assets')
+            .getPublicUrl(fileName);
+        return data.publicUrl;
+    },
+
     async saveJob(payload, id = null, companyId) {
         if (id) {
             const { error } = await supabaseClient
@@ -54,17 +81,5 @@ const JobService = {
             .eq('id', id)
             .eq('company_id', companyId);
         if (error) throw error;
-    },
-
-    async getActiveJobs(companyId) {
-        const { data, error } = await supabaseClient
-            .from('jobs')
-            .select('*')
-            .eq('is_active', true)
-            .eq('company_id', companyId)
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data;
     }
 };
-
