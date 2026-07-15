@@ -6,6 +6,7 @@ function renderGlobalNavbar() {
     const isDashboard = currentPath.includes('dashboard.html') || currentPath.endsWith('/');
     const isEmployees = currentPath.includes('admin-employees.html');
     const isJobs = currentPath.includes('admin-jobs.html');
+    const isAttendance = currentPath.includes('admin-attendance.html'); // 🟢 เพิ่มตัวแปรเช็คหน้า Attendance
 
     const navbarHtml = `
         <nav class="bg-kcblue text-white p-4 shadow-none border-b-4 border-kcyellow shrink-0">
@@ -15,7 +16,8 @@ function renderGlobalNavbar() {
                     <div class="hidden sm:flex gap-8 ml-6 border-l border-white/30 pl-6">
                         <a href="dashboard.html" class="${isDashboard ? 'text-kcyellow' : 'text-white/80 hover:text-white'} font-bold text-base tracking-wide transition-colors">จัดการผู้สมัครงาน</a>
                         <a href="admin-employees.html" class="${isEmployees ? 'text-kcyellow' : 'text-white/80 hover:text-white'} font-bold text-base tracking-wide transition-colors">จัดการพนักงาน</a>
-                        <a href="admin-jobs.html" class="${isJobs ? 'text-kcyellow' : 'text-white/80 hover:text-white'} font-bold text-base tracking-wide transition-colors">จัดการเว็บและประกาศงาน</a>
+                        <a href="admin-jobs.html" class="${isJobs ? 'text-kcyellow' : 'text-white/80 hover:text-white'} font-bold text-base tracking-wide transition-colors">จัดการเว็บและประกาศงาน</a>                       
+                        <a href="admin-attendance.html" class="${isAttendance ? 'text-kcyellow' : 'text-white/80 hover:text-white'} font-bold text-base tracking-wide transition-colors">จัดการเวลาทำงาน (ESS)</a>
                     </div>
                 </div>
                 <button onclick="handleGlobalLogout()" class="border-2 border-white px-4 py-1 text-sm font-bold hover:bg-white hover:text-kcblue transition-colors cursor-pointer">ออกจากระบบ</button>
