@@ -155,11 +155,11 @@ function closeTimestampCamera() {
     if (clockInterval) clearInterval(clockInterval);
 }
 
-// 📌 💾 ประมวลผลภาพถ่ายลายน้ำและส่งข้อมูลเข้าตาราง attendance_logs (อัปเดตรองรับระบบแจ้งปัญหา)
+// 📌 💾 ประมวลผลภาพถ่าย บีบอัด อัปโหลด และส่งข้อมูลเข้าตาราง attendance_logs
 async function processAttendance() {
     const siteSelect = document.getElementById('workSiteSelect');
     const clientId = siteSelect ? siteSelect.value : '';
-    const remarkInput = document.getElementById('employeeRemark').value.trim(); // ดึงข้อความหมายเหตุ
+    const remarkInput = document.getElementById('employeeRemark').value.trim();
     
     if (!clientId) {
         showToast("⚠️ กรุณาเลือกสถานที่ปฏิบัติงานก่อนบันทึกเวลา");
@@ -173,13 +173,45 @@ async function processAttendance() {
     const now = new Date();
     const workDate = now.toISOString().split('T')[0];
     const currentTimeString = now.toLocaleTimeString('th-TH', { hour12: false });
-    
-    // รวมพิกัด GPS และหมายเหตุเข้าด้วยกัน เพื่อส่งให้แอดมิน
     const finalRemark = `GPS: ${currentLatitude}, ${currentLongitude} ${remarkInput ? '| หมายเหตุพนง: ' + remarkInput : ''}`;
 
     try {
-        showToast("⏳ กำลังบันทึกเวลาทำงาน...");
+        showToast("⏳ กำลังบีบอัดรูปภาพและบันทึกข้อมูล...");
+        const snapBtn = document.getElementById('snapBtn');
+        if(snapBtn) { snapBtn.disabled = true; snapBtn.classList.add('opacity-50'); }
 
+        // --- 📸 ส่วนที่ 1: แคปรูปจากวิดีโอและบีบอัด (Client-Side Compression) ---
+        const video = document.getElementById('webcamVideo');
+        const canvas = document.getElementById('captureCanvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // แปลงภาพเป็น Blob (JPEG คุณภาพ 60% เพื่อลดขนาดไฟล์จาก 3MB เหลือ ~150KB)
+        const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.6));
+
+        // --- 🗂️ ส่วนที่ 2: จัดระเบียบชื่อไฟล์และโฟลเดอร์ ---
+        // รูปแบบ: 2026-07-15/client_001/KC260501001_173000.jpg
+        const timeForFile = currentTimeString.replace(/:/g, '');
+        const filePath = `${workDate}/${clientId}/${emp.emp_id}_${timeForFile}.jpg`;
+
+        // อัปโหลดขึ้น Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabaseClient
+            .storage
+            .from('attendance_photos')
+            .upload(filePath, imageBlob, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) throw new Error("อัปโหลดรูปภาพล้มเหลว: " + uploadError.message);
+
+        // ดึง Public URL ของรูปที่เพิ่งอัปโหลดเสร็จ
+        const { data: publicUrlData } = supabaseClient.storage.from('attendance_photos').getPublicUrl(filePath);
+        const photoUrl = publicUrlData.publicUrl;
+
+        // --- 💾 ส่วนที่ 3: บันทึกข้อมูลลง Database ---
         const { data: existingLog, error: checkError } = await supabaseClient
             .from('attendance_logs')
             .select('*')
@@ -200,39 +232,43 @@ async function processAttendance() {
                     check_in: currentTimeString,
                     status: 'present',
                     check_in_method: 'mobile',
-                    manual_override_reason: finalRemark // บันทึกหมายเหตุลงฐานข้อมูล
+                    manual_override_reason: finalRemark,
+                    photo_url: photoUrl // บันทึกลิงก์รูปลงฐานข้อมูล
                 }]);
-
             if (insertError) throw insertError;
-            showToast("✅ บันทึกเวลาเข้างาน (Check-In) สำเร็จ!");
+            showToast("✅ บันทึกเวลาเข้างานและรูปถ่ายสำเร็จ!");
         } else if (existingLog && !existingLog.check_out) {
             // Check-Out 
-            // หากมีการพิมพ์หมายเหตุมาตอนออกงาน ให้บันทึกทับเพื่อเตือนแอดมิน
-            let updatePayload = { check_out: currentTimeString };
+            let updatePayload = { 
+                check_out: currentTimeString,
+                photo_url: photoUrl // อัปเดตรูปใหม่เป็นตอนออกงาน
+            };
             if (remarkInput) {
                 updatePayload.manual_override_reason = existingLog.manual_override_reason + " | แจ้งตอนออก: " + remarkInput;
-                updatePayload.status = 'flagged'; // เปลี่ยนสถานะเป็น flagged ให้เด้งเตือนสีแดงหน้าแอดมิน
+                updatePayload.status = 'flagged';
             }
 
             const { error: updateError } = await supabaseClient
                 .from('attendance_logs')
                 .update(updatePayload)
                 .eq('id', existingLog.id);
-
             if (updateError) throw updateError;
-            showToast("✅ บันทึกเวลาออกงาน (Check-Out) สำเร็จ!");
+            showToast("✅ บันทึกเวลาออกงานและรูปถ่ายสำเร็จ!");
         } else {
             showToast("⚠️ คุณได้ลงเวลาทำงานของวันนี้ครบถ้วนแล้ว");
         }
 
         setTimeout(() => {
             closeTimestampCamera();
-            document.getElementById('employeeRemark').value = ""; // เคลียร์ช่องข้อความ
+            document.getElementById('employeeRemark').value = "";
         }, 1500);
 
     } catch (err) {
-        console.error("Attendance log error:", err);
+        console.error("System error:", err);
         showToast("❌ เกิดข้อผิดพลาด: " + err.message);
+    } finally {
+        const snapBtn = document.getElementById('snapBtn');
+        if(snapBtn) { snapBtn.disabled = false; snapBtn.classList.remove('opacity-50'); }
     }
 }
 
