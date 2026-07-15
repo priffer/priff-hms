@@ -34,7 +34,6 @@
       </div>
       
       <div class="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto">
-        <!-- ลบ div กรอบรูปออก เหลือแค่ชื่อกับรหัส จัดชิดขวาให้ดูคลีนขึ้น -->
         <div class="flex items-center text-left md:text-right">
             <div>
                 <p id="empNameDisplay" class="font-bold text-lg md:text-xl leading-tight">กำลังโหลดข้อมูล...</p>
@@ -64,7 +63,7 @@
 
           <div class="md:col-span-7">
               <h3 class="text-sm md:text-lg font-bold text-gray-800 mb-4 border-l-4 border-kcyellow pl-3">บริการอื่นๆ (Self-Service)</h3>
-              <div class="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
+              <div class="grid grid-cols-2 gap-3 md:gap-4">
                 <button class="bg-gray-50 border border-gray-200 p-6 md:p-8 text-center hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center gap-3">
                   <span class="text-3xl md:text-4xl">💸</span>
                   <span class="text-sm md:text-base font-bold text-gray-700">ขอเบิกเงินล่วงหน้า</span>
@@ -87,19 +86,57 @@
     </main>
   </div>
 
-  <!-- 🌟 Modal ยืนยันการออกจากระบบแบบใหม่ (ลบ flex ออกตอนเริ่มต้นเพื่อแก้ Error) -->
+  <div id="cameraModal" class="hidden fixed inset-0 z-50 bg-black/80 items-center justify-center p-4">
+      <div class="bg-white w-full max-w-md p-6 shadow-2xl flex flex-col max-h-[90vh]">
+          <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+              <h3 class="text-lg font-bold text-kcblue">📸 ถ่ายรูปเช็คอินหน้างาน</h3>
+              <button onclick="closeTimestampCamera()" class="text-gray-400 hover:text-red-600 font-bold text-xl cursor-pointer">✕</button>
+          </div>
+
+          <div class="mb-4">
+              <label class="block text-xs font-bold text-gray-600 mb-1">เลือกสถานที่ปฏิบัติงาน (ลูกค้า) <span class="text-red-500">*</span></label>
+              <select id="workSiteSelect" class="w-full h-11 border border-gray-300 px-3 text-sm focus:border-kcblue outline-none bg-white font-bold text-gray-800">
+                  <option value="">-- กำลังโหลดไซต์งาน --</option>
+              </select>
+          </div>
+
+          <div class="relative w-full aspect-video bg-gray-900 border border-gray-300 overflow-hidden flex items-center justify-center mb-4">
+              <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+              <canvas id="captureCanvas" class="hidden"></canvas>
+              
+              <div class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] p-2 font-mono space-y-0.5">
+                  <p id="gpsStatusText">🛰️ GPS: กำลังค้นหาตำแหน่ง...</p>
+                  <p id="cameraTimeText">⏱️ เวลา: --:--:--</p>
+              </div>
+          </div>
+
+          <div class="space-y-3">
+              <button id="snapBtn" onclick="processAttendance()" disabled class="w-full bg-green-600 text-white py-3.5 font-bold hover:bg-green-700 transition-colors shadow-md cursor-not-allowed opacity-50 flex justify-center items-center gap-2">
+                  <span>📌</span> บันทึกเวลาเข้า-ออกงาน
+              </button>
+              <button onclick="closeTimestampCamera()" class="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 font-bold hover:bg-gray-200 transition-colors cursor-pointer">
+                  ยกเลิก
+              </button>
+          </div>
+      </div>
+  </div>
+
   <div id="logoutConfirmModal" class="hidden fixed inset-0 z-50 bg-black/70 items-center justify-center p-4">
       <div class="bg-white w-full max-w-sm p-6 shadow-2xl">
           <div class="flex items-center gap-3 mb-4">
               <div class="w-10 h-10 bg-gray-200 text-kcblue flex items-center justify-center font-bold text-xl shrink-0">?</div>
               <h3 class="text-xl font-bold text-gray-900">ยืนยันการออกจากระบบ?</h3>
           </div>
-          <p class="text-sm text-gray-600 mb-6 pl-13">คุณต้องการออกจากระบบบริการพนักงาน (ESS) ใช่หรือไม่?</p>
+          <p class="text-sm text-gray-600 mb-6">คุณต้องการออกจากระบบบริการพนักงาน (ESS) ใช่หรือไม่?</p>
           <div class="flex gap-3">
               <button onclick="cancelLogout()" class="flex-1 border border-gray-300 bg-gray-100 text-gray-700 py-3 text-sm font-bold hover:bg-gray-200 transition-colors cursor-pointer">ยกเลิก</button>
               <button onclick="confirmLogout()" class="flex-1 bg-kcblue text-white py-3 text-sm font-bold hover:bg-blue-900 transition-colors cursor-pointer">ออกจากระบบ</button>
           </div>
       </div>
+  </div>
+
+  <div id="globalToast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-6 py-4 shadow-2xl font-bold text-sm border-l-4 border-kcyellow transition-all max-w-sm text-center">
+      <span id="toastMessage">ข้อความแจ้งเตือน</span>
   </div>
 
   <script src="js/pages/employee-dashboard.js"></script>
