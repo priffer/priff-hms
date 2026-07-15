@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="dist/output.css">
     <style>
         * { border-radius: 0 !important; }
+        .tab-active { background-color: #003366; color: white; border-color: #003366; }
+        .tab-inactive { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex flex-col">
@@ -19,30 +21,72 @@
     <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1">
         <div class="bg-white border border-gray-300 p-4 md:p-6 shadow-none">
             
-            <div class="flex justify-between items-end mb-6 border-b-2 border-gray-200 pb-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-kcblue border-l-8 border-kcyellow pl-3">รายชื่อพนักงานทั้งหมด (Employee Directory)</h2>
-                    <p class="text-sm text-gray-500 mt-1 pl-5">จัดการข้อมูลพนักงานปัจจุบัน, ดูประวัติ, และสถานะการทำงาน</p>
+            <!-- 🌟 แท็บสลับหน้า (ที่เคยหายไป ตอนนี้จะกลับมาแล้วครับ) -->
+            <div class="flex flex-wrap gap-1 mb-6 border-b-2 border-gray-200 pb-2">
+                <button onclick="switchEmpMainTab('directory')" id="mainTab-directory" class="px-6 py-2 font-bold border tab-active cursor-pointer transition-colors">👥 รายชื่อพนักงาน (Directory)</button>
+                <button onclick="switchEmpMainTab('departments')" id="mainTab-departments" class="px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-gray-200">🏢 โครงสร้างองค์กรและแผนก</button>
+            </div>
+
+            <!-- หน้า: รายชื่อพนักงาน -->
+            <div id="view-directory">
+                <div class="flex justify-between items-end mb-4 border-b border-gray-100 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-kcblue border-l-8 border-kcyellow pl-3">รายชื่อพนักงานทั้งหมด</h2>
+                        <p class="text-sm text-gray-500 mt-1 pl-5">จัดการข้อมูลพนักงานปัจจุบัน, ดูประวัติ, และสถานะการทำงาน</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <!-- 🚀 อัปเกรดเป็น Real-time Search: ใส่ oninput และเอาปุ่มค้นหาออกให้เรียบร้อย -->
+                        <input type="text" id="searchInput" oninput="searchEmployees()" placeholder="🔍 ค้นหาชื่อ หรือ รหัสพนักงาน..." class="border border-gray-300 p-2 text-sm outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue w-64 bg-white shadow-sm transition-all">
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <input type="text" id="searchInput" placeholder="ค้นหาชื่อ หรือ รหัสพนักงาน..." class="border border-gray-300 p-2 text-sm outline-none focus:border-kcblue w-64">
-                    <button onclick="searchEmployees()" class="bg-gray-800 text-white px-4 py-2 font-bold hover:bg-black cursor-pointer border-0">ค้นหา</button>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse border border-gray-300">
+                        <thead>
+                            <tr class="bg-gray-900 text-white text-sm">
+                                <th class="p-3 border-b border-gray-700 font-bold w-32">รหัสพนักงาน</th>
+                                <th class="p-3 border-b border-gray-700 font-bold">ชื่อ-นามสกุล</th>
+                                <th class="p-3 border-b border-gray-700 font-bold">กลุ่มงาน / ตำแหน่ง</th>
+                                <th class="p-3 border-b border-gray-700 font-bold">วันที่เริ่มงาน</th>
+                                <th class="p-3 border-b border-gray-700 font-bold text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeListBody"></tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse border border-gray-300">
-                    <thead>
-                        <tr class="bg-gray-900 text-white text-sm">
-                            <th class="p-3 border-b border-gray-700 font-bold w-32">รหัสพนักงาน</th>
-                            <th class="p-3 border-b border-gray-700 font-bold">ชื่อ-นามสกุล</th>
-                            <th class="p-3 border-b border-gray-700 font-bold">กลุ่มงาน / ตำแหน่ง</th>
-                            <th class="p-3 border-b border-gray-700 font-bold">วันที่เริ่มงาน</th>
-                            <th class="p-3 border-b border-gray-700 font-bold text-center">จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="employeeListBody"></tbody>
-                </table>
+            <!-- หน้า: จัดการแผนก -->
+            <div id="view-departments" class="hidden space-y-6">
+                <div class="flex justify-between items-center border-l-8 border-kcyellow pl-3 mb-2">
+                    <h2 class="text-2xl font-bold text-kcblue">โครงสร้างแผนก (Departments)</h2>
+                    <button onclick="document.getElementById('addDeptForm').classList.toggle('hidden')" class="bg-kcblue text-white font-bold px-4 py-2 hover:bg-kcyellow hover:text-kcblue transition-colors border border-kcblue cursor-pointer">+ สร้างแผนกใหม่</button>
+                </div>
+                
+                <!-- ฟอร์มสร้างแผนกใหม่ -->
+                <div id="addDeptForm" class="hidden bg-gray-50 border-2 border-dashed border-gray-300 p-5 mb-6">
+                    <h3 class="font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">➕ สร้างแผนกใหม่เข้าสู่ระบบ</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">รหัสแผนกย่อ (เช่น SALES, CLEAN) <span class="text-red-500">*</span></label>
+                            <input type="text" id="newDeptCode" class="w-full border border-gray-300 p-2 outline-none uppercase focus:border-kcblue">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">ชื่อเต็มแผนก/ฝ่าย <span class="text-red-500">*</span></label>
+                            <input type="text" id="newDeptName" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">รายละเอียดหน้าที่มีอะไรบ้าง?</label>
+                            <input type="text" id="newDeptDesc" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button onclick="document.getElementById('addDeptForm').classList.add('hidden')" class="bg-gray-300 text-gray-800 px-4 py-2 font-bold cursor-pointer border-0">ยกเลิก</button>
+                        <button onclick="saveNewDepartment()" class="bg-green-600 text-white px-6 py-2 font-bold cursor-pointer border-0 hover:bg-green-700">บันทึกแผนก</button>
+                    </div>
+                </div>
+
+                <div id="deptCardContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </div>
 
         </div>
@@ -52,6 +96,7 @@
     
     <script src="js/components/navbar.js"></script>
     <script src="js/services/candidateService.js"></script>
+    <script src="js/utils/uiHelper.js"></script> 
     <script src="js/pages/admin-employees.js"></script>
 </body>
 </html>

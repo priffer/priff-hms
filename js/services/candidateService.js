@@ -121,5 +121,64 @@ const CandidateService = {
             .from('public-assets')
             .getPublicUrl(fileName);
         return data.publicUrl;
+    },
+
+    async getDepartmentsWithHeadcount() {
+        const companyId = this.getCompanyId();
+        const { data: depts, error: deptError } = await supabaseClient
+            .from('departments')
+            .select('*')
+            .eq('company_id', companyId)
+            .order('created_at', { ascending: true });
+            
+        if (deptError) throw deptError;
+
+        // 🌟 แก้ไขให้นับคนจากคอลัมน์ department_id แทนตัวหนังสือแบบเก่า
+        const { data: emps, error: empError } = await supabaseClient
+            .from('employees')
+            .select('department_id')
+            .eq('company_id', companyId)
+            .eq('status', 'hired');
+
+        if (empError) throw empError;
+
+        const headcountMap = {};
+        emps.forEach(emp => {
+            const deptId = emp.department_id;
+            if (deptId) {
+                headcountMap[deptId] = (headcountMap[deptId] || 0) + 1;
+            }
+        });
+
+        return depts.map(d => ({
+            ...d,
+            headcount: headcountMap[d.id] || 0
+        }));
+    },
+
+    async createDepartment(payload) {
+        payload.company_id = this.getCompanyId();
+        const { error } = await supabaseClient
+            .from('departments')
+            .insert([payload]);
+        if (error) throw error;
+    },
+
+    async updateDepartment(id, payload) {
+        const { error } = await supabaseClient
+            .from('departments')
+            .update(payload)
+            .eq('id', id)
+            .eq('company_id', this.getCompanyId());
+        if (error) throw error;
+    },
+
+    async deleteDepartment(id) {
+        const { error } = await supabaseClient
+            .from('departments')
+            .delete()
+            .eq('id', id)
+            .eq('company_id', this.getCompanyId());
+        if (error) throw error;
     }
 };

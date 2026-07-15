@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>พนักงานเข้าสู่ระบบ (ESS) - PRIFF HMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config/supabase.js"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { kcblue: '#003366', kcyellow: '#FFCC00' }, fontFamily: { sans: ['Sarabun', 'sans-serif'] } } }
+    }
+  </script>
+  <style>* { border-radius: 0 !important; }</style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-sm bg-white border border-gray-200 shadow-sm p-8 border-t-8 border-t-kcblue">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-bold text-kcblue tracking-wide">EMPLOYEE LOGIN</h2>
+      <p class="text-gray-500 text-sm mt-1 font-bold">ระบบบริการพนักงาน (ESS)</p>
+    </div>
+
+    <div id="alertBox" class="hidden mb-6 p-4 border text-center font-bold text-sm" role="alert"></div>
+
+    <form id="employeeLoginForm" class="space-y-5">
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">รหัสพนักงาน</label>
+        <input type="text" id="empId" placeholder="เช่น KC260501001" required class="w-full border border-gray-300 p-3 focus:outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue uppercase">
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">เบอร์โทรศัพท์ (รหัสผ่านเริ่มต้น)</label>
+        <input type="password" id="empPhone" placeholder="กรอกเบอร์โทรศัพท์ 10 หลัก" required class="w-full border border-gray-300 p-3 focus:outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+      </div>
+      
+      <div class="pt-2">
+        <button type="submit" id="loginBtn" class="w-full bg-kcblue text-white font-bold py-3 hover:bg-kcyellow hover:text-kcblue transition-colors border border-kcblue">เข้าสู่ระบบพนักงาน</button>
+      </div>
+    </form>
+    
+    <div class="text-center mt-6">
+      <a href="index.html" class="text-sm text-gray-500 hover:text-kcblue transition-colors font-bold">← กลับไปหน้าเว็บไซต์หลัก</a>
+    </div>
+  </div>
+
+  <script src="js/pages/employee-login.js"></script>
+</body>
+</html>

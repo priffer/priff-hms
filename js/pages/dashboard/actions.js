@@ -47,8 +47,10 @@ async function updateRemarks(id) {
 
 async function processHiring(id) {
     const startDate = document.getElementById('startDateInput').value;
-    if (!startDate) {
-        alert('กรุณาระบุวันที่เริ่มงานด้วยครับ');
+    const deptId = document.getElementById('assignDepartmentInput').value;
+
+    if (!startDate || !deptId) {
+        alert('กรุณาระบุวันที่เริ่มงาน และเลือกแผนกให้ครบถ้วนด้วยครับ');
         return;
     }
 
@@ -77,7 +79,8 @@ async function processHiring(id) {
         await CandidateService.updateCandidateData(id, { 
             status: 'hired', 
             emp_id: newEmpId,
-            available_start_date: startDate
+            available_start_date: startDate,
+            department_id: deptId 
         });
 
         await supabaseClient
@@ -91,6 +94,30 @@ async function processHiring(id) {
         
     } catch (error) {
         alert(error.message);
+    }
+}
+
+async function processTransfer(id) {
+    const newDeptId = document.getElementById('transferDeptInput').value;
+    const transferDate = document.getElementById('transferDateInput').value;
+
+    if (!newDeptId || !transferDate) {
+        alert('กรุณาเลือกแผนกใหม่และระบุวันที่มีผลให้ครบถ้วนครับ');
+        return;
+    }
+
+    if (!confirm('ยืนยันการทำเรื่องย้ายแผนก/ปรับตำแหน่งใช่หรือไม่?')) return;
+
+    try {
+        await CandidateService.updateCandidateData(id, {
+            department_id: newDeptId
+        });
+
+        alert('บันทึกการโยกย้ายแผนกให้พนักงานเรียบร้อยแล้วครับ!');
+        closeModal();
+        fetchEmployees();
+    } catch (error) {
+        alert('เกิดข้อผิดพลาดในการย้ายแผนก: ' + error.message);
     }
 }
 
@@ -112,7 +139,7 @@ async function updateStartDate(id) {
         await CandidateService.updateCandidateData(id, { available_start_date: newDate });
         alert('อัปเดตวันที่เริ่มงานเรียบร้อยแล้ว');
         closeModal();
-        fetchEmployees(); // รีเฟรชตารางเพื่อให้ป้ายกำกับด้านนอกเปลี่ยนวันที่ตาม
+        fetchEmployees(); 
     } catch (err) {
         alert('เกิดข้อผิดพลาดในการอัปเดต: ' + err.message);
     }
@@ -122,12 +149,12 @@ async function restoreCandidate(id) {
     if (!confirm('ยืนยันดึงผู้สมัครคนนี้กลับมาพิจารณาใหม่อีกครั้ง? (ข้อมูลการนัดสัมภาษณ์เดิมจะถูกล้างค่าใหม่ทั้งหมด)')) return;
     try {
         await CandidateService.updateCandidateData(id, {
-            status: 'applied', // บังคับส่งกลับไปแท็บผู้สมัครใหม่เสมอ
-            is_reconsidered: true, // เปิดป้ายพิจารณาใหม่
-            interview_date: null,  // ล้างวันที่นัดสัมภาษณ์เดิมทิ้ง
-            interview_time: null,  // ล้างเวลานัดเดิมทิ้ง
-            interview_type: null,  // ล้างรูปแบบเดิมทิ้ง
-            available_start_date: null // ล้างวันเริ่มงานเดิมทิ้ง (เผื่อมี)
+            status: 'applied', 
+            is_reconsidered: true, 
+            interview_date: null,  
+            interview_time: null,  
+            interview_type: null,  
+            available_start_date: null 
         });
         alert('ดึงข้อมูลกลับมาเพื่อพิจารณาใหม่เรียบร้อยแล้วครับ');
         closeModal();

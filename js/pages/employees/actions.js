@@ -1,3 +1,126 @@
+async function submitInterviewSchedule(id) {
+    const date = document.getElementById('intDate').value;
+    const time = document.getElementById('intTime').value;
+    const type = document.getElementById('intType').value;
+
+    if (!date || !time) {
+        alert('กรุณากรอกวันที่และเวลาสำหรับการสัมภาษณ์ให้ครบถ้วนก่อนครับ');
+        return;
+    }
+
+    try {
+        await CandidateService.updateCandidateData(id, {
+            status: 'interview',
+            interview_date: date,
+            interview_time: time,
+            interview_type: type
+        });
+        
+        alert('บันทึกเวลานัดหมายสัมภาษณ์และแจ้งสถานะเรียบร้อยแล้วครับ');
+        closeModal();
+        fetchEmployees();
+    } catch (err) {
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลนัดหมาย: ' + err.message);
+    }
+}
+
+async function updateStatus(id, newStatus) {
+    if (!confirm(`ยืนยันการเปลี่ยนสถานะเป็น: ${newStatus}?`)) return;
+    try {
+        await CandidateService.updateCandidateData(id, { status: newStatus });
+        closeModal(); 
+        fetchEmployees();
+    } catch (err) {
+        alert('เปลี่ยนสถานะไม่สำเร็จ: ' + err.message);
+    }
+}
+
+async function updateRemarks(id) {
+    const text = document.getElementById('remarksInput').value;
+    try {
+        await CandidateService.updateCandidateData(id, { admin_remarks: text });
+        alert('บันทึกโน้ตเรียบร้อย');
+    } catch (err) {
+        alert('บันทึกโน้ตไม่สำเร็จ: ' + err.message);
+    }
+}
+
+async function processHiring(id) {
+    const startDate = document.getElementById('startDateInput').value;
+    const deptId = document.getElementById('assignDepartmentInput').value;
+
+    if (!startDate || !deptId) {
+        alert('กรุณาระบุวันที่เริ่มงาน และเลือกแผนกให้ครบถ้วนด้วยครับ');
+        return;
+    }
+
+    if (!confirm('ยืนยันรับคนนี้เข้าทำงาน? ระบบจะออกรหัสพนักงานให้อัตโนมัติ')) return;
+    
+    try {
+        const { data: settings, error: fetchErr } = await supabaseClient
+            .from('system_settings')
+            .select('setting_value')
+            .eq('setting_key', 'LAST_EMP_RUN_NO')
+            .single();
+            
+        if (fetchErr) throw new Error('ไม่สามารถดึงข้อมูล Running No. ได้');
+
+        let currentRun = parseInt(settings.setting_value || '0', 10);
+        currentRun += 1; 
+        const runStr = currentRun.toString().padStart(3, '0'); 
+        
+        const now = new Date();
+        const yy = now.getFullYear().toString().slice(-2); 
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0'); 
+        const dd = now.getDate().toString().padStart(2, '0'); 
+
+        const newEmpId = `KC${yy}${mm}${dd}${runStr}`; 
+
+        await CandidateService.updateCandidateData(id, { 
+            status: 'hired', 
+            emp_id: newEmpId,
+            available_start_date: startDate,
+            department_id: deptId 
+        });
+
+        await supabaseClient
+            .from('system_settings')
+            .update({ setting_value: runStr })
+            .eq('setting_key', 'LAST_EMP_RUN_NO');
+
+        alert(`รับเข้าทำงานเรียบร้อย!\nรหัสพนักงานใหม่คือ: ${newEmpId}`);
+        closeModal(); 
+        fetchEmployees();
+        
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function processTransfer(id) {
+    const newDeptId = document.getElementById('transferDeptInput').value;
+    const transferDate = document.getElementById('transferDateInput').value;
+
+    if (!newDeptId || !transferDate) {
+        alert('กรุณาเลือกแผนกใหม่และระบุวันที่มีผลให้ครบถ้วนครับ');
+        return;
+    }
+
+    if (!confirm('ยืนยันการทำเรื่องย้ายแผนก/ปรับตำแหน่งใช่หรือไม่?')) return;
+
+    try {
+        await CandidateService.updateCandidateData(id, {
+            department_id: newDeptId
+        });
+
+        alert('บันทึกการโยกย้ายแผนกให้พนักงานเรียบร้อยแล้วครับ!');
+        closeModal();
+        fetchEmployees();
+    } catch (error) {
+        alert('เกิดข้อผิดพลาดในการย้ายแผนก: ' + error.message);
+    }
+}
+
 async function handleLogout() {
     if (typeof supabaseClient !== 'undefined' && supabaseClient.auth) {
         await supabaseClient.auth.signOut();
@@ -5,87 +128,37 @@ async function handleLogout() {
     window.location.href = 'login.html';
 }
 
-// อัปเดตสถานะการเป็นพนักงาน (Active, Suspended, Resigned)
-async function updateEmployeeStatus(id) {
-    const newStatus = document.getElementById('empStatusSelect').value;
-    
-    // แจ้งเตือนแอดมินให้ชัวร์ก่อนเซฟ
-    const statusText = newStatus === 'hired' ? 'ทำงานอยู่ปกติ' : newStatus === 'suspended' ? 'พักงาน' : 'ลาออก/พ้นสภาพ';
-    if (!confirm(`ยืนยันการเปลี่ยนสถานะพนักงานคนนี้เป็น: "${statusText}" ใช่หรือไม่?`)) return;
-    
-    try {
-        await CandidateService.updateCandidateData(id, { status: newStatus });
-        alert('อัปเดตสถานะพนักงานเรียบร้อยแล้ว');
-        closeEmployeeModal();
-        
-        // ถ้าสถานะไม่ใช่ hired แล้ว ให้โหลดตารางใหม่ชื่อเขาจะหายไป
-        loadEmployees(); 
-    } catch (err) {
-        alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
-    }
-}
-
-// ฟังก์ชันจำลองพนักงานกดขอเบิกเงิน (สำหรับทดสอบ)
-async function simulateAdvanceRequest(dbId, empId) {
-    if (!empId || empId === '-') {
-        alert('พนักงานคนนี้ยังไม่มีรหัสพนักงาน (emp_id)');
-        return;
-    }
-    
-    const amount = prompt('จำลองคำขอ (เสมือนพนักงานกดมาจากแอป):\nกรุณากรอกจำนวนเงินที่ต้องการเบิก (เช่น 1000)');
-    if (!amount || isNaN(amount)) return;
-    
-    try {
-        await CandidateService.createAdvancePayment({
-            emp_id: empId,
-            amount: parseFloat(amount),
-            status: 'pending' // ค่าเริ่มต้นคือรอแอดมินโอน
-        });
-        alert('ส่งคำขอเบิกเงินจำลองสำเร็จ!');
-        viewEmployeeDetails(dbId); // รีเฟรชหน้าต่างอัตโนมัติ ไม่ต้องกดปิดเปิดใหม่
-    } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
-    }
-}
-
-// แอดมินยืนยันการโอนเงิน (บังคับอัปโหลดสลิป)
-async function approveAdvance(dbId, advId) {
-    const fileInput = document.getElementById(`slip_${advId}`);
-    const file = fileInput?.files[0];
-    
-    if (!file) {
-        alert('❌ กรุณาอัปโหลดรูป "สลิปโอนเงิน" ก่อนกดยืนยันครับ (ระบบบังคับเพื่อป้องกันการทุจริต)');
+async function updateStartDate(id) {
+    const newDate = document.getElementById('editStartDateInput').value;
+    if (!newDate) {
+        alert('กรุณาระบุวันที่เริ่มงานใหม่ด้วยครับ');
         return;
     }
 
-    if (!confirm('ยืนยันว่าสลิปถูกต้อง และโอนเงินเรียบร้อยแล้ว?')) return;
-
     try {
-        // อัปโหลดสลิป และขอ URL
-        const fileExt = file.name.split('.').pop();
-        const fileName = `slips/slip_${advId}_${Date.now()}.${fileExt}`;
-        const slipUrl = await CandidateService.uploadSlipAndGetUrl(file, fileName);
-
-        // อัปเดตสถานะเป็น Approved
-        await CandidateService.updateAdvancePayment(advId, {
-            status: 'approved',
-            transfer_slip_url: slipUrl
-        });
-        
-        alert('✅ บันทึกสลิปและอนุมัติการเบิกเงินเรียบร้อยครับ');
-        viewEmployeeDetails(dbId); // รีเฟรชหน้าต่าง
+        await CandidateService.updateCandidateData(id, { available_start_date: newDate });
+        alert('อัปเดตวันที่เริ่มงานเรียบร้อยแล้ว');
+        closeModal();
+        fetchEmployees(); 
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        alert('เกิดข้อผิดพลาดในการอัปเดต: ' + err.message);
     }
 }
 
-// แอดมินกดไม่อนุมัติ
-async function rejectAdvance(dbId, advId) {
-    if (!confirm('ยืนยัน "ไม่อนุมัติ" คำขอเบิกเงินนี้?')) return;
+async function restoreCandidate(id) {
+    if (!confirm('ยืนยันดึงผู้สมัครคนนี้กลับมาพิจารณาใหม่อีกครั้ง? (ข้อมูลการนัดสัมภาษณ์เดิมจะถูกล้างค่าใหม่ทั้งหมด)')) return;
     try {
-        await CandidateService.updateAdvancePayment(advId, { status: 'rejected' });
-        alert('บันทึกสถานะไม่อนุมัติเรียบร้อย');
-        viewEmployeeDetails(dbId); // รีเฟรชหน้าต่าง
+        await CandidateService.updateCandidateData(id, {
+            status: 'applied', 
+            is_reconsidered: true, 
+            interview_date: null,  
+            interview_time: null,  
+            interview_type: null,  
+            available_start_date: null 
+        });
+        alert('ดึงข้อมูลกลับมาเพื่อพิจารณาใหม่เรียบร้อยแล้วครับ');
+        closeModal();
+        fetchEmployees();
     } catch (err) {
         alert('เกิดข้อผิดพลาด: ' + err.message);
     }

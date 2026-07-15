@@ -40,6 +40,8 @@ async function fetchEmployees() {
     tableBody.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-kcblue font-bold">กำลังดึงข้อมูล...</td></tr>';
 
     try {
+        // 🌟 โหลดข้อมูลแผนกผ่านไฟล์กลาง (ทำครั้งเดียวใช้ได้ทั้งหน้า)
+        await UIHelper.initDepartments();
         const data = await CandidateService.getCandidatesByStatus(currentTab);
 
         if (!data || data.length === 0) {
@@ -67,16 +69,22 @@ async function fetchEmployees() {
                 badgeHtml = `<div class="mt-2 inline-block bg-orange-50 border border-orange-200 text-orange-700 text-xs px-2 py-1 font-bold">🗓️ นัด: ${intDate}${intTime} (${intType})</div>`;
             }
 
+            // 🌟 แปลง ID เป็นชื่อแผนกสวยๆ ผ่านไฟล์กลาง UIHelper
+            const displayDept = UIHelper.getDepartmentDisplayHtml(emp.department_id, emp.job_group);
+
             tableBody.innerHTML += `
                 <tr class="border-b border-gray-200 hover:bg-gray-50 text-sm">
                     <td class="p-3">${date}</td>
                     <td class="p-3">
-                        <span class="font-bold text-kcblue text-base">${emp.full_name}</span>${reconsideredBadge}<br>
+                        <span class="font-bold text-gray-900 text-base">${emp.full_name}</span>${reconsideredBadge}<br>
                         ${badgeHtml}
                     </td>
-                    <td class="p-3">${emp.job_group}<br><span class="text-xs text-gray-500">${emp.interested_position}</span></td>
+                    <td class="p-3 leading-tight">
+                        ${displayDept}<br>
+                        <span class="text-xs text-gray-500">ตำแหน่ง: ${emp.interested_position || '-'}</span>
+                    </td>
                     <td class="p-3 text-center">
-                        <button onclick="viewDetails('${emp.id}')" class="bg-kcblue text-white px-4 py-1 font-bold rounded-none border-0 hover:bg-kcyellow hover:text-kcblue cursor-pointer">จัดการ</button>
+                        <button onclick="viewDetails('${emp.id}')" class="bg-kcblue text-white px-4 py-1 font-bold rounded-none border-0 hover:bg-kcyellow hover:text-kcblue cursor-pointer shadow-sm">จัดการ</button>
                     </td>
                 </tr>
             `;

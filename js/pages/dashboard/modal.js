@@ -3,6 +3,28 @@ async function viewDetails(id) {
         const emp = await CandidateService.getCandidateById(id);
         if (!emp) return;
 
+        // 🌟 1. ดึงข้อมูลแผนกมาเตรียมไว้ทำ Dropdown และเช็กชื่อแผนกปัจจุบัน
+        let deptOptionsHtml = '<option value="">-- กรุณาเลือกแผนก/ฝ่าย --</option>';
+        let currentDeptName = '<span class="text-gray-400 font-normal">- ยังไม่ได้ระบุแผนก -</span>';
+
+        try {
+            const depts = await CandidateService.getDepartmentsWithHeadcount();
+            const activeDepts = depts.filter(d => d.is_active);
+            
+            // เช็กว่ามีการกำหนดแผนกไว้หรือยัง
+            if (emp.department_id) {
+                const matchedDept = depts.find(d => d.id === emp.department_id);
+                if (matchedDept) currentDeptName = `${matchedDept.department_name} (${matchedDept.department_code})`;
+            }
+
+            activeDepts.forEach(d => {
+                const isSelected = emp.department_id === d.id ? 'selected' : '';
+                deptOptionsHtml += `<option value="${d.id}" ${isSelected}>${d.department_name} (${d.department_code})</option>`;
+            });
+        } catch (deptErr) {
+            console.error("โหลดแผนกไม่สำเร็จ:", deptErr);
+        }
+
         let interviewInfoHtml = '';
         if (emp.interview_date) {
             const displayDate = new Date(emp.interview_date).toLocaleDateString('th-TH');
@@ -22,20 +44,38 @@ async function viewDetails(id) {
         let hiredInfoHtml = '';
         if (emp.status === 'hired') {
             const startDateStr = emp.available_start_date ? new Date(emp.available_start_date).toLocaleDateString('th-TH') : 'ยังไม่ระบุ';
+            
+            // 🌟 2. อัปเกรดกรอบสีเขียว ให้แสดงแผนก และมีปุ่มกำหนดแผนก
             hiredInfoHtml = `
                 <div class="col-span-2 bg-green-50 border border-green-300 p-3 my-2 text-sm">
-                    <div class="flex justify-between items-center mb-2">
-                        <p class="font-bold text-green-800">✅ ข้อมูลพนักงานใหม่</p>
-                        <button onclick="document.getElementById('editStartDateSection').classList.toggle('hidden')" class="text-xs bg-white border border-green-500 text-green-700 px-2 py-1 font-bold cursor-pointer hover:bg-green-100">แก้ไขวันเริ่มงาน</button>
+                    <div class="flex justify-between items-center mb-2 pb-2 border-b border-green-200">
+                        <p class="font-bold text-green-800">✅ ข้อมูลพนักงานใหม่ (Hired)</p>
+                        <div class="flex gap-2">
+                            <button onclick="document.getElementById('editStartDateSection').classList.toggle('hidden')" class="text-xs bg-white border border-green-500 text-green-700 px-2 py-1 font-bold cursor-pointer hover:bg-green-100">📅 แก้ไขวันเริ่มงาน</button>
+                            <button onclick="document.getElementById('editDeptSection').classList.toggle('hidden')" class="text-xs bg-white border border-blue-500 text-blue-700 px-2 py-1 font-bold cursor-pointer hover:bg-blue-100">🏢 กำหนดแผนกสังกัด</button>
+                        </div>
                     </div>
-                    <p><strong>รหัสพนักงาน:</strong> ${emp.emp_id || '-'}</p>
-                    <p><strong>วันที่เริ่มงาน:</strong> ${startDateStr}</p>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <p><strong>รหัสพนักงาน:</strong> ${emp.emp_id || '-'}</p>
+                        <p><strong>วันที่เริ่มงาน:</strong> ${startDateStr}</p>
+                        <p class="col-span-2"><strong>แผนกต้นสังกัด:</strong> <span class="text-blue-700 font-bold">${currentDeptName}</span></p>
+                    </div>
                     
                     <div id="editStartDateSection" class="hidden mt-3 pt-3 border-t border-green-200">
                         <label class="block font-bold text-gray-700 mb-1 text-xs">เปลี่ยนวันที่เริ่มงานใหม่ <span class="text-red-500">*</span></label>
                         <div class="flex gap-2">
                             <input type="date" id="editStartDateInput" value="${emp.available_start_date || ''}" class="flex-1 border border-gray-300 p-1.5 text-sm outline-none">
-                            <button onclick="updateStartDate('${emp.id}')" class="bg-green-600 text-white px-3 py-1.5 text-xs font-bold border-0 cursor-pointer hover:bg-green-700">บันทึกการเปลี่ยนแปลง</button>
+                            <button onclick="updateStartDate('${emp.id}')" class="bg-green-600 text-white px-3 py-1.5 text-xs font-bold border-0 cursor-pointer hover:bg-green-700">บันทึกวันเริ่มงาน</button>
+                        </div>
+                    </div>
+
+                    <div id="editDeptSection" class="hidden mt-3 pt-3 border-t border-blue-200 bg-blue-50 p-2 border border-dashed">
+                        <label class="block font-bold text-blue-800 mb-1 text-xs">ระบุแผนกต้นสังกัด <span class="text-red-500">*</span></label>
+                        <div class="flex gap-2">
+                            <select id="editDeptInput" class="flex-1 border border-gray-300 p-1.5 text-sm outline-none focus:border-blue-500 bg-white">
+                                ${deptOptionsHtml}
+                            </select>
+                            <button onclick="updateDashboardDepartment('${emp.id}')" class="bg-blue-600 text-white px-3 py-1.5 text-xs font-bold border-0 cursor-pointer hover:bg-blue-700">บันทึกแผนก</button>
                         </div>
                     </div>
                 </div>
@@ -63,7 +103,7 @@ async function viewDetails(id) {
                         <p><strong>ชื่อ:</strong> ${emp.full_name}</p>
                         <p><strong>เบอร์โทร:</strong> ${emp.phone_number}</p>
                         <p><strong>อีเมล:</strong> ${emp.email || '-'}</p>
-                        <p><strong>ตำแหน่ง:</strong> ${emp.interested_position}</p>
+                        <p><strong>ตำแหน่งที่สมัคร:</strong> ${emp.interested_position}</p>
                         <p><strong>เงินเดือนที่ต้องการ:</strong> ${emp.expected_salary} บาท</p>
                         <p class="col-span-2"><strong>ไฟล์แนบ:</strong> 
                             ${emp.resume_url ? `<a href="${emp.resume_url}" target="_blank" class="text-blue-600 underline ml-2">Resume</a>` : ''}
@@ -100,11 +140,20 @@ async function viewDetails(id) {
                         </div>
                     </div>
 
+                    <!-- ฟอร์มสำหรับ "รับเข้าทำงาน" (จะโชว์ก็ต่อเมื่อยังไม่ Hired) -->
                     <div id="hireFormSection" class="hidden border-2 border-green-500 bg-green-50 p-4 mb-4">
                         <h4 class="font-bold text-green-800 text-sm mb-3">✅ ยืนยันการรับเข้าทำงาน</h4>
-                        <div class="mb-3">
-                            <label class="block font-bold text-gray-700 mb-1 text-xs">วันที่เริ่มทำงาน <span class="text-red-500">*</span></label>
-                            <input type="date" id="startDateInput" class="w-full max-w-xs border border-gray-300 p-2 bg-white outline-none text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block font-bold text-gray-700 mb-1 text-xs">วันที่เริ่มทำงาน <span class="text-red-500">*</span></label>
+                                <input type="date" id="startDateInput" class="w-full border border-gray-300 p-2 bg-white outline-none text-sm">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-gray-700 mb-1 text-xs">แผนก / ฝ่ายที่สังกัด <span class="text-red-500">*</span></label>
+                                <select id="assignDepartmentInput" class="w-full border border-gray-300 p-2 bg-white outline-none text-sm focus:border-green-500">
+                                    ${deptOptionsHtml}
+                                </select>
+                            </div>
                         </div>
                         <div class="flex justify-end gap-2">
                             <button onclick="document.getElementById('hireFormSection').classList.add('hidden')" class="bg-gray-500 text-white px-3 py-1 text-xs font-bold border-0 cursor-pointer">ยกเลิก</button>
@@ -139,4 +188,26 @@ async function viewDetails(id) {
 function closeModal() { 
     const container = document.getElementById('modalContainer');
     if (container) container.innerHTML = ''; 
+}
+
+// 🌟 3. ฟังก์ชันสำหรับรับคำสั่งตอนแอดมินกดบันทึกแผนกใหม่
+async function updateDashboardDepartment(id) {
+    const newDeptId = document.getElementById('editDeptInput').value;
+    if (!newDeptId) {
+        alert('กรุณาเลือกแผนกต้นสังกัดด้วยครับ');
+        return;
+    }
+
+    try {
+        await CandidateService.updateCandidateData(id, { department_id: newDeptId });
+        alert('บันทึกแผนกต้นสังกัดเรียบร้อยแล้วครับ');
+        closeModal();
+        if (typeof fetchEmployees === 'function') {
+            fetchEmployees(); // รีเฟรชตาราง Dashboard
+        } else {
+            window.location.reload();
+        }
+    } catch (err) {
+        alert('เกิดข้อผิดพลาดในการบันทึกแผนก: ' + err.message);
+    }
 }

@@ -3,6 +3,29 @@ async function viewEmployeeDetails(id) {
         const emp = await CandidateService.getCandidateById(id);
         if (!emp) return;
 
+        // 🌟 1. ดึงข้อมูลแผนกมาเตรียมไว้ทำ Dropdown และหาชื่อแผนกปัจจุบัน
+        let deptOptionsHtml = '<option value="">-- กรุณาเลือกแผนก/ฝ่าย --</option>';
+        let currentDeptName = emp.job_group || '-'; // ถ้ายังไม่มีแผนก ให้ใช้ text เดิมไปก่อน
+        
+        try {
+            const depts = await CandidateService.getDepartmentsWithHeadcount();
+            const activeDepts = depts.filter(d => d.is_active);
+            
+            // เช็กว่าพนักงานคนนี้อยู่แผนกอะไร
+            if (emp.department_id) {
+                const matchedDept = depts.find(d => d.id === emp.department_id);
+                if (matchedDept) currentDeptName = matchedDept.department_name;
+            }
+
+            activeDepts.forEach(d => {
+                const isSelected = emp.department_id === d.id ? 'selected' : '';
+                deptOptionsHtml += `<option value="${d.id}" ${isSelected}>${d.department_name} (${d.department_code})</option>`;
+            });
+        } catch (deptErr) {
+            console.error("โหลดแผนกไม่สำเร็จ:", deptErr);
+        }
+
+        // ประวัติการเบิกเงิน (คงโค้ดเดิมของคุณไว้ 100%)
         let advanceListHtml = '';
         if (emp.emp_id) {
             const advanceData = await CandidateService.getAdvancePayments(emp.emp_id);
@@ -60,7 +83,7 @@ async function viewEmployeeDetails(id) {
                             <h2 class="text-xl font-bold text-gray-900 uppercase">แฟ้มประวัติพนักงาน</h2>
                             <p class="text-sm text-kcblue font-bold mt-1">รหัสพนักงาน: ${emp.emp_id || '-'} | ${emp.full_name}</p>
                         </div>
-                        <button onclick="closeEmployeeModal()" class="text-gray-400 hover:text-red-600 font-bold text-3xl leading-none bg-transparent border-0 cursor-pointer">&times;</button>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-red-600 font-bold text-3xl leading-none bg-transparent border-0 cursor-pointer">&times;</button>
                     </div>
 
                     <div class="flex border-b border-gray-200 bg-gray-100 shrink-0 px-6 pt-4 gap-1 overflow-x-auto">
@@ -78,7 +101,7 @@ async function viewEmployeeDetails(id) {
                                 <p><strong>ชื่อ-นามสกุล:</strong> ${emp.full_name}</p>
                                 <p><strong>เบอร์โทรศัพท์:</strong> ${emp.phone_number}</p>
                                 <p><strong>เลขบัตรประชาชน:</strong> ${emp.id_card_number || '-'}</p>
-                                <p><strong>กลุ่มงาน:</strong> ${emp.job_group || '-'}</p>
+                                <p><strong>แผนก / ฝ่าย:</strong> <span class="text-kcblue font-bold">${currentDeptName}</span></p>
                                 <p><strong>ตำแหน่ง:</strong> ${emp.interested_position || '-'}</p>
                                 <p><strong>วันที่เริ่มงาน:</strong> ${emp.available_start_date ? new Date(emp.available_start_date).toLocaleDateString('th-TH') : '-'}</p>
                                 <p><strong>โซนที่ทำงาน:</strong> ${emp.preferred_zone || '-'}</p>
@@ -103,19 +126,44 @@ async function viewEmployeeDetails(id) {
                             </div>
                         </div>
 
-                        <div id="empView-settings" class="emp-view-content hidden space-y-4">
-                            <h3 class="font-bold text-lg text-kcblue border-b border-gray-200 pb-2 mb-4">ตั้งค่าสถานะพนักงาน</h3>
-                            <div class="bg-gray-50 p-4 border border-gray-200 mb-4 max-w-sm">
-                                <label class="block font-bold text-gray-700 mb-2 text-sm">อัปเดตสถานะการทำงาน</label>
-                                <div class="flex gap-2">
-                                    <select id="empStatusSelect" class="w-full border border-gray-300 p-2 text-sm outline-none bg-white">
-                                        <option value="hired" ${emp.status === 'hired' ? 'selected' : ''}>🟢 ทำงานอยู่ปกติ (Active)</option>
-                                        <option value="suspended" ${emp.status === 'suspended' ? 'selected' : ''}>🟠 พักงาน (Suspended)</option>
-                                        <option value="resigned" ${emp.status === 'resigned' ? 'selected' : ''}>🔴 ลาออก/พ้นสภาพ (Resigned)</option>
-                                    </select>
+                        <div id="empView-settings" class="emp-view-content hidden space-y-6">
+                            
+                            <div>
+                                <h3 class="font-bold text-lg text-kcblue border-b border-gray-200 pb-2 mb-4">ตั้งค่าสถานะพนักงาน</h3>
+                                <div class="bg-gray-50 p-4 border border-gray-200 max-w-md">
+                                    <label class="block font-bold text-gray-700 mb-2 text-sm">อัปเดตสถานะการทำงาน</label>
+                                    <div class="flex gap-2">
+                                        <select id="empStatusSelect" class="w-full border border-gray-300 p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                            <option value="hired" ${emp.status === 'hired' ? 'selected' : ''}>🟢 ทำงานอยู่ปกติ (Active)</option>
+                                            <option value="suspended" ${emp.status === 'suspended' ? 'selected' : ''}>🟠 พักงาน (Suspended)</option>
+                                            <option value="resigned" ${emp.status === 'resigned' ? 'selected' : ''}>🔴 ลาออก/พ้นสภาพ (Resigned)</option>
+                                        </select>
+                                    </div>
+                                    <button onclick="updateEmployeeStatus('${emp.id}')" class="mt-3 w-full bg-gray-800 text-white px-4 py-2 text-sm font-bold hover:bg-black transition-colors cursor-pointer border-0 shadow-sm">บันทึกสถานะ</button>
                                 </div>
-                                <button onclick="updateEmployeeStatus('${emp.id}')" class="mt-3 w-full bg-gray-800 text-white px-4 py-2 text-sm font-bold hover:bg-black transition-colors cursor-pointer border-0">บันทึกสถานะ</button>
                             </div>
+
+                            <div>
+                                <h3 class="font-bold text-lg text-blue-800 border-b border-gray-200 pb-2 mb-4">🔄 โยกย้ายแผนก / ปรับตำแหน่ง</h3>
+                                <div class="bg-blue-50/50 p-4 border border-blue-200 max-w-2xl border-dashed">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block font-bold text-gray-700 mb-1 text-sm">เลือกแผนกใหม่ <span class="text-red-500">*</span></label>
+                                            <select id="transferDeptInput" class="w-full border border-gray-400 p-2 bg-white outline-none text-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                                                ${deptOptionsHtml}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block font-bold text-gray-700 mb-1 text-sm">วันที่มีผลบังคับใช้ <span class="text-red-500">*</span></label>
+                                            <input type="date" id="transferDateInput" class="w-full border border-gray-400 p-2 bg-white outline-none text-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600">
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex justify-end">
+                                        <button onclick="processTransfer('${emp.id}')" class="bg-blue-600 text-white px-6 py-2 text-sm font-bold border-0 cursor-pointer hover:bg-blue-700 shadow-sm transition-colors">บันทึกการโยกย้าย</button>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                     </div>
@@ -146,7 +194,8 @@ function switchEmpTab(tabName) {
     });
 }
 
-function closeEmployeeModal() {
+// 🌟 เปลี่ยนชื่อจาก closeEmployeeModal เป็น closeModal เพื่อให้ตรงกับไฟล์ actions.js
+function closeModal() {
     const container = document.getElementById('modalContainer');
     if (container) container.innerHTML = '';
 }
