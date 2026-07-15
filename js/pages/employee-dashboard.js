@@ -155,10 +155,11 @@ function closeTimestampCamera() {
     if (clockInterval) clearInterval(clockInterval);
 }
 
-// 📌 💾 ประมวลผลภาพถ่ายลายน้ำและส่งข้อมูลเข้าตาราง attendance_logs
+// 📌 💾 ประมวลผลภาพถ่ายลายน้ำและส่งข้อมูลเข้าตาราง attendance_logs (อัปเดตรองรับระบบแจ้งปัญหา)
 async function processAttendance() {
     const siteSelect = document.getElementById('workSiteSelect');
     const clientId = siteSelect ? siteSelect.value : '';
+    const remarkInput = document.getElementById('employeeRemark').value.trim(); // ดึงข้อความหมายเหตุ
     
     if (!clientId) {
         showToast("⚠️ กรุณาเลือกสถานที่ปฏิบัติงานก่อนบันทึกเวลา");
@@ -170,13 +171,15 @@ async function processAttendance() {
     const emp = JSON.parse(sessionData);
 
     const now = new Date();
-    const workDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const workDate = now.toISOString().split('T')[0];
     const currentTimeString = now.toLocaleTimeString('th-TH', { hour12: false });
+    
+    // รวมพิกัด GPS และหมายเหตุเข้าด้วยกัน เพื่อส่งให้แอดมิน
+    const finalRemark = `GPS: ${currentLatitude}, ${currentLongitude} ${remarkInput ? '| หมายเหตุพนง: ' + remarkInput : ''}`;
 
     try {
         showToast("⏳ กำลังบันทึกเวลาทำงาน...");
 
-        // 1. ตรวจสอบว่าพนักงานคนนี้เคยเช็คอิน (มีข้อมูลแถวของวันนี้) ไปแล้วหรือยัง
         const { data: existingLog, error: checkError } = await supabaseClient
             .from('attendance_logs')
             .select('*')
@@ -187,7 +190,7 @@ async function processAttendance() {
         if (checkError) throw checkError;
 
         if (!existingLog) {
-            // 🟩 กรณียังไม่เคยเข้างาน: ทำการ INSERT ข้อมูลแถวใหม่ (Check-In)
+            // Check-In ใหม่
             const { error: insertError } = await supabaseClient
                 .from('attendance_logs')
                 .insert([{
@@ -197,29 +200,34 @@ async function processAttendance() {
                     check_in: currentTimeString,
                     status: 'present',
                     check_in_method: 'mobile',
-                    manual_override_reason: `GPS: ${currentLatitude}, ${currentLongitude}`
+                    manual_override_reason: finalRemark // บันทึกหมายเหตุลงฐานข้อมูล
                 }]);
 
             if (insertError) throw insertError;
             showToast("✅ บันทึกเวลาเข้างาน (Check-In) สำเร็จ!");
         } else if (existingLog && !existingLog.check_out) {
-            // 🟨 กรณีเข้างานไปแล้วแต่ยังไม่ได้ออกงาน: ทำการ UPDATE เติมเวลาออกงาน (Check-Out)
+            // Check-Out 
+            // หากมีการพิมพ์หมายเหตุมาตอนออกงาน ให้บันทึกทับเพื่อเตือนแอดมิน
+            let updatePayload = { check_out: currentTimeString };
+            if (remarkInput) {
+                updatePayload.manual_override_reason = existingLog.manual_override_reason + " | แจ้งตอนออก: " + remarkInput;
+                updatePayload.status = 'flagged'; // เปลี่ยนสถานะเป็น flagged ให้เด้งเตือนสีแดงหน้าแอดมิน
+            }
+
             const { error: updateError } = await supabaseClient
                 .from('attendance_logs')
-                .update({ 
-                    check_out: currentTimeString
-                })
+                .update(updatePayload)
                 .eq('id', existingLog.id);
 
             if (updateError) throw updateError;
             showToast("✅ บันทึกเวลาออกงาน (Check-Out) สำเร็จ!");
         } else {
-            // 🟥 กรณีลงเวลาครบทั้งเข้าและออกของวันนี้ไปแล้ว
             showToast("⚠️ คุณได้ลงเวลาทำงานของวันนี้ครบถ้วนแล้ว");
         }
 
         setTimeout(() => {
             closeTimestampCamera();
+            document.getElementById('employeeRemark').value = ""; // เคลียร์ช่องข้อความ
         }, 1500);
 
     } catch (err) {
