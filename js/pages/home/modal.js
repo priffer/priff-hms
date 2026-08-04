@@ -49,7 +49,10 @@ function closeModal() {
     document.getElementById('modalPdf').src = '';
 }
 
-function applyForThisJob() {
+function applyForThisJob(jobId) {
+    if (jobId && !selectedJobForModal) {
+        selectedJobForModal = allJobs.find(j => j.id === jobId) || selectedJobForModal;
+    }
     if (!selectedJobForModal) return;
     localStorage.setItem('selected_position_title', selectedJobForModal.title);
     localStorage.setItem('target_company_id', CURRENT_SITE_COMPANY_ID);
