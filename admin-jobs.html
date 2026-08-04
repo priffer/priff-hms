@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config/supabase.js"></script>
+    <script src="js/auth/auth-guard.js"></script>
+    <style>body{visibility:hidden}</style>
     <link rel="stylesheet" href="dist/output.css">
     <style>
         * { border-radius: 0 !important; }
@@ -173,12 +175,14 @@
     <script src="js/pages/admin-cms.js"></script>
     <script src="js/pages/admin-jobs.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            loadCmsSettings();
-        });
-        function checkAuth() {}        
-        function switchAdminTab(tabName) {
+    (async ()=>{
+      const ok = await window.PriffAuthGuard.requireAuth(['admin','supervisor']);
+      if (!ok) return;
+      document.body.style.visibility = 'visible';
+      // load initial settings after auth
+      if (typeof loadCmsSettings === 'function') loadCmsSettings();
+    })();
+    function switchAdminTab(tabName) {
             const viewCms = document.getElementById('view-cms');
             const viewJobs = document.getElementById('view-jobs');
             const btnCms = document.getElementById('tab-cms');

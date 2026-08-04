@@ -1,0 +1,156 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.employees (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  full_name text NOT NULL,
+  gender text,
+  id_card_number text,
+  phone_number text,
+  job_group text,
+  interested_position text,
+  expected_salary text,
+  available_start_date date,
+  resume_url text,
+  status text DEFAULT 'applied'::text,
+  emp_id text,
+  email text,
+  education_level text,
+  preferred_zone text,
+  admin_remarks text,
+  birth_date date,
+  marital_status text,
+  current_address text,
+  emergency_contact text,
+  work_experience text,
+  driving_ability text,
+  tech_ai_skills text,
+  special_skills text,
+  work_mode text,
+  shift_work text,
+  profile_photo_url text,
+  id_card_url text,
+  house_reg_url text,
+  education_cert_url text,
+  certificate_url text,
+  self_learning text,
+  problem_solving text,
+  reason_for_joining text,
+  reference_person text,
+  commute_method text,
+  health_and_shape text,
+  driving_license_url text,
+  work_certificate_url text,
+  other_certificates text,
+  driving_and_travel text,
+  teamwork_attitude text,
+  career_goal text,
+  latest_job text,
+  latest_mistake text,
+  criminal_record text,
+  ops_skills text,
+  company_id text DEFAULT 'comp_kc_clean'::text,
+  interview_date date,
+  interview_time time without time zone,
+  interview_type text,
+  is_reconsidered boolean DEFAULT false,
+  department_id uuid,
+  CONSTRAINT employees_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.system_settings (
+  id integer NOT NULL DEFAULT nextval('system_settings_id_seq'::regclass),
+  setting_key text NOT NULL UNIQUE,
+  setting_value text NOT NULL,
+  description text,
+  CONSTRAINT system_settings_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.clients (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  client_name text NOT NULL,
+  location text,
+  contact_person text,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT clients_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.attendance_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  emp_id text NOT NULL,
+  client_id uuid,
+  work_date date NOT NULL,
+  check_in time without time zone,
+  check_out time without time zone,
+  total_hours numeric,
+  ot_hours numeric,
+  status text DEFAULT 'present'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  check_in_method text,
+  manual_override_reason text,
+  photo_url text,
+  CONSTRAINT attendance_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT attendance_logs_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id)
+);
+CREATE TABLE public.jobs (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  title text NOT NULL,
+  company_name text,
+  salary_text text,
+  zone_name text,
+  content text,
+  flyer_url text,
+  pdf_url text,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT now(),
+  company_id text DEFAULT 'comp_kc_clean'::text,
+  CONSTRAINT jobs_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.site_settings (
+  company_id text NOT NULL,
+  company_name text NOT NULL,
+  hero_headline text,
+  hero_subhead text,
+  welfares jsonb,
+  logo_url text,
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT site_settings_pkey PRIMARY KEY (company_id)
+);
+CREATE TABLE public.advance_payments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  emp_id text NOT NULL,
+  amount numeric NOT NULL,
+  request_date timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  status text DEFAULT 'pending'::text,
+  transfer_slip_url text,
+  admin_remarks text,
+  created_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  company_id text DEFAULT 'comp_kc_clean'::text,
+  CONSTRAINT advance_payments_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.departments (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id text NOT NULL DEFAULT 'comp_kc_clean'::text,
+  department_code text NOT NULL,
+  department_name text NOT NULL,
+  description text,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT departments_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.employee_movements (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  emp_db_id uuid NOT NULL,
+  company_id text NOT NULL DEFAULT 'comp_kc_clean'::text,
+  movement_type text NOT NULL,
+  effective_date date NOT NULL,
+  old_department text,
+  old_position text,
+  old_salary numeric,
+  new_department text,
+  new_position text,
+  new_salary numeric,
+  reason text,
+  recorded_by text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT employee_movements_pkey PRIMARY KEY (id),
+  CONSTRAINT employee_movements_emp_fkey FOREIGN KEY (emp_db_id) REFERENCES public.employees(id)
+);

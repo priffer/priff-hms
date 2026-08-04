@@ -24,19 +24,25 @@ function showToast(message, duration = 3000) {
     }, duration);
 }
 
-function checkEmployeeSession() {
-    const sessionData = localStorage.getItem('priff_emp_session');
-    if (!sessionData) {
-        window.location.href = 'employee-login.html';
-        return;
-    }
+// Session handling: use Supabase Auth + user_profiles instead of legacy localStorage
+async function checkEmployeeSession() {
     try {
-        const emp = JSON.parse(sessionData);
-        document.getElementById('empNameDisplay').textContent = emp.full_name;
-        document.getElementById('empIdDisplay').textContent = emp.emp_id;
+        // If auth-guard has run, window.currentUserProfile should be set; otherwise try fetching via helper
+        let profile = window.currentUserProfile;
+        if (!profile && window.PriffAuthGuard && typeof window.PriffAuthGuard.getCurrentUserProfile === 'function') {
+            profile = await window.PriffAuthGuard.getCurrentUserProfile();
+            window.currentUserProfile = profile;
+        }
+        if (!profile) {
+            window.location.href = 'employee-login.html';
+            return;
+        }
+        document.getElementById('empNameDisplay').textContent = profile.display_name || profile.full_name || 'พนักงาน';
+        document.getElementById('empIdDisplay').textContent = profile.employee_emp_id || profile.emp_id || '';
     } catch (err) {
-        console.error("Session corrupted", err);
-        confirmLogout(); 
+        console.error("Session/profile error", err);
+        // Fallback: redirect to login
+        window.location.href = 'employee-login.html';
     }
 }
 
@@ -166,9 +172,9 @@ async function processAttendance() {
         return;
     }
 
-    const sessionData = localStorage.getItem('priff_emp_session');
-    if (!sessionData) return;
-    const emp = JSON.parse(sessionData);
+    // read current user profile populated by auth-guard
+    const emp = window.currentUserProfile || null;
+    if (!emp) return;
 
     const now = new Date();
     const workDate = now.toISOString().split('T')[0];
@@ -287,7 +293,19 @@ function cancelLogout() {
         modal.classList.remove('flex');
     }
 }
-function confirmLogout() {
-    localStorage.removeItem('priff_emp_session');
-    window.location.href = 'employee-login.html';
+async function confirmLogout() {
+    // Use PriffAuthGuard signOut to clear Supabase session and redirect
+    try {
+        if (window.PriffAuthGuard && typeof window.PriffAuthGuard.signOut === 'function') {
+            await window.PriffAuthGuard.signOut();
+        } else if (supabaseClient && supabaseClient.auth) {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'employee-login.html';
+        } else {
+            window.location.href = 'employee-login.html';
+        }
+    } catch (err) {
+        console.error('Sign out error', err);
+        window.location.href = 'employee-login.html';
+    }
 }

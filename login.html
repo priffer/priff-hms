@@ -40,6 +40,39 @@
     </div>
   </div>
 
-  <script src="js/pages/login.js"></script>
+  <script src="js/auth/login.js"></script>
+  <script>
+  document.getElementById('loginForm').addEventListener('submit', async function(event){
+    event.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const alertBox = document.getElementById('alertBox');
+    const identifier = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    btn.innerHTML = 'กำลังตรวจสอบ...'; btn.disabled=true;
+    alertBox.style.display='none';
+    try {
+      let result;
+      if (identifier.includes('@')) {
+        // treat as email (admin)
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: identifier, password });
+        if (error) throw error;
+        result = data;
+      } else {
+        // treat as emp_id -> synthetic login
+        result = await window.PriffLogin.loginWithEmpId(identifier, password);
+      }
+      try { localStorage.removeItem('priff_emp_session'); } catch(e){}
+      alertBox.className='alert alert-success mt-3';
+      alertBox.innerHTML='✅ เข้าสู่ระบบสำเร็จ! กำลังพาท่านไปหน้าจัดการ...';
+      alertBox.style.display='block';
+      setTimeout(()=> window.location.href='dashboard.html',1000);
+    } catch (err) {
+      alertBox.className='alert alert-danger mt-3';
+      alertBox.innerHTML='❌ '+ (err?.message || 'เข้าสู่ระบบไม่สำเร็จ');
+      alertBox.style.display='block';
+      btn.innerHTML='เข้าสู่ระบบ'; btn.disabled=false;
+    }
+  });
+  </script>
 </body>
 </html>

@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config/supabase.js"></script>
+  <script src="js/auth/auth-guard.js"></script>
+  <style>body{visibility:hidden}</style>
   <script>
     tailwind.config = {
       theme: { extend: { colors: { kcblue: '#003366', kcyellow: '#FFCC00' }, fontFamily: { sans: ['Sarabun', 'sans-serif'] } } }
@@ -122,5 +124,20 @@
   </div>
 
   <script src="js/pages/employee-dashboard.js"></script>
+  <script>
+  (async ()=>{
+    const ok = await window.PriffAuthGuard.requireAuth(['employee','supervisor','payroll','admin']);
+    if (!ok) return;
+    const profile = await window.PriffAuthGuard.getCurrentUserProfile();
+    window.currentUserProfile = profile;
+    if (profile) {
+      document.getElementById('empNameDisplay').textContent = profile.display_name || profile.email || 'พนักงาน';
+      document.getElementById('empIdDisplay').textContent = profile.employee_emp_id || '';
+    }
+    document.body.style.visibility = 'visible';
+    // load other employee data
+    if (typeof loadWorkSites === 'function') loadWorkSites();
+  })();
+  </script>
 </body>
 </html>

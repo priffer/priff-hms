@@ -1,0 +1,26 @@
+# Vercel deployment ignore list
+# Only static frontend assets (HTML/CSS/JS/components) should be deployed.
+# Everything below contains secrets, database internals, or is irrelevant to the
+# deployed static site and MUST NOT be uploaded to Vercel.
+
+.env
+.env.*
+
+# Internal documentation (not part of the deployed app)
+docs/
+
+# Database migration/seed/test SQL scripts (schema + policy internals)
+database/
+
+# Node.js automation scripts (contain DB credentials usage, raw JWTs, test
+# account passwords in generated *.json result files)
+scripts/
+
+# Governance/process file, not part of the app
+.agent-rules.md
+
+# VCS / tooling
+.git
+.gitignore
+.vercel
+node_modules

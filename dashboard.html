@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config/supabase.js"></script>
+    <script src="js/auth/auth-guard.js"></script>
+    <style>body{visibility:hidden}</style>
     <link rel="stylesheet" href="dist/output.css">
     <style>
         * { border-radius: 0 !important; }
@@ -71,6 +73,32 @@
     
     <script src="js/components/navbar.js"></script>
     <script src="js/services/candidateService.js"></script>
-    <script src="js/utils/uiHelper.js"></script> 
-    <script src="js/pages/dashboard.js"></script> </body>
+    <script src="js/utils/uiHelper.js"></script>
+    <script src="js/pages/dashboard.js"></script>
+    <script>
+    (async ()=>{
+      // Require auth for allowed roles before showing the page
+      const ok = await window.PriffAuthGuard.requireAuth(['admin','payroll','supervisor','employee']);
+      if (!ok) return; // requireAuth will redirect as needed
+      const profile = await window.PriffAuthGuard.getCurrentUserProfile();
+      window.currentUserProfile = profile;
+      // reveal page after successful auth
+      document.body.style.visibility = 'visible';
+
+      // Role-based UI adjustments
+      const role = profile?.role || '';
+      // Hide settings tab and view for non-admins
+      if (role !== 'admin') {
+        const settingsTab = document.getElementById('tab-settings');
+        if (settingsTab) settingsTab.style.display = 'none';
+        const settingsView = document.getElementById('settingsView');
+        if (settingsView) settingsView.classList.add('hidden');
+      }
+
+      // Example: further UI toggles can be implemented by frontend team
+      // e.g., hide payroll controls if role !== 'payroll' && role !== 'admin'
+
+    })();
+    </script>
+    </body>
 </html>

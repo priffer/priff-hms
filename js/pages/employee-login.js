@@ -47,11 +47,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             showAlert('เข้าสู่ระบบสำเร็จ! กำลังพาท่านไปยังหน้าหลัก...', 'success');
-            localStorage.setItem('priff_emp_session', JSON.stringify(data));
+            // ใช้ Synthetic Email Login ผ่าน PriffLogin เพื่อสร้าง Supabase session
+            try {
+                await window.PriffLogin.loginWithEmpId(empId, empPhone);
+                // ล้าง legacy localStorage หากมี
+                try { localStorage.removeItem('priff_emp_session'); } catch(e){}
+                setTimeout(() => {
+                    window.location.href = 'employee-dashboard.html';
+                }, 1000);
+            } catch (loginErr) {
+                console.error('Supabase login failed', loginErr);
+                showAlert('ไม่สามารถเข้าสู่ระบบผ่าน Supabase ได้: ' + (loginErr?.message || loginErr));
+            }
 
-            setTimeout(() => {
-                window.location.href = 'employee-dashboard.html';
-            }, 1000);
+            
+
 
         } catch (err) {
             console.error('Login Error:', err);

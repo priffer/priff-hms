@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config/supabase.js"></script>
+    <script src="js/auth/auth-guard.js"></script>
+    <style>body{visibility:hidden}</style>
     <link rel="stylesheet" href="dist/output.css">
     <style>
         * { border-radius: 0 !important; }
@@ -98,5 +100,14 @@
     <script src="js/services/candidateService.js"></script>
     <script src="js/utils/uiHelper.js"></script> 
     <script src="js/pages/admin-employees.js"></script>
+    <script>
+    (async ()=>{
+      const ok = await window.PriffAuthGuard.requireAuth(['admin','payroll']);
+      if (!ok) return;
+      const profile = await window.PriffAuthGuard.getCurrentUserProfile();
+      window.currentUserProfile = profile;
+      document.body.style.visibility = 'visible';
+    })();
+    </script>
 </body>
 </html>
