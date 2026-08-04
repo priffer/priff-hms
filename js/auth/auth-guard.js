@@ -3,8 +3,10 @@
 // - Uses Supabase client available as window.supabase or window.supabaseClient
 // - Do NOT use localStorage for session storage in new flow
 
-const sb = window.supabase || window.supabaseClient;
-if (!sb) console.warn('Supabase client not found as window.supabase or window.supabaseClient');
+// สำคัญ: ต้องเช็ค window.supabaseClient (instance ที่ถูกสร้างจริง) ก่อน window.supabase
+// เพราะ window.supabase คือ raw library namespace จาก CDN (มี createClient แต่ไม่มี .auth)
+const sb = window.supabaseClient || window.supabase;
+if (!sb || !sb.auth) console.warn('Supabase client not found as window.supabaseClient or window.supabase');
 
 async function getCurrentSession() {
   // Supabase client v2: getSession() returns { data: { session } }

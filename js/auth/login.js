@@ -3,8 +3,10 @@
 // Converts emp_id to synthetic email: <emp_id>@kc-clean.internal
 // Uses Supabase client available as window.supabase or window.supabaseClient
 
-const sb = window.supabase || window.supabaseClient;
-if (!sb) console.warn('Supabase client not found as window.supabase or window.supabaseClient');
+// สำคัญ: ต้องเช็ค window.supabaseClient (instance ที่ถูกสร้างจริง) ก่อน window.supabase
+// เพราะ window.supabase คือ raw library namespace จาก CDN (มี createClient แต่ไม่มี .auth)
+const sb = window.supabaseClient || window.supabase;
+if (!sb || !sb.auth) console.warn('Supabase client not found as window.supabaseClient or window.supabase');
 
 function toSyntheticEmail(empId) {
   // sanitize empId if needed
