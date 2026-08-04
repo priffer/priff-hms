@@ -10,14 +10,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }`;
     }
 
+    // ตรวจสอบสิทธิ์ Portal ทันทีหลัง Login: ESS Portal อนุญาตเฉพาะ employee และ supervisor เท่านั้น
+    async function enforceEssPortalRole(uid) {
+        const { data: profile, error: profileErr } = await supabaseClient
+            .from('user_profiles').select('role,status').eq('auth_uid', uid).single();
+        if (profileErr || !profile || profile.status !== 'active') {
+            await supabaseClient.auth.signOut();
+            throw new Error('ไม่พบบัญชีผู้ใช้งานที่ใช้งานได้ กรุณาติดต่อผู้ดูแลระบบ');
+        }
+        if (!['employee', 'supervisor'].includes(profile.role)) {
+            await supabaseClient.auth.signOut();
+            const err = new Error('บัญชีนี้ไม่มีสิทธิ์เข้าใช้งาน ESS Portal กรุณาเข้าสู่ระบบผ่าน Admin Portal แทน');
+            err.isPortalMismatch = true;
+            throw err;
+        }
+        return profile;
+    }
+
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        const empId = document.getElementById('empId').value.trim().toUpperCase();
-        const empPhone = document.getElementById('empPhone').value.trim();
 
-        if (!empId || !empPhone) {
-            showAlert('กรุณากรอกรหัสพนักงานและเบอร์โทรศัพท์ให้ครบถ้วน');
+        const identifier = document.getElementById('empId').value.trim();
+        const secret = document.getElementById('empPhone').value.trim();
+
+        if (!identifier || !secret) {
+            showAlert('กรุณากรอกข้อมูลให้ครบถ้วน');
             return;
         }
 
@@ -27,45 +44,54 @@ document.addEventListener('DOMContentLoaded', () => {
         loginBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
         try {
-            console.log("🔍 กำลังค้นหา: ", empId);
+            let session;
+            if (identifier.includes('@')) {
+                // โหมดเข้าสู่ระบบด้วยอีเมล (สำหรับ supervisor/employee ที่มีบัญชี Supabase Auth โดยตรง)
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email: identifier, password: secret });
+                if (error) throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+                session = data;
+            } else {
+                const empId = identifier.toUpperCase();
+                const empPhone = secret;
 
-            // 1. ค้นหาโดยบังคับว่า "รหัสพนักงาน" และ "เบอร์โทร" ต้องตรงกันเป๊ะ
-            const { data, error } = await supabaseClient
-                .from('employees')
-                .select('*')
-                .eq('emp_id', empId)
-                .eq('phone_number', empPhone) // เปิดการเช็คเบอร์โทรกลับมาแล้ว
-                .single(); // บังคับว่าต้องเจอแค่ 1 คนเท่านั้น
+                // 1. ค้นหาโดยบังคับว่า "รหัสพนักงาน" และ "เบอร์โทร" ต้องตรงกันเป๊ะ
+                const { data, error } = await supabaseClient
+                    .from('employees')
+                    .select('*')
+                    .eq('emp_id', empId)
+                    .eq('phone_number', empPhone) // เปิดการเช็คเบอร์โทรกลับมาแล้ว
+                    .single(); // บังคับว่าต้องเจอแค่ 1 คนเท่านั้น
 
-            if (error || !data) {
-                throw new Error('รหัสพนักงาน หรือ เบอร์โทรศัพท์ ไม่ถูกต้อง');
+                if (error || !data) {
+                    throw new Error('รหัสพนักงาน หรือ เบอร์โทรศัพท์ ไม่ถูกต้อง');
+                }
+
+                // 2. เช็คว่าพนักงานคนนี้ยังทำงานอยู่ใช่ไหม? (ป้องกันคนลาออกแอบเข้าระบบ)
+                if (data.status !== 'hired') {
+                    throw new Error('พนักงานคนนี้ไม่ได้อยู่ในสถานะทำงานปกติ (อาจลาออกหรือถูกพักงาน)');
+                }
+
+                // ใช้ Synthetic Email Login ผ่าน PriffLogin เพื่อสร้าง Supabase session
+                session = await window.PriffLogin.loginWithEmpId(empId, empPhone);
             }
 
-            // 2. เช็คว่าพนักงานคนนี้ยังทำงานอยู่ใช่ไหม? (ป้องกันคนลาออกแอบเข้าระบบ)
-            if (data.status !== 'hired') {
-                throw new Error('พนักงานคนนี้ไม่ได้อยู่ในสถานะทำงานปกติ (อาจลาออกหรือถูกพักงาน)');
-            }
+            // ตรวจสอบ role ให้ตรงกับ ESS Portal ก่อนพาไปหน้าหลัก
+            await enforceEssPortalRole(session?.user?.id);
 
+            try { localStorage.removeItem('priff_emp_session'); } catch (e) {}
             showAlert('เข้าสู่ระบบสำเร็จ! กำลังพาท่านไปยังหน้าหลัก...', 'success');
-            // ใช้ Synthetic Email Login ผ่าน PriffLogin เพื่อสร้าง Supabase session
-            try {
-                await window.PriffLogin.loginWithEmpId(empId, empPhone);
-                // ล้าง legacy localStorage หากมี
-                try { localStorage.removeItem('priff_emp_session'); } catch(e){}
-                setTimeout(() => {
-                    window.location.href = 'employee-dashboard.html';
-                }, 1000);
-            } catch (loginErr) {
-                console.error('Supabase login failed', loginErr);
-                showAlert('ไม่สามารถเข้าสู่ระบบผ่าน Supabase ได้: ' + (loginErr?.message || loginErr));
-            }
-
-            
-
+            setTimeout(() => {
+                window.location.href = 'employee-dashboard.html';
+            }, 1000);
 
         } catch (err) {
             console.error('Login Error:', err);
-            showAlert(err.message);
+            if (err.isPortalMismatch) {
+                alertBox.innerHTML = `❌ ${err.message} <a href="login.html" class="underline font-bold">ไปที่ Admin Portal</a>`;
+                alertBox.className = 'mb-6 p-4 border text-center font-bold text-sm block bg-red-50 border-red-300 text-red-700';
+            } else {
+                showAlert(err.message);
+            }
         } finally {
             loginBtn.innerHTML = originalBtnText;
             loginBtn.disabled = false;

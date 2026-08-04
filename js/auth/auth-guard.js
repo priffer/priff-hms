@@ -51,9 +51,11 @@ async function requireAuth(allowedRoles = [], options = {}) {
     return false;
   }
   if (allowedRoles.length > 0 && !allowedRoles.includes(profile.role)) {
-    // role mismatch
+    // role mismatch: portal ที่กำลังเข้าไม่ตรงกับสิทธิ์ของผู้ใช้
     console.warn('Access denied. Required roles:', allowedRoles, 'Got:', profile.role);
-    // optionally show an alert and redirect
+    // เก็บ role ไว้แสดงผลในหน้า unauthorized ก่อน sign out เพื่อไม่ให้ session ค้างอยู่ผิด Portal
+    try { sessionStorage.setItem('priff_last_denied_role', profile.role || ''); } catch (e) {}
+    try { await sb.auth.signOut(); } catch (e) { /* ignore */ }
     window.location.href = '/unauthorized.html';
     return false;
   }

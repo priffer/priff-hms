@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="overflow-x-hidden">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -36,6 +36,7 @@
             <div>
                 <p id="empNameDisplay" class="font-bold text-lg md:text-xl leading-tight">กำลังโหลดข้อมูล...</p>
                 <p id="empIdDisplay" class="text-sm text-kcyellow font-bold mt-0.5">KC-XXXXX</p>
+                <p id="empRoleDisplay" class="text-xs text-blue-200 mt-0.5"></p>
             </div>
         </div>
         <button onclick="logoutEmployee()" class="hidden md:block text-sm bg-white/20 hover:bg-white/30 text-white px-4 py-2 font-bold border border-white/50 transition-colors ml-6 cursor-pointer">ออกจากระบบ</button>
@@ -126,13 +127,17 @@
   <script src="js/pages/employee-dashboard.js"></script>
   <script>
   (async ()=>{
-    const ok = await window.PriffAuthGuard.requireAuth(['employee','supervisor','payroll','admin']);
+    // ESS Portal: จำกัดเฉพาะ employee และ supervisor เท่านั้น (admin/payroll ใช้ Admin Portal)
+    const ok = await window.PriffAuthGuard.requireAuth(['employee','supervisor']);
     if (!ok) return;
     const profile = await window.PriffAuthGuard.getCurrentUserProfile();
     window.currentUserProfile = profile;
     if (profile) {
       document.getElementById('empNameDisplay').textContent = profile.display_name || profile.email || 'พนักงาน';
       document.getElementById('empIdDisplay').textContent = profile.employee_emp_id || '';
+      const roleLabels = { supervisor: 'หัวหน้างาน (Supervisor)', employee: 'พนักงาน (Employee)' };
+      const roleEl = document.getElementById('empRoleDisplay');
+      if (roleEl) roleEl.textContent = [profile.email, roleLabels[profile.role] || profile.role].filter(Boolean).join(' · ');
     }
     document.body.style.visibility = 'visible';
     // load other employee data

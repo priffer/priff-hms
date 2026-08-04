@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ไม่มีสิทธิ์เข้าใช้งาน - PRIFF HMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dist/output.css">
+  <style>* { border-radius: 0 !important; }</style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-md bg-white border border-gray-200 shadow-sm p-8 text-center border-t-8 border-t-red-600">
+    <div class="text-6xl mb-4">🚫</div>
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">ไม่มีสิทธิ์เข้าใช้งานส่วนนี้</h1>
+    <p id="deniedRoleText" class="text-gray-500 text-sm mb-6">
+      บัญชีของท่านไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาเข้าสู่ระบบผ่าน Portal ที่ตรงกับสิทธิ์การใช้งานของท่าน
+    </p>
+
+    <div class="space-y-3">
+      <a href="login.html" class="block w-full bg-gray-900 text-white font-bold py-3 hover:bg-black transition-colors border border-gray-900">
+        เข้าสู่ระบบ Admin Portal (admin / payroll)
+      </a>
+      <a href="employee-login.html" class="block w-full bg-kcblue text-white font-bold py-3 hover:bg-blue-900 transition-colors border border-kcblue">
+        เข้าสู่ระบบ ESS Portal (พนักงาน / หัวหน้างาน)
+      </a>
+      <a href="index.html" class="block w-full text-sm text-gray-500 hover:text-kcblue transition-colors pt-2">
+        ← กลับไปหน้าเว็บไซต์หลัก
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // แสดง role ล่าสุดที่ถูกปฏิเสธ (ถ้ามี) เพื่อช่วยผู้ใช้เข้าใจสาเหตุ
+    try {
+      const deniedRole = sessionStorage.getItem('priff_last_denied_role');
+      if (deniedRole) {
+        document.getElementById('deniedRoleText').textContent =
+          `บัญชีของท่าน (role: ${deniedRole}) ไม่มีสิทธิ์เข้าถึงหน้านี้ กรุณาเข้าสู่ระบบผ่าน Portal ที่ตรงกับสิทธิ์การใช้งานของท่าน`;
+        sessionStorage.removeItem('priff_last_denied_role');
+      }
+    } catch (e) {}
+  </script>
+</body>
+</html>

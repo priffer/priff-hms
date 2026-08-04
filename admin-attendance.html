@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="overflow-x-hidden">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,11 +16,11 @@
         .tab-inactive { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col overflow-x-hidden">
 
     <div id="global-navbar"></div>
 
-    <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1">
+    <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1 min-w-0">
         <div class="bg-white border border-gray-300 p-4 md:p-6 shadow-none">
             
             <div class="space-y-6">
@@ -99,7 +99,8 @@
     <script src="js/pages/admin-attendance.js"></script>
     <script>
     (async ()=>{
-      const ok = await window.PriffAuthGuard.requireAuth(['admin','supervisor','payroll']);
+      // Admin Portal: จำกัดเฉพาะ admin และ payroll เท่านั้น (supervisor ต้องใช้ ESS Portal)
+      const ok = await window.PriffAuthGuard.requireAuth(['admin','payroll']);
       if (!ok) return;
       document.body.style.visibility = 'visible';
     })();

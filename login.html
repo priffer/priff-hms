@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="overflow-x-hidden">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,8 +35,10 @@
       </div>
     </form>
     
-    <div class="text-center mt-6">
-      <a href="index.html" class="text-sm text-gray-500 hover:text-kcblue transition-colors">← กลับไปหน้าฟอร์มรับสมัครงาน</a>
+    <div class="text-center mt-6 space-y-2">
+      <p class="text-xs text-gray-400">สำหรับ Admin และ Payroll เท่านั้น</p>
+      <a href="employee-login.html" class="block text-sm text-kcblue font-bold hover:underline">พนักงาน / หัวหน้างาน เข้าสู่ระบบที่นี่ (ESS Portal) →</a>
+      <a href="index.html" class="block text-sm text-gray-500 hover:text-kcblue transition-colors">← กลับไปหน้าฟอร์มรับสมัครงาน</a>
     </div>
   </div>
 
@@ -62,6 +64,24 @@
         result = await window.PriffLogin.loginWithEmpId(identifier, password);
       }
       try { localStorage.removeItem('priff_emp_session'); } catch(e){}
+
+      // ตรวจสอบสิทธิ์ Portal ทันทีหลัง Login: Admin Portal อนุญาตเฉพาะ admin และ payroll เท่านั้น
+      const uid = result?.user?.id;
+      const { data: profile, error: profileErr } = await supabaseClient
+        .from('user_profiles').select('role,status').eq('auth_uid', uid).single();
+      if (profileErr || !profile || profile.status !== 'active') {
+        await supabaseClient.auth.signOut();
+        throw new Error('ไม่พบบัญชีผู้ใช้งานที่ใช้งานได้ กรุณาติดต่อผู้ดูแลระบบ');
+      }
+      if (!['admin','payroll'].includes(profile.role)) {
+        await supabaseClient.auth.signOut();
+        alertBox.className='alert alert-danger mt-3';
+        alertBox.innerHTML='❌ บัญชีนี้ไม่มีสิทธิ์เข้าใช้งาน Admin Portal กรุณาเข้าสู่ระบบผ่าน <a href="employee-login.html" class="underline font-bold">ESS Portal (พนักงาน/หัวหน้างาน)</a> แทน';
+        alertBox.style.display='block';
+        btn.innerHTML='เข้าสู่ระบบ'; btn.disabled=false;
+        return;
+      }
+
       alertBox.className='alert alert-success mt-3';
       alertBox.innerHTML='✅ เข้าสู่ระบบสำเร็จ! กำลังพาท่านไปหน้าจัดการ...';
       alertBox.style.display='block';
