@@ -2,57 +2,53 @@ function cleanStr(str) {
     return String(str || '').replace(/ต\.|อ\.|จ\.|เขต|\(ทั้งหมด\)/g, '').replace(/\s+/g, '').toLowerCase();
 }
 
+// p1 = จังหวัด, p2 = นิคมอุตสาหกรรม OR อำเภอ (flattened single-select), p3 = ตำบล (only applies when p2 is an อำเภอ)
 function isZoneInArea(job, p1, p2, p3) {
-    if (!p1) return true; 
+    if (!p1) return true;
 
     const zone = cleanStr(job.zone_name);
     const content = cleanStr(job.content);
     const compName = cleanStr(job.company_name);
-    
-    if (p3) {
-        const cleanP3 = cleanStr(p3);
-        if (zone.includes(cleanP3) || content.includes(cleanP3) || compName.includes(cleanP3)) return true;
-        
-        if (p2 && typeof locationData !== 'undefined' && locationData[p1] && locationData[p1][p2]) {
-            const node = locationData[p1][p2];
-            if (!Array.isArray(node) && node[p3]) {
-                return node[p3].some(tambon => {
-                    const cTambon = cleanStr(tambon);
-                    return zone.includes(cTambon) || content.includes(cTambon) || compName.includes(cTambon);
-                });
-            }
-        }
-        return false;
+
+    const textIncludes = (needle) => {
+        const cNeedle = cleanStr(needle);
+        if (!cNeedle) return false;
+        if (zone.includes(cNeedle) || content.includes(cNeedle) || compName.includes(cNeedle)) return true;
+        // Guard against empty zone always matching via reverse-inclusion.
+        return Boolean(zone) && cNeedle.includes(zone);
+    };
+
+    if (!p2) {
+        return textIncludes(p1);
     }
-    
-    if (p2 && typeof locationData !== 'undefined' && locationData[p1] && locationData[p1][p2]) {
-        const node = locationData[p1][p2];
-        const cleanP2 = cleanStr(p2);
-        
-        if (zone.includes(cleanP2) || content.includes(cleanP2) || compName.includes(cleanP2)) return true;
+
+    if (typeof locationData === 'undefined' || !locationData[p1]) {
+        return textIncludes(p2);
+    }
+
+    const groups = locationData[p1];
+
+    for (const groupName of Object.keys(groups)) {
+        const node = groups[groupName];
 
         if (Array.isArray(node)) {
-            return node.some(sub => {
-                const cSub = cleanStr(sub);
-                return zone.includes(cSub) || content.includes(cSub) || compName.includes(cSub);
-            });
-        } else {
-            return Object.keys(node).some(amphoe => {
-                const cAmphoe = cleanStr(amphoe);
-                if (zone.includes(cAmphoe) || content.includes(cAmphoe) || compName.includes(cAmphoe)) return true;
-                
-                return node[amphoe].some(tambon => {
-                    const cTambon = cleanStr(tambon);
-                    return zone.includes(cTambon) || content.includes(cTambon) || compName.includes(cTambon);
-                });
-            });
+            // Industrial estate group: p2 is a leaf value, no further drill-down.
+            if (node.includes(p2)) {
+                return textIncludes(p2);
+            }
+            continue;
+        }
+
+        // Amphoe/Tambon group: p2 is an อำเภอ key.
+        if (node[p2]) {
+            if (p3) {
+                return textIncludes(p3);
+            }
+            // No specific tambon chosen: match the amphoe name itself or any of its tambons.
+            if (textIncludes(p2)) return true;
+            return node[p2].some(tambon => textIncludes(tambon));
         }
     }
-    
-    if (p1) { 
-        const cleanP1 = cleanStr(p1);
-        return zone.includes(cleanP1) || content.includes(cleanP1) || compName.includes(cleanP1);
-    }
-    
-    return true;
+
+    return textIncludes(p2);
 }

@@ -37,6 +37,39 @@ function syncLandingOverview() {
     renderFeaturedJobs(allJobs);
 }
 
+// Builds a context-aware "no results" message: tells the user exactly which combination
+// of keyword + location filters produced zero matches, with a one-click way to clear them.
+function buildEmptyStateHtml() {
+    const kwEl = document.getElementById('searchKeyword');
+    const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
+    const dd3 = document.getElementById('dd3');
+
+    const keyword = kwEl ? kwEl.value.trim() : '';
+    const locationParts = [dd3 ? dd3.value : '', dd2 ? dd2.value : '', dd1 ? dd1.value : ''].filter(Boolean);
+
+    if (!keyword && locationParts.length === 0) {
+        return '<div class="col-span-full text-center p-12 bg-white border border-slate-200 rounded-3xl text-slate-500 font-bold">ไม่พบตำแหน่งงาน</div>';
+    }
+
+    let detail = '';
+    if (keyword && locationParts.length > 0) {
+        detail = `ไม่พบตำแหน่งงานที่ตรงกับคำว่า <strong class="text-slate-700">"${keyword}"</strong> ในพื้นที่ <strong class="text-slate-700">${locationParts.join(' / ')}</strong>`;
+    } else if (keyword) {
+        detail = `ไม่พบตำแหน่งงานที่ตรงกับคำว่า <strong class="text-slate-700">"${keyword}"</strong>`;
+    } else {
+        detail = `ไม่พบตำแหน่งงานในพื้นที่ <strong class="text-slate-700">${locationParts.join(' / ')}</strong>`;
+    }
+
+    return `
+        <div class="col-span-full text-center p-12 bg-white border border-slate-200 rounded-3xl">
+            <p class="text-slate-500 font-bold">${detail}</p>
+            <p class="text-sm text-slate-400 mt-1">ลองล้างตัวกรองบางส่วน หรือลองใช้คำค้นหาอื่น</p>
+            <button type="button" onclick="resetFilters()" class="mt-4 inline-flex items-center rounded-full bg-kcblue text-white text-sm font-bold px-5 py-2.5 hover:bg-kcdark transition-colors">ล้างตัวกรองทั้งหมด</button>
+        </div>
+    `;
+}
+
 function renderJobGrid() {
     const grid = document.getElementById('jobGrid');
     if (!grid) return;
@@ -46,7 +79,7 @@ function renderJobGrid() {
     grid.innerHTML = '';
 
     if (filteredJobs.length === 0) {
-        grid.innerHTML = '<div class="col-span-full text-center p-12 bg-white border border-slate-200 rounded-3xl text-slate-500 font-bold">ไม่พบตำแหน่งงาน</div>';
+        grid.innerHTML = buildEmptyStateHtml();
         const pagination = document.getElementById('paginationControls');
         if (pagination) pagination.innerHTML = '';
         return;
@@ -115,59 +148,6 @@ function renderPaginationControls() {
         };
         container.appendChild(btn);
     }
-}
-
-function resetFilters() {
-    const searchInput = document.getElementById('searchKeyword');
-    const locationInput = document.getElementById('locationKeyword');
-    const dd1 = document.getElementById('dd1');
-    const dd2 = document.getElementById('dd2');
-    const dd3 = document.getElementById('dd3');
-    const boxDd2 = document.getElementById('boxDd2');
-    const boxDd3 = document.getElementById('boxDd3');
-
-    if (searchInput) searchInput.value = '';
-    if (locationInput) locationInput.value = '';
-    if (dd1) dd1.value = '';
-    if (dd2) dd2.value = '';
-    if (dd3) dd3.value = '';
-    if (dd2) dd2.innerHTML = '';
-    if (dd3) dd3.innerHTML = '';
-    if (boxDd2) boxDd2.classList.add('hidden');
-    if (boxDd3) boxDd3.classList.add('hidden');
-    filterJobs(false);
-}
-
-function toggleFilterPanel() {
-    const panel = document.getElementById('filterPanel');
-    const backdrop = document.getElementById('filterBackdrop');
-    if (!panel) return;
-
-    const isOpen = !panel.classList.contains('hidden');
-    if (isOpen) {
-        closeFilterPanel();
-        return;
-    }
-
-    panel.classList.remove('hidden');
-    if (backdrop) backdrop.classList.remove('hidden');
-}
-
-function closeFilterPanel() {
-    const panel = document.getElementById('filterPanel');
-    const backdrop = document.getElementById('filterBackdrop');
-    if (panel) panel.classList.add('hidden');
-    if (backdrop) backdrop.classList.add('hidden');
-}
-
-function updateFilterActiveDot() {
-    const dot = document.getElementById('filterActiveDot');
-    if (!dot) return;
-
-    const locationKeyword = document.getElementById('locationKeyword')?.value.trim();
-    const dd1 = document.getElementById('dd1')?.value;
-    const isActive = Boolean(locationKeyword || dd1);
-    dot.classList.toggle('hidden', !isActive);
 }
 
 function updateJobCount(count) {
@@ -392,36 +372,70 @@ function resetFilters() {
     const searchInput = document.getElementById('searchKeyword');
     const dd1 = document.getElementById('dd1');
     const dd2 = document.getElementById('dd2');
-    
+    const dd3 = document.getElementById('dd3');
+
     if (searchInput) searchInput.value = '';
     if (dd1) dd1.value = '';
-    if (dd2) {
-        dd2.value = '';
-        dd2.innerHTML = '<option value="">-- เลือกพื้นที่ทั้งหมด --</option>';
+    if (typeof resetDropdown === 'function') {
+        resetDropdown(dd2, 'โปรดเลือกจังหวัดก่อน');
+        resetDropdown(dd3, 'โปรดเลือกอำเภอก่อน');
     }
-    
-    // Clear dependencies like boxDd2
-    const boxDd2 = document.getElementById('boxDd2');
-    const placeholder = document.getElementById('boxDd2Placeholder');
-    if (boxDd2) boxDd2.classList.add('hidden');
-    if (placeholder) placeholder.classList.remove('hidden');
-    
-    filterJobs();
-    updateFilterActiveDot();
-    
+
+    toggleClearKeywordBtn();
+
     if (typeof submitJobSearch === 'function') {
         submitJobSearch();
+    }
+}
+
+// Removes only the location facet (keeps keyword untouched) - used by the active filter chips.
+function clearLocationFilters() {
+    const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
+    const dd3 = document.getElementById('dd3');
+
+    if (dd1) dd1.value = '';
+    if (typeof resetDropdown === 'function') {
+        resetDropdown(dd2, 'โปรดเลือกจังหวัดก่อน');
+        resetDropdown(dd3, 'โปรดเลือกอำเภอก่อน');
+    }
+
+    if (typeof submitJobSearch === 'function') {
+        submitJobSearch();
+    }
+}
+
+// Removes only the search keyword (keeps location filters untouched).
+function clearKeywordOnly() {
+    const searchInput = document.getElementById('searchKeyword');
+    if (searchInput) searchInput.value = '';
+    toggleClearKeywordBtn();
+
+    if (typeof submitJobSearch === 'function') {
+        submitJobSearch();
+    }
+}
+
+function toggleClearKeywordBtn() {
+    const searchInput = document.getElementById('searchKeyword');
+    const btn = document.getElementById('clearKeywordBtn');
+    if (!btn) return;
+
+    if (searchInput && searchInput.value.trim()) {
+        btn.classList.remove('hidden');
+    } else {
+        btn.classList.add('hidden');
     }
 }
 
 function updateFilterActiveDot() {
     const dd1 = document.getElementById('dd1');
     const dd2 = document.getElementById('dd2');
-    const searchInput = document.getElementById('searchKeyword');
+    const dd3 = document.getElementById('dd3');
     const dot = document.getElementById('filterActiveDot');
-    
-    const hasActiveFilters = (dd1 && dd1.value) || (dd2 && dd2.value) || (searchInput && searchInput.value);
-    
+
+    const hasActiveFilters = (dd1 && dd1.value) || (dd2 && dd2.value) || (dd3 && dd3.value);
+
     if (dot) {
         if (hasActiveFilters) {
             dot.classList.remove('hidden');
@@ -429,6 +443,43 @@ function updateFilterActiveDot() {
             dot.classList.add('hidden');
         }
     }
+}
+
+// Renders removable chips for each active location facet so the user always sees
+// exactly which filters are combined with the keyword search (fixes the "stuck / stale data" confusion).
+function renderActiveChips() {
+    const row = document.getElementById('activeChipsRow');
+    if (!row) return;
+
+    const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
+    const dd3 = document.getElementById('dd3');
+
+    const p1 = dd1 ? dd1.value : '';
+    const p2 = dd2 ? dd2.value : '';
+    const p3 = dd3 ? dd3.value : '';
+
+    const chips = [];
+    if (p1) chips.push({ icon: '📍', label: p1 });
+    if (p2) chips.push({ icon: '🏘️', label: p2 });
+    if (p3) chips.push({ icon: '🏠', label: p3 });
+
+    if (chips.length === 0) {
+        row.classList.add('hidden');
+        row.classList.remove('flex');
+        row.innerHTML = '';
+        return;
+    }
+
+    row.innerHTML = chips.map(chip => `
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-[#eef5ff] text-kcdark text-xs font-bold pl-3 pr-2 py-1.5">
+            ${chip.icon} ${chip.label}
+        </span>
+    `).join('') + `
+        <button type="button" onclick="clearLocationFilters()" class="text-xs font-bold text-slate-400 hover:text-red-500 underline underline-offset-2 transition-colors">ล้างพื้นที่ทั้งหมด</button>
+    `;
+    row.classList.remove('hidden');
+    row.classList.add('flex');
 }
 
 function toggleFilterPanel() {
@@ -453,3 +504,4 @@ function closeFilterPanel() {
     if (panel) panel.classList.add('hidden');
     if (backdrop) backdrop.classList.add('hidden');
 }
+

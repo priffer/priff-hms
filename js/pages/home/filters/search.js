@@ -2,7 +2,8 @@ function submitJobSearch() {
     filterJobs();
     closeFilterPanel();
     updateFilterActiveDot();
-    
+    renderActiveChips();
+
     // Auto-scroll to results
     const jobsSection = document.getElementById('jobs-section');
     if (jobsSection) {
@@ -16,22 +17,23 @@ function filterJobs() {
     const kwEl = document.getElementById('searchKeyword');
     const keyword = kwEl ? kwEl.value.trim().toLowerCase() : '';
     const cleanKeyword = keyword.replace(/ต\.|อ\.|จ\.|เขต/g, '').replace(/\s+/g, '');
-    
+
     const p1 = document.getElementById('dd1') ? document.getElementById('dd1').value : '';
     const p2 = document.getElementById('dd2') ? document.getElementById('dd2').value : '';
+    const p3 = document.getElementById('dd3') ? document.getElementById('dd3').value : '';
 
     filteredJobs = allJobs.filter(job => {
         const zone = String(job.zone_name || '').toLowerCase();
         const companyName = String(job.company_name || '').toLowerCase();
-        const content = String(job.content || '').toLowerCase(); 
-        
+        const content = String(job.content || '').toLowerCase();
+
         const matchKeyword = matchesJobSearchTerm(job, keyword, cleanKeyword);
-        
+
         let matchLocation = true;
         if (typeof isZoneInArea === 'function' && typeof locationData !== 'undefined') {
-            matchLocation = isZoneInArea(job, p1, p2);
+            matchLocation = isZoneInArea(job, p1, p2, p3);
         } else {
-            const targetArea = p2 || p1;
+            const targetArea = p3 || p2 || p1;
             if (targetArea) {
                 const cTarget = cleanStr(targetArea);
                 const cZone = cleanStr(zone);
