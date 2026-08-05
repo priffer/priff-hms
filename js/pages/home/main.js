@@ -249,7 +249,22 @@ function getPrimaryArea(zoneName) {
 function applyPopularAreaFilter(areaLabel) {
     const searchInput = document.getElementById('searchKeyword');
     if (searchInput) searchInput.value = areaLabel;
+    toggleClearKeywordBtn();
+
+    // Clicking a popular-area card is a keyword search shortcut - clear any stale
+    // location dropdown selection so it doesn't silently conflict (same as submitKeywordSearch()).
+    const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
+    const dd3 = document.getElementById('dd3');
+    if (dd1) dd1.value = '';
+    if (typeof resetDropdown === 'function') {
+        resetDropdown(dd2, 'โปรดเลือกจังหวัดก่อน');
+        resetDropdown(dd3, 'โปรดเลือกอำเภอก่อน');
+    }
+
     filterJobs();
+    updateFilterActiveDot();
+    renderActiveChips();
 }
 
 function setText(id, value) {
@@ -396,6 +411,26 @@ function applyLocationFilter() {
     const searchInput = document.getElementById('searchKeyword');
     if (searchInput) searchInput.value = '';
     toggleClearKeywordBtn();
+
+    if (typeof submitJobSearch === 'function') {
+        submitJobSearch();
+    }
+}
+
+// Called by the main "ค้นหา" button / Enter key on the keyword box. Symmetric to
+// applyLocationFilter(): using the keyword search is a distinct, deliberate action, so any
+// leftover location filter from a previous search is always cleared first - regardless of
+// whether the keyword search finds a match or not, per user requirement.
+function submitKeywordSearch() {
+    const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
+    const dd3 = document.getElementById('dd3');
+
+    if (dd1) dd1.value = '';
+    if (typeof resetDropdown === 'function') {
+        resetDropdown(dd2, 'โปรดเลือกจังหวัดก่อน');
+        resetDropdown(dd3, 'โปรดเลือกอำเภอก่อน');
+    }
 
     if (typeof submitJobSearch === 'function') {
         submitJobSearch();

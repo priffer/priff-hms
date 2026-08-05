@@ -63,11 +63,11 @@
                 <!-- Search Input -->
                 <div class="relative flex-1">
                     <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                    <input id="searchKeyword" type="text" autocomplete="off" placeholder="ค้นหาตำแหน่งงาน, บริษัท..." onkeydown="if(event.key === 'Enter') submitJobSearch()" oninput="toggleClearKeywordBtn()" class="w-full h-11 rounded-full border border-[#e6edf7] bg-white pl-10 pr-9 text-sm text-slate-900 focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] focus:outline-none shadow-sm transition-all" />
+                    <input id="searchKeyword" type="text" autocomplete="off" placeholder="ค้นหาตำแหน่งงาน, บริษัท..." onkeydown="if(event.key === 'Enter') submitKeywordSearch()" oninput="toggleClearKeywordBtn()" class="w-full h-11 rounded-full border border-[#e6edf7] bg-white pl-10 pr-9 text-sm text-slate-900 focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] focus:outline-none shadow-sm transition-all" />
                     <button id="clearKeywordBtn" type="button" onclick="clearKeywordOnly()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 text-xs hover:bg-slate-300 transition-colors">✕</button>
                 </div>
                 <!-- Search Button -->
-                <button type="button" onclick="submitJobSearch()" class="shrink-0 h-11 px-5 rounded-full bg-kcblue text-white text-sm font-bold shadow-sm hover:bg-kcdark hover:shadow-md transition-all flex items-center gap-2">
+                <button type="button" onclick="submitKeywordSearch()" class="shrink-0 h-11 px-5 rounded-full bg-kcblue text-white text-sm font-bold shadow-sm hover:bg-kcdark hover:shadow-md transition-all flex items-center gap-2">
                     <span class="hidden sm:inline">ค้นหา</span>
                     <span class="sm:hidden">🔍</span>
                 </button>
