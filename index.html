@@ -56,25 +56,31 @@
         </div>
     </nav>
  
-    <!-- Unified Search Bar: Fixed with proper structure -->
-    <section class="sticky top-16 lg:top-20 z-40 bg-white/95 border-b border-[#e6edf7] shadow-[0_8px_24px_rgba(15,43,115,0.04)]">
-        <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-3 relative">
-            <div class="flex items-center gap-2 lg:gap-3">
-                <div class="relative flex-1 min-w-0">
-                    <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                    <input id="searchKeyword" type="text" autocomplete="off" placeholder="ค้นหาตำแหน่งงาน, พื้นที่ทำงาน..." class="w-full h-12 rounded-full border border-[#e6edf7] bg-white pl-11 pr-4 text-sm text-slate-900 focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] focus:outline-none" />
+    <!-- Unified Search Bar: Two-Pill Search -->
+    <section class="sticky top-16 lg:top-20 z-40 bg-white/95 border-b border-[#e6edf7] shadow-[0_8px_24px_rgba(15,43,115,0.04)] backdrop-blur-sm">
+        <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-3 sm:py-4 relative">
+            <div class="flex items-center">
+                <div class="flex w-full rounded-full border border-[#e6edf7] bg-white shadow-sm hover:shadow focus-within:ring-4 focus-within:ring-[#eef5ff] focus-within:border-kcblue overflow-hidden transition-all">
+                    <!-- Pill 1: Keyword -->
+                    <div class="relative flex-1 flex items-center min-w-0 border-r border-[#e6edf7]">
+                        <span class="pointer-events-none absolute left-4 text-slate-400 text-base">🔍</span>
+                        <input id="searchKeyword" type="text" autocomplete="off" placeholder="ค้นหาตำแหน่งงาน, หน้างาน..." class="w-full h-12 sm:h-14 bg-transparent pl-11 pr-4 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none" />
+                    </div>
+                    <!-- Pill 2: Province -->
+                    <div class="relative shrink-0 w-[110px] sm:w-48 bg-white flex items-center hover:bg-[#f7faff] transition-colors">
+                        <span class="pointer-events-none absolute left-3 sm:left-4 text-slate-400 text-base">📍</span>
+                        <select id="dd1" class="w-full h-12 sm:h-14 bg-transparent pl-9 sm:pl-11 pr-7 sm:pr-8 text-sm sm:text-base text-slate-700 cursor-pointer focus:outline-none appearance-none font-bold">
+                            <option value="">ทุกจังหวัด</option>
+                        </select>
+                        <span class="pointer-events-none absolute right-3 sm:right-4 text-slate-400 text-xs">▼</span>
+                    </div>
                 </div>
-                <select id="dd1" class="shrink-0 h-12 px-4 rounded-full border border-[#e6edf7] bg-white text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none">
-                    <option value="">จังหวัด</option>
-                </select>
-                <select id="dd2" class="shrink-0 h-12 px-4 rounded-full border border-[#e6edf7] bg-white text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none">
-                    <option value="">เขตพื้นที่</option>
-                </select>
-                <button id="clearBtn" type="button" onclick="resetFilters()" class="shrink-0 h-12 px-4 rounded-full border border-[#e6edf7] bg-white text-slate-700 text-sm font-bold hover:bg-[#eef5ff] hover:text-kcdark hover:border-kcblue transition-colors">ล้าง</button>
+                <!-- Clear Button -->
+                <button id="clearBtn" type="button" onclick="resetFilters()" class="ml-2 sm:ml-3 shrink-0 h-12 sm:h-14 w-12 sm:w-auto sm:px-6 flex items-center justify-center rounded-full bg-[#f7faff] text-slate-500 text-sm font-bold hover:bg-[#ffeef0] hover:text-red-600 transition-colors">
+                    <span class="sm:hidden text-lg">✕</span>
+                    <span class="hidden sm:inline">ล้าง</span>
+                </button>
             </div>
-
-            <!-- Tap outside to close if needed for mobile -->
-            <div id="filterBackdrop" onclick="closeFilterPanel()" class="hidden fixed inset-0 z-30 bg-slate-900/20"></div>
         </div>
     </section>
  

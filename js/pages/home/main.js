@@ -391,25 +391,19 @@ function normalizeAreaText(value) {
 function resetFilters() {
     const searchInput = document.getElementById('searchKeyword');
     const dd1 = document.getElementById('dd1');
-    const dd2 = document.getElementById('dd2');
     
     if (searchInput) searchInput.value = '';
     if (dd1) dd1.value = '';
-    if (dd2) {
-        dd2.value = '';
-        dd2.innerHTML = '<option value="">เขตพื้นที่</option>';
-    }
     
     filterJobs();
 }
 
 function updateFilterActiveDot() {
     const dd1 = document.getElementById('dd1');
-    const dd2 = document.getElementById('dd2');
     const searchInput = document.getElementById('searchKeyword');
     const dot = document.getElementById('filterActiveDot');
     
-    const hasActiveFilters = (dd1 && dd1.value) || (dd2 && dd2.value) || (searchInput && searchInput.value);
+    const hasActiveFilters = (dd1 && dd1.value) || (searchInput && searchInput.value);
     
     if (dot) {
         if (hasActiveFilters) {
