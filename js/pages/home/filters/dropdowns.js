@@ -43,8 +43,11 @@ function handleDd1Change() {
     const groups = locationData[p1];
     let optionsHtml = '<option value="">-- ทุกพื้นที่ใน' + p1 + ' --</option>';
 
+    // Render each raw group as its own <optgroup> so นิคมอุตสาหกรรม and อำเภอ/ตำบล
+    // never visually mix together in the dropdown list.
     Object.keys(groups).forEach(groupName => {
         const node = groups[groupName];
+        optionsHtml += `<optgroup label="${groupName}">`;
         if (Array.isArray(node)) {
             // Industrial estate group: each entry is a selectable leaf value
             node.forEach(estate => {
@@ -56,6 +59,7 @@ function handleDd1Change() {
                 optionsHtml += `<option value="${amphoe}" data-type="amphoe">${amphoe}</option>`;
             });
         }
+        optionsHtml += '</optgroup>';
     });
 
     if (dd2) {
