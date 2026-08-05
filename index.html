@@ -62,41 +62,38 @@
                 </button>
             </div>
 
-            <!-- Quick Mode Form -->
+            <!-- Quick Mode Form: live filtering, no submit button needed -->
             <div id="quickSearchForm" class="block rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6">
-                <form onsubmit="event.preventDefault(); filterJobs(true);" class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+                <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
                     <div class="grid gap-2">
                         <label class="text-xs font-bold text-slate-500" for="searchKeyword">ตำแหน่งงาน</label>
-                        <input id="searchKeyword" type="text" placeholder="พิมพ์ชื่อตำแหน่งงาน" oninput="filterJobsNoScroll();" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
+                        <input id="searchKeyword" type="text" placeholder="พิมพ์ชื่อตำแหน่งงาน" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
                     </div>
                     <div class="grid gap-2">
                         <label class="text-xs font-bold text-slate-500" for="locationKeyword">พื้นที่ทำงาน</label>
-                        <input id="locationKeyword" type="text" placeholder="ชลบุรี / ระยอง / ฉะเชิงเทรา" oninput="filterJobsNoScroll();" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
+                        <input id="locationKeyword" type="text" placeholder="ชลบุรี / ระยอง / ฉะเชิงเทรา" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
                     </div>
-                </form>
+                </div>
             </div>
 
-            <!-- Detailed Mode Form -->
+            <!-- Detailed Mode Form: live filtering on every selection, no submit button needed -->
             <div id="detailedSearchForm" class="hidden rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 mb-2">จังหวัด</label>
-                        <select id="dd1" onchange="handleDd1Change()" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white">
+                        <select id="dd1" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white">
                             <option value="">-- สถานที่ทั้งหมด --</option>
                         </select>
                     </div>
                     <div id="boxDd2" class="hidden">
                         <label id="lblDd2" class="block text-xs font-bold text-slate-500 mb-2">...</label>
-                        <select id="dd2" onchange="handleDd2Change()" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white"></select>
+                        <select id="dd2" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white"></select>
                     </div>
                     <div id="boxDd3" class="hidden">
                         <label id="lblDd3" class="block text-xs font-bold text-slate-500 mb-2">...</label>
                         <select id="dd3" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white"></select>
                     </div>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <button onclick="filterJobs(true)" class="w-full rounded-2xl bg-kcblue text-white py-3 text-sm font-bold hover:bg-kcyellow hover:text-kcblue transition-colors">ค้นหางาน</button>
-                        <button onclick="resetFilters()" class="w-full rounded-2xl bg-white border border-slate-200 text-slate-700 py-3 text-sm font-bold hover:bg-slate-100 transition-colors">ล้างตัวกรอง</button>
-                    </div>
+                    <button onclick="resetFilters()" class="w-full rounded-2xl bg-white border border-slate-200 text-slate-700 py-3 text-sm font-bold hover:bg-slate-100 transition-colors">ล้างตัวกรอง</button>
                 </div>
             </div>
         </div>
@@ -221,7 +218,9 @@
     
     <script src="js/pages/home/state.js"></script>
     <script src="js/pages/home/cms.js"></script>
-    <script src="js/pages/home/filters.js"></script>
+    <script src="js/pages/home/filters/utils.js"></script>
+    <script src="js/pages/home/filters/dropdowns.js"></script>
+    <script src="js/pages/home/filters/search.js"></script>
     <script src="js/pages/home/modal.js"></script>
     <script src="js/pages/home/main.js"></script>
 

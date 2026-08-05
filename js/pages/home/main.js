@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSiteSettings();
     fetchActiveJobs();
     initializeSearchMode();
+    if (typeof initLocationFilters === 'function') {
+        initLocationFilters();
+    }
 });
 
 function initializeSearchMode() {

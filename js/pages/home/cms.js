@@ -11,9 +11,6 @@ async function loadSiteSettings() {
             logoContainer.innerHTML = `<img src="${data.logo_url}?v=${Date.now()}" alt="Logo" class="w-full h-full object-contain">`;
         }
 
-        if (data.hero_headline) document.getElementById('mainHeadline').innerText = data.hero_headline;
-        if (data.hero_subhead) document.getElementById('subHeadline').innerText = data.hero_subhead;
-
         const welfareList = document.getElementById('welfareList');
         welfareList.innerHTML = '';
         if (data.welfares && data.welfares.length > 0) {

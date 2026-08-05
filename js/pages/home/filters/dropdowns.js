@@ -3,6 +3,7 @@ function initLocationFilters() {
     const dd2 = document.getElementById('dd2');
     const dd3 = document.getElementById('dd3');
     const searchInput = document.getElementById('searchKeyword');
+    const locationInput = document.getElementById('locationKeyword');
 
     if (dd1) {
         dd1.removeEventListener('change', handleDd1Change);
@@ -13,12 +14,16 @@ function initLocationFilters() {
         dd2.addEventListener('change', handleDd2Change);
     }
     if (dd3) {
-        dd3.removeEventListener('change', filterJobs);
-        dd3.addEventListener('change', filterJobs);
+        dd3.removeEventListener('change', filterJobsNoScroll);
+        dd3.addEventListener('change', filterJobsNoScroll);
     }
     if (searchInput) {
-        searchInput.removeEventListener('input', filterJobs);
-        searchInput.addEventListener('input', filterJobs);
+        searchInput.removeEventListener('input', filterJobsNoScroll);
+        searchInput.addEventListener('input', filterJobsNoScroll);
+    }
+    if (locationInput) {
+        locationInput.removeEventListener('input', filterJobsNoScroll);
+        locationInput.addEventListener('input', filterJobsNoScroll);
     }
 
     if (!dd1 || typeof locationData === 'undefined') return;
@@ -40,7 +45,7 @@ function handleDd1Change() {
     if (!dd1 || typeof locationData === 'undefined' || !locationData[dd1]) {
         if (boxDd2) boxDd2.classList.add('hidden');
         if (dd2) dd2.innerHTML = '';
-        filterJobs();
+        filterJobsNoScroll();
         return;
     }
 
@@ -54,7 +59,7 @@ function handleDd1Change() {
         });
         if (boxDd2) boxDd2.classList.remove('hidden');
     }
-    filterJobs();
+    filterJobsNoScroll();
 }
 
 function handleDd2Change() {
@@ -66,7 +71,7 @@ function handleDd2Change() {
     if (!dd2 || typeof locationData === 'undefined' || !locationData[dd1] || !locationData[dd1][dd2]) {
         if (boxDd3) boxDd3.classList.add('hidden');
         if (dd3) dd3.innerHTML = '';
-        filterJobs();
+        filterJobsNoScroll();
         return;
     }
 
@@ -95,5 +100,5 @@ function handleDd2Change() {
         dd3.innerHTML = optionsHTML;
         if (boxDd3) boxDd3.classList.remove('hidden');
     }
-    filterJobs();
+    filterJobsNoScroll();
 }
