@@ -388,6 +388,20 @@ function resetFilters() {
     }
 }
 
+// Called by the "นำไปใช้" button in the location filter panel. Selecting a location via the
+// structured dropdowns is a distinct, deliberate action - any leftover free-text keyword from
+// an earlier search would silently conflict with it (AND-logic => 0 results with no obvious cause).
+// So applying a location filter always clears the keyword box first.
+function applyLocationFilter() {
+    const searchInput = document.getElementById('searchKeyword');
+    if (searchInput) searchInput.value = '';
+    toggleClearKeywordBtn();
+
+    if (typeof submitJobSearch === 'function') {
+        submitJobSearch();
+    }
+}
+
 // Removes only the location facet (keeps keyword untouched) - used by the active filter chips.
 function clearLocationFilters() {
     const dd1 = document.getElementById('dd1');
