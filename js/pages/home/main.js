@@ -1,16 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadSiteSettings();
     fetchActiveJobs();
-    initializeSearchMode();
     if (typeof initLocationFilters === 'function') {
         initLocationFilters();
     }
 });
-
-function initializeSearchMode() {
-    const searchMode = localStorage.getItem('searchMode') || 'quick';
-    switchSearchMode(searchMode);
-}
 
 async function fetchActiveJobs() {
     const grid = document.getElementById('jobGrid');
@@ -48,6 +42,7 @@ function renderJobGrid() {
     if (!grid) return;
 
     updateJobCount(filteredJobs.length);
+    updateFilterActiveDot();
     grid.innerHTML = '';
 
     if (filteredJobs.length === 0) {
@@ -68,31 +63,31 @@ function renderJobGrid() {
         const audienceLabel = getJobAudienceLabel(job);
 
         grid.innerHTML += `
-            <article class="group relative overflow-hidden bg-white border border-slate-200 rounded-[2rem] p-5 lg:p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between gap-5">
-                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-kcblue via-[#0b4b86] to-kcyellow"></div>
+            <article class="group relative overflow-hidden bg-white border border-[#e6edf7] rounded-[2rem] p-5 lg:p-6 shadow-[0_12px_30px_rgba(15,43,115,0.04)] hover:shadow-[0_18px_40px_rgba(15,43,115,0.08)] hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between gap-5">
+                <div class="absolute inset-x-0 top-0 h-1 bg-kcblue"></div>
                 <div class="space-y-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0 space-y-3">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">${jobType}</span>
-                                <span class="inline-flex items-center rounded-full bg-kcyellow/20 px-3 py-1 text-xs font-bold text-kcblue">${audienceLabel}</span>
+                                <span class="inline-flex items-center rounded-full bg-[#f7faff] px-3 py-1 text-xs font-bold text-slate-700 border border-[#e6edf7]">${jobType}</span>
+                                <span class="inline-flex items-center rounded-full bg-kcyellow px-3 py-1 text-xs font-bold text-kcdark">${audienceLabel}</span>
                             </div>
-                            <h3 class="font-extrabold text-slate-900 text-xl lg:text-2xl leading-snug line-clamp-2">${job.title || 'ไม่ระบุชื่อตำแหน่ง'}</h3>
+                            <h3 class="font-extrabold text-kcdark text-xl lg:text-2xl leading-snug line-clamp-2">${job.title || 'ไม่ระบุชื่อตำแหน่ง'}</h3>
                             <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                                <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 font-bold text-kcblue">${locationSummary.primary}</span>
+                                <span class="inline-flex items-center rounded-full bg-[#eef5ff] px-3 py-1 font-bold text-kcblue">${locationSummary.primary}</span>
                                 ${locationSummary.secondary ? `<span class="truncate text-slate-500">${locationSummary.secondary}</span>` : `<span class="truncate text-slate-500">${companyName}</span>`}
                             </div>
                         </div>
                     </div>
-                    <div class="rounded-[1.5rem] bg-gradient-to-br from-slate-50 to-blue-50 px-4 py-4 border border-slate-100">
+                    <div class="rounded-[1.5rem] bg-[#f7faff] px-4 py-4 border border-[#e6edf7]">
                         <p class="text-xs uppercase tracking-[0.25em] text-slate-500">เงินเดือน / รายได้</p>
-                        <p class="mt-2 text-2xl font-extrabold text-kcblue">${salaryText}</p>
+                        <p class="mt-2 text-2xl font-extrabold text-kcdark">${salaryText}</p>
                         <p class="mt-2 text-sm text-slate-500">แตะดูรายละเอียดงาน</p>
                     </div>
                 </div>
                 <div class="mt-auto grid gap-3 sm:grid-cols-2">
-                    <button onclick="applyForThisJob(${job.id})" class="w-full rounded-[1.25rem] bg-kcblue text-white px-4 py-3.5 text-sm font-bold hover:bg-kcyellow hover:text-kcblue transition-colors shadow-sm">สมัครงาน</button>
-                    <button onclick="openJobModal(${job.id})" class="w-full rounded-[1.25rem] border border-slate-300 bg-white text-slate-700 px-4 py-3.5 text-sm font-bold hover:border-kcblue hover:text-kcblue transition-colors">ดูรายละเอียด</button>
+                    <button onclick="applyForThisJob(${job.id})" class="w-full rounded-[1.25rem] bg-kcblue text-white px-4 py-3.5 text-sm font-bold hover:bg-kcdark transition-colors shadow-sm">สมัครงาน</button>
+                    <button onclick="openJobModal(${job.id})" class="w-full rounded-[1.25rem] border border-[#e6edf7] bg-white text-slate-700 px-4 py-3.5 text-sm font-bold hover:border-kcblue hover:text-kcblue hover:bg-[#eef5ff] transition-colors">ดูรายละเอียด</button>
                 </div>
             </article>
         `;
@@ -112,7 +107,7 @@ function renderPaginationControls() {
     for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement('button');
         btn.innerText = i;
-        btn.className = `w-10 h-10 rounded-full font-bold border transition-colors ${currentPage === i ? 'bg-kcblue text-white border-kcblue' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'}`;
+        btn.className = `w-10 h-10 rounded-full font-bold border transition-colors ${currentPage === i ? 'bg-kcblue text-white border-kcblue shadow-sm' : 'bg-white text-slate-700 border-[#e6edf7] hover:bg-[#eef5ff] hover:text-kcblue'}`;
         btn.onclick = () => {
             currentPage = i;
             renderJobGrid();
@@ -144,48 +139,35 @@ function resetFilters() {
 }
 
 function toggleFilterPanel() {
-    const panel = document.getElementById('searchPanel');
+    const panel = document.getElementById('filterPanel');
+    const backdrop = document.getElementById('filterBackdrop');
     if (!panel) return;
-
-    if (window.innerWidth >= 640) {
-        panel.classList.remove('hidden');
-        resetFilterPanelStyles(panel);
-        return;
-    }
 
     const isOpen = !panel.classList.contains('hidden');
     if (isOpen) {
-        panel.classList.add('hidden');
-        resetFilterPanelStyles(panel);
+        closeFilterPanel();
         return;
     }
 
     panel.classList.remove('hidden');
-    panel.style.position = 'fixed';
-    panel.style.top = '0';
-    panel.style.left = '0';
-    panel.style.right = '0';
-    panel.style.bottom = '0';
-    panel.style.width = '100%';
-    panel.style.height = '100%';
-    panel.style.zIndex = '9999';
-    panel.style.backgroundColor = '#ffffff';
-    panel.style.overflowY = 'auto';
-    panel.style.padding = '1.5rem';
+    if (backdrop) backdrop.classList.remove('hidden');
 }
 
-function resetFilterPanelStyles(panel) {
-    panel.style.position = '';
-    panel.style.top = '';
-    panel.style.left = '';
-    panel.style.right = '';
-    panel.style.bottom = '';
-    panel.style.width = '';
-    panel.style.height = '';
-    panel.style.zIndex = '';
-    panel.style.backgroundColor = '';
-    panel.style.overflowY = '';
-    panel.style.padding = '';
+function closeFilterPanel() {
+    const panel = document.getElementById('filterPanel');
+    const backdrop = document.getElementById('filterBackdrop');
+    if (panel) panel.classList.add('hidden');
+    if (backdrop) backdrop.classList.add('hidden');
+}
+
+function updateFilterActiveDot() {
+    const dot = document.getElementById('filterActiveDot');
+    if (!dot) return;
+
+    const locationKeyword = document.getElementById('locationKeyword')?.value.trim();
+    const dd1 = document.getElementById('dd1')?.value;
+    const isActive = Boolean(locationKeyword || dd1);
+    dot.classList.toggle('hidden', !isActive);
 }
 
 function updateJobCount(count) {
@@ -204,18 +186,18 @@ function renderPopularAreas(jobs) {
 
     const popularAreas = buildPopularAreas(jobs).slice(0, 5);
     if (popularAreas.length === 0) {
-        container.innerHTML = '<div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5 text-sm text-slate-400">ยังไม่มีข้อมูลพื้นที่</div>';
+        container.innerHTML = '<div class="rounded-[1.5rem] border border-[#e6edf7] bg-white px-5 py-5 text-sm text-slate-400">ยังไม่มีข้อมูลพื้นที่</div>';
         return;
     }
 
     container.innerHTML = popularAreas.map(area => `
-        <button type="button" onclick="applyPopularAreaFilter('${escapeJsString(area.label)}')" class="group rounded-[1.5rem] border border-slate-200 bg-gradient-to-br from-white to-blue-50/60 p-5 text-left transition-all hover:-translate-y-1 hover:border-kcblue hover:shadow-lg">
+        <button type="button" onclick="applyPopularAreaFilter('${escapeJsString(area.label)}')" class="group rounded-[1.5rem] border border-[#e6edf7] bg-white p-5 text-left transition-all hover:-translate-y-1 hover:border-kcblue hover:shadow-[0_12px_30px_rgba(15,43,115,0.08)]">
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <span class="block text-xs font-bold uppercase tracking-[0.25em] text-slate-400">Location</span>
-                    <span class="mt-2 block text-xl font-extrabold text-slate-900">${escapeHtml(area.label)}</span>
+                    <span class="mt-2 block text-xl font-extrabold text-kcdark">${escapeHtml(area.label)}</span>
                 </div>
-                <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-kcyellow text-kcblue font-black shadow-sm">${area.count}</span>
+                <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-kclight text-kcdark font-black">${area.count}</span>
             </div>
             <span class="mt-4 block text-sm text-slate-500">เปิดรับ ${area.count} ตำแหน่ง</span>
         </button>
@@ -230,19 +212,19 @@ function renderFeaturedJobs(jobs) {
     setText('featuredJobsSummary', featuredJobs.length > 0 ? `${featuredJobs.length} งาน` : 'ยังไม่มีตำแหน่งแนะนำ');
 
     if (featuredJobs.length === 0) {
-        container.innerHTML = '<div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 text-sm text-slate-400">ยังไม่มีตำแหน่งงานแนะนำ</div>';
+        container.innerHTML = '<div class="rounded-[1.5rem] border border-[#e6edf7] bg-white p-5 text-sm text-slate-400">ยังไม่มีตำแหน่งงานแนะนำ</div>';
         return;
     }
 
     container.innerHTML = featuredJobs.map(job => `
-        <button type="button" onclick="openJobModal(${job.id})" class="group w-full rounded-[1.5rem] border border-slate-200 bg-white p-4 text-left transition-colors hover:border-kcblue hover:bg-slate-50">
+        <button type="button" onclick="openJobModal(${job.id})" class="group w-full rounded-[1.5rem] border border-[#e6edf7] bg-white p-4 text-left transition-colors hover:border-kcblue hover:shadow-[0_12px_30px_rgba(15,43,115,0.08)]">
             <div class="flex items-start justify-between gap-4">
                 <div class="min-w-0 flex-1 space-y-2">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">${escapeHtml(getJobAudienceLabel(job))}</span>
-                        <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-kcblue">${escapeHtml(getJobLocationSummary(job.zone_name).primary)}</span>
+                        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 border border-[#e6edf7]">${escapeHtml(getJobAudienceLabel(job))}</span>
+                        <span class="inline-flex items-center rounded-full bg-kclight px-3 py-1 text-xs font-bold text-kcdark">${escapeHtml(getJobLocationSummary(job.zone_name).primary)}</span>
                     </div>
-                    <p class="text-base sm:text-lg font-extrabold text-slate-900 leading-snug line-clamp-2">${escapeHtml(job.title || 'ไม่ระบุชื่อตำแหน่ง')}</p>
+                    <p class="text-base sm:text-lg font-extrabold text-kcdark leading-snug line-clamp-2">${escapeHtml(job.title || 'ไม่ระบุชื่อตำแหน่ง')}</p>
                     <p class="text-sm text-slate-500 line-clamp-1">${escapeHtml(job.zone_name || 'ไม่ระบุพื้นที่')}</p>
                 </div>
                 <div class="shrink-0 text-right">
@@ -406,35 +388,57 @@ function normalizeAreaText(value) {
         .replace(/\s+/g, '');
 }
 
-function switchSearchMode(mode) {
-    const quickForm = document.getElementById('quickSearchForm');
-    const detailedForm = document.getElementById('detailedSearchForm');
-    const quickBtn = document.getElementById('quickModeBtn');
-    const detailedBtn = document.getElementById('detailedModeBtn');
+function resetFilters() {
+    const searchInput = document.getElementById('searchKeyword');
+    const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
+    
+    if (searchInput) searchInput.value = '';
+    if (dd1) dd1.value = '';
+    if (dd2) {
+        dd2.value = '';
+        dd2.innerHTML = '<option value="">เขตพื้นที่</option>';
+    }
+    
+    filterJobs();
+}
 
-    if (mode === 'quick') {
-        if (quickForm) quickForm.classList.remove('hidden');
-        if (detailedForm) detailedForm.classList.add('hidden');
-        if (quickBtn) {
-            quickBtn.classList.add('bg-kcblue', 'text-white', 'border-kcblue');
-            quickBtn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
-        }
-        if (detailedBtn) {
-            detailedBtn.classList.remove('bg-kcblue', 'text-white', 'border-kcblue');
-            detailedBtn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
-        }
-    } else if (mode === 'detailed') {
-        if (quickForm) quickForm.classList.add('hidden');
-        if (detailedForm) detailedForm.classList.remove('hidden');
-        if (quickBtn) {
-            quickBtn.classList.remove('bg-kcblue', 'text-white', 'border-kcblue');
-            quickBtn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
-        }
-        if (detailedBtn) {
-            detailedBtn.classList.add('bg-kcblue', 'text-white', 'border-kcblue');
-            detailedBtn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+function updateFilterActiveDot() {
+    const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
+    const searchInput = document.getElementById('searchKeyword');
+    const dot = document.getElementById('filterActiveDot');
+    
+    const hasActiveFilters = (dd1 && dd1.value) || (dd2 && dd2.value) || (searchInput && searchInput.value);
+    
+    if (dot) {
+        if (hasActiveFilters) {
+            dot.classList.remove('hidden');
+        } else {
+            dot.classList.add('hidden');
         }
     }
+}
 
-    localStorage.setItem('searchMode', mode);
+function toggleFilterPanel() {
+    const panel = document.getElementById('filterPanel');
+    const backdrop = document.getElementById('filterBackdrop');
+    
+    if (!panel) return;
+    
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        if (backdrop) backdrop.classList.remove('hidden');
+    } else {
+        panel.classList.add('hidden');
+        if (backdrop) backdrop.classList.add('hidden');
+    }
+}
+
+function closeFilterPanel() {
+    const panel = document.getElementById('filterPanel');
+    const backdrop = document.getElementById('filterBackdrop');
+    
+    if (panel) panel.classList.add('hidden');
+    if (backdrop) backdrop.classList.add('hidden');
 }

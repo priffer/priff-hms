@@ -14,7 +14,14 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { kcblue: '#003366', kcyellow: '#FFCC00' },
+                    colors: {
+                        kcblue: '#165DFF',
+                        kcdark: '#0F2B73',
+                        kclight: '#EEF5FF',
+                        kcyellow: '#FFC72C',
+                        kcsoft: '#F7FAFF',
+                        kcborder: '#E6EDF7'
+                    },
                     fontFamily: { sans: ['Sarabun', 'sans-serif'] },
                     maxWidth: { '350': '1400px' } 
                 }
@@ -29,93 +36,65 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased flex flex-col min-h-screen">
+<body class="bg-[#f7faff] font-sans text-slate-800 antialiased flex flex-col min-h-screen">
 
-    <nav class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-sm shrink-0">
+    <nav class="bg-white/95 backdrop-blur-md border-b border-[#e6edf7] sticky top-0 z-50 shadow-[0_8px_24px_rgba(15,43,115,0.05)] shrink-0">
         <div class="max-w-350 mx-auto px-4 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-3">
             <a href="index.html" class="flex items-center gap-3 group min-w-0">
-                <div id="defaultLogo" class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-kcblue text-kcyellow font-black flex items-center justify-center text-lg shadow-md group-hover:scale-105 transition-all">KC</div>
-                <span id="dynamicCompanyName" class="font-extrabold text-kcblue text-sm sm:text-base lg:text-lg uppercase tracking-wider truncate">KC CLEAN TRADE</span>
+                <div id="defaultLogo" class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-gradient-to-br from-kcblue to-kcdark text-white font-black flex items-center justify-center text-lg shadow-md group-hover:scale-105 transition-all">KC</div>
+                <span id="dynamicCompanyName" class="font-extrabold text-kcdark text-sm sm:text-base lg:text-lg uppercase tracking-wider truncate">KC CLEAN TRADE</span>
             </a>
 
             <div class="flex items-center gap-2 sm:gap-3">
-                <a href="employee-login.html" class="rounded-full flex items-center gap-2 bg-slate-100 border border-slate-200 text-slate-700 px-3 py-2 text-xs sm:text-sm font-bold hover:bg-kcblue hover:text-white hover:border-kcblue transition-colors">
+                <a href="employee-login.html" class="rounded-full flex items-center gap-2 bg-white border border-[#e6edf7] text-slate-700 px-3 py-2 text-xs sm:text-sm font-bold hover:bg-[#eef5ff] hover:text-kcdark hover:border-kcblue transition-colors">
                     <span>เข้าสู่ระบบพนักงาน</span>
                 </a>
-                <a href="login.html" class="rounded-full flex items-center gap-2 bg-kcblue border border-kcblue text-white px-3 py-2 text-xs sm:text-sm font-bold hover:bg-kcyellow hover:text-kcblue transition-colors">
+                <a href="login.html" class="rounded-full flex items-center gap-2 bg-kcblue border border-kcblue text-white px-3 py-2 text-xs sm:text-sm font-bold hover:bg-kcdark transition-colors">
                     <span>เข้าสู่ระบบบริษัท</span>
                 </a>
             </div>
         </div>
     </nav>
  
-    <!-- Sticky Search Area -->
-    <section class="sticky top-20 lg:top-24 z-40 bg-white border-b border-slate-200 shadow-sm">
-        <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-4 lg:py-5">
-            <!-- Search Mode Toggle -->
-            <div class="flex gap-2 mb-4">
-                <button id="quickModeBtn" onclick="switchSearchMode('quick')" class="px-4 py-2 rounded-full text-sm font-bold border-2 border-kcblue bg-kcblue text-white hover:bg-kcyellow hover:text-kcblue hover:border-kcyellow transition-colors">
-                    ค้นหาทั่วไป
-                </button>
-                <button id="detailedModeBtn" onclick="switchSearchMode('detailed')" class="px-4 py-2 rounded-full text-sm font-bold border-2 border-slate-200 bg-white text-slate-700 hover:border-kcblue hover:text-kcblue transition-colors">
-                    ค้นหาแบบละเอียด
-                </button>
+    <!-- Sticky Search Bar: unified single-point search -->
+    <section class="sticky top-16 lg:top-20 z-40 bg-white/95 border-b border-[#e6edf7] shadow-[0_8px_24px_rgba(15,43,115,0.04)]">
+        <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-3 relative">
+            <div class="flex items-center gap-2 lg:gap-3">
+                <div class="relative flex-1 min-w-0">
+                    <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                    <input id="searchKeyword" type="text" autocomplete="off" placeholder="ค้นหาตำแหน่งงาน, พื้นที่ทำงาน..." class="w-full h-12 rounded-full border border-[#e6edf7] bg-white pl-11 pr-4 text-sm text-slate-900 focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] focus:outline-none" />
+                </div>
+                <select id="dd1" class="shrink-0 h-12 px-4 rounded-full border border-[#e6edf7] bg-white text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none">
+                    <option value="">จังหวัด</option>
+                </select>
+                <select id="dd2" class="shrink-0 h-12 px-4 rounded-full border border-[#e6edf7] bg-white text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none">
+                    <option value="">เขตพื้นที่</option>
+                </select>
+                <button id="clearBtn" type="button" onclick="resetFilters()" class="shrink-0 h-12 px-4 rounded-full border border-[#e6edf7] bg-white text-slate-700 text-sm font-bold hover:bg-[#eef5ff] hover:text-kcdark hover:border-kcblue transition-colors">ล้าง</button>
             </div>
 
-            <!-- Quick Mode Form: live filtering, no submit button needed -->
-            <div id="quickSearchForm" class="block rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6">
-                <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
-                    <div class="grid gap-2">
-                        <label class="text-xs font-bold text-slate-500" for="searchKeyword">ตำแหน่งงาน</label>
-                        <input id="searchKeyword" type="text" placeholder="พิมพ์ชื่อตำแหน่งงาน" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
-                    </div>
-                    <div class="grid gap-2">
-                        <label class="text-xs font-bold text-slate-500" for="locationKeyword">พื้นที่ทำงาน</label>
-                        <input id="locationKeyword" type="text" placeholder="ชลบุรี / ระยอง / ฉะเชิงเทรา" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Detailed Mode Form: live filtering on every selection, no submit button needed -->
-            <div id="detailedSearchForm" class="hidden rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-2">จังหวัด</label>
-                        <select id="dd1" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white">
-                            <option value="">-- สถานที่ทั้งหมด --</option>
-                        </select>
-                    </div>
-                    <div id="boxDd2" class="hidden">
-                        <label id="lblDd2" class="block text-xs font-bold text-slate-500 mb-2">...</label>
-                        <select id="dd2" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white"></select>
-                    </div>
-                    <div id="boxDd3" class="hidden">
-                        <label id="lblDd3" class="block text-xs font-bold text-slate-500 mb-2">...</label>
-                        <select id="dd3" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white"></select>
-                    </div>
-                    <button onclick="resetFilters()" class="w-full rounded-2xl bg-white border border-slate-200 text-slate-700 py-3 text-sm font-bold hover:bg-slate-100 transition-colors">ล้างตัวกรอง</button>
-                </div>
-            </div>
+            <!-- Tap outside to close if needed for mobile -->
+            <div id="filterBackdrop" onclick="closeFilterPanel()" class="hidden fixed inset-0 z-30 bg-slate-900/20"></div>
         </div>
     </section>
  
     <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-6 lg:py-8">
         <section class="space-y-6 lg:space-y-8">
-            <section class="rounded-[2rem] bg-white border border-slate-200 p-5 lg:p-6 shadow-sm">
+            <section class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">แนะนำสำหรับคุณ</p>
                         <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">งานแนะนำวันนี้</h2>
                         <p class="mt-2 text-sm text-slate-500">คัดมาให้แล้ว ดูชื่อตำแหน่ง พื้นที่ และรายได้แบบสั้นๆ</p>
                     </div>
-                    <span id="featuredJobsSummary" class="inline-flex items-center rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">กำลังโหลด...</span>
+                    <span id="featuredJobsSummary" class="inline-flex items-center rounded-full bg-[#eef5ff] px-4 py-2 text-sm font-bold text-kcdark">กำลังโหลด...</span>
                 </div>
                 <div id="featuredJobsGrid" class="mt-5 grid gap-3">
-                    <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-sm text-slate-400">กำลังโหลดตำแหน่งแนะนำ...</div>
+                    <div class="rounded-[1.75rem] border border-[#e6edf7] bg-white p-5 text-sm text-slate-400">กำลังโหลดตำแหน่งแนะนำ...</div>
                 </div>
             </section>
 
-            <section id="jobs-section" class="rounded-[2rem] bg-white border border-slate-200 p-5 lg:p-6 shadow-sm">
+            <section id="jobs-section" class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                     <div>
                         <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">ตำแหน่งงาน</p>
@@ -128,7 +107,7 @@
                 <div id="paginationControls" class="mt-8 flex flex-wrap justify-center items-center gap-2"></div>
             </section>
 
-            <section id="welfare-section" class="rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6 shadow-sm">
+            <section id="welfare-section" class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">สวัสดิการ</p>
@@ -141,10 +120,10 @@
                         <li id="welfareLoading" class="flex items-start gap-2">✔️ <span class="text-slate-400">กำลังดึงข้อมูล...</span></li>
                     </ul>
                 </div>
-                <a href="apply.html" class="mt-5 inline-flex w-full justify-center rounded-2xl bg-kcyellow text-kcblue font-bold py-3 text-sm hover:bg-kcblue hover:text-white transition-colors">สมัครงานเลย</a>
+                <a href="apply.html" class="mt-5 inline-flex w-full justify-center rounded-2xl bg-kcyellow text-kcdark font-bold py-3 text-sm hover:bg-kcblue hover:text-white transition-colors">สมัครงานเลย</a>
             </section>
 
-            <section class="rounded-[2rem] bg-gradient-to-br from-[#fffdf5] via-white to-blue-50 border border-slate-200 p-5 lg:p-6 shadow-sm">
+            <section class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
                 <div>
                     <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">ทำไมต้อง KC</p>
                     <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">จุดเด่นของการร่วมงาน</h2>
@@ -168,7 +147,7 @@
                     </div>
                 </div>
                 <div class="mt-6">
-                    <a href="apply.html" class="inline-flex items-center justify-center rounded-2xl bg-kcblue px-6 py-3 text-sm font-bold text-white hover:bg-kcyellow hover:text-kcblue transition-colors">สมัครงานเลย</a>
+                    <a href="apply.html" class="inline-flex items-center justify-center rounded-2xl bg-kcblue px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-kcdark transition-colors">สมัครงานเลย</a>
                 </div>
             </section>
         </section>
