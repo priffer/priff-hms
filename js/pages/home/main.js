@@ -391,19 +391,36 @@ function normalizeAreaText(value) {
 function resetFilters() {
     const searchInput = document.getElementById('searchKeyword');
     const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
     
     if (searchInput) searchInput.value = '';
     if (dd1) dd1.value = '';
+    if (dd2) {
+        dd2.value = '';
+        dd2.innerHTML = '<option value="">-- เลือกพื้นที่ทั้งหมด --</option>';
+    }
+    
+    // Clear dependencies like boxDd2
+    const boxDd2 = document.getElementById('boxDd2');
+    const placeholder = document.getElementById('boxDd2Placeholder');
+    if (boxDd2) boxDd2.classList.add('hidden');
+    if (placeholder) placeholder.classList.remove('hidden');
     
     filterJobs();
+    updateFilterActiveDot();
+    
+    if (typeof submitJobSearch === 'function') {
+        submitJobSearch();
+    }
 }
 
 function updateFilterActiveDot() {
     const dd1 = document.getElementById('dd1');
+    const dd2 = document.getElementById('dd2');
     const searchInput = document.getElementById('searchKeyword');
     const dot = document.getElementById('filterActiveDot');
     
-    const hasActiveFilters = (dd1 && dd1.value) || (searchInput && searchInput.value);
+    const hasActiveFilters = (dd1 && dd1.value) || (dd2 && dd2.value) || (searchInput && searchInput.value);
     
     if (dot) {
         if (hasActiveFilters) {
