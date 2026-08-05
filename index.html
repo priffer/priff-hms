@@ -29,127 +29,55 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased overflow-x-hidden flex flex-col min-h-screen">
+<body class="bg-slate-50 font-sans text-slate-800 antialiased flex flex-col min-h-screen">
 
-    <nav class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 shadow-sm shrink-0">
-        <div class="max-w-350 mx-auto px-4 lg:px-8 h-16 lg:h-20 flex flex-wrap items-center justify-between gap-3">
+    <nav class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-sm shrink-0">
+        <div class="max-w-350 mx-auto px-4 lg:px-8 h-16 lg:h-20 flex items-center justify-between gap-3">
             <a href="index.html" class="flex items-center gap-3 group min-w-0">
                 <div id="defaultLogo" class="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-kcblue text-kcyellow font-black flex items-center justify-center text-lg shadow-md group-hover:scale-105 transition-all">KC</div>
                 <span id="dynamicCompanyName" class="font-extrabold text-kcblue text-sm sm:text-base lg:text-lg uppercase tracking-wider truncate">KC CLEAN TRADE</span>
             </a>
- 
-            <div class="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
-                <a href="#jobs-section" class="hover:text-kcblue transition-colors">หางาน</a>
-                <a href="#welfare-section" class="hover:text-kcblue transition-colors">สวัสดิการ</a>
-                <a href="#about-section" class="hover:text-kcblue transition-colors">เกี่ยวกับเรา</a>
-            </div>
- 
+
             <div class="flex items-center gap-2 sm:gap-3">
                 <a href="employee-login.html" class="rounded-full flex items-center gap-2 bg-slate-100 border border-slate-200 text-slate-700 px-3 py-2 text-xs sm:text-sm font-bold hover:bg-kcblue hover:text-white hover:border-kcblue transition-colors">
-                    <span>พนักงาน (ESS)</span>
+                    <span>เข้าสู่ระบบพนักงาน</span>
                 </a>
                 <a href="login.html" class="rounded-full flex items-center gap-2 bg-kcblue border border-kcblue text-white px-3 py-2 text-xs sm:text-sm font-bold hover:bg-kcyellow hover:text-kcblue transition-colors">
-                    <span>เข้าสู่ระบบองค์กร</span>
+                    <span>เข้าสู่ระบบบริษัท</span>
                 </a>
             </div>
         </div>
     </nav>
  
-    <header class="relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-br from-kcblue via-[#0a467e] to-slate-900"></div>
-        <div class="absolute -top-16 -left-10 w-56 h-56 bg-kcyellow/20 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-20 right-0 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl"></div>
-        <div class="relative max-w-350 mx-auto px-4 lg:px-8 pt-10 pb-12 lg:pt-16 lg:pb-16 text-white">
-            <div class="max-w-3xl">
-                <p class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs md:text-sm font-bold tracking-wide uppercase text-white/90">
-                    <span class="w-2 h-2 rounded-full bg-kcyellow"></span> Recruitment Platform for KC</p>
-                <h1 id="mainHeadline" class="mt-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight">ค้นหางานใกล้บ้านคุณ พร้อมรับข้อเสนอใหม่ทันที</h1>
-                <p id="subHeadline" class="mt-4 text-sm sm:text-base lg:text-lg text-blue-100 leading-relaxed max-w-2xl">
-                    แพลตฟอร์มหางานของ KC Clean Trade มอบโอกาสงานที่ชัดเจน อ่านง่าย และพร้อมสมัครได้ทันทีบนมือถือและเดสก์ท็อป
-                </p>
- 
-                <div class="mt-8 grid gap-3 sm:grid-cols-[1fr_auto]">
-                    <form onsubmit="event.preventDefault(); filterJobs();" class="relative min-w-0">
-                        <label class="sr-only" for="searchKeyword">ค้นหาตำแหน่งงาน</label>
-                        <input id="searchKeyword" type="text" placeholder="ค้นหาตำแหน่ง, บริษัท, พื้นที่..." class="w-full h-14 rounded-full border border-white/25 bg-white/95 px-5 pr-36 text-slate-900 text-sm shadow-sm focus:border-kcblue focus:outline-none" />
-                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-kcblue text-white px-5 py-3 text-sm font-bold shadow-lg hover:bg-kcyellow hover:text-kcblue transition-colors">ค้นหา</button>
-                    </form>
-                    <button type="button" onclick="toggleFilterPanel()" class="sm:hidden rounded-full bg-white text-kcblue font-bold px-5 py-3 shadow-sm border border-white/80 hover:bg-slate-100 transition-colors">ตัวกรอง</button>
-                </div>
- 
-                <div class="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div class="rounded-3xl bg-white/10 border border-white/15 p-5">
-                        <p class="text-4xl font-extrabold">16+</p>
-                        <p class="mt-2 text-sm text-blue-100">ตำแหน่งงานเปิดรับ</p>
-                    </div>
-                    <div class="rounded-3xl bg-white/10 border border-white/15 p-5">
-                        <p class="text-4xl font-extrabold">20+</p>
-                        <p class="mt-2 text-sm text-blue-100">พื้นที่ให้บริการ</p>
-                    </div>
-                    <div class="rounded-3xl bg-white/10 border border-white/15 p-5">
-                        <p class="text-4xl font-extrabold">500+</p>
-                        <p class="mt-2 text-sm text-blue-100">พนักงานในเครือ</p>
-                    </div>
-                    <div class="rounded-3xl bg-white/10 border border-white/15 p-5">
-                        <p class="text-4xl font-extrabold">10+</p>
-                        <p class="mt-2 text-sm text-blue-100">ปีประสบการณ์</p>
-                    </div>
-                </div>
+    <!-- Sticky Search Area -->
+    <section class="sticky top-20 lg:top-24 z-40 bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-4 lg:py-5">
+            <!-- Search Mode Toggle -->
+            <div class="flex gap-2 mb-4">
+                <button id="quickModeBtn" onclick="switchSearchMode('quick')" class="px-4 py-2 rounded-full text-sm font-bold border-2 border-kcblue bg-kcblue text-white hover:bg-kcyellow hover:text-kcblue hover:border-kcyellow transition-colors">
+                    ค้นหาทั่วไป
+                </button>
+                <button id="detailedModeBtn" onclick="switchSearchMode('detailed')" class="px-4 py-2 rounded-full text-sm font-bold border-2 border-slate-200 bg-white text-slate-700 hover:border-kcblue hover:text-kcblue transition-colors">
+                    ค้นหาแบบละเอียด
+                </button>
             </div>
-        </div>
-    </header>
- 
-    <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-6 lg:py-8 space-y-8">
-        <section class="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
-            <div class="space-y-6">
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
-                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold mb-3">งานด่วน</p>
-                        <p class="text-lg font-semibold text-slate-900">ตำแหน่งที่ต้องการรับสมัครทันที</p>
-                        <p class="text-sm text-slate-500 mt-3">ค้นหางานที่เปิดรับด่วน พร้อมสมัครได้เลย</p>
+
+            <!-- Quick Mode Form -->
+            <div id="quickSearchForm" class="block rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6">
+                <form onsubmit="event.preventDefault(); filterJobs(true);" class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+                    <div class="grid gap-2">
+                        <label class="text-xs font-bold text-slate-500" for="searchKeyword">ตำแหน่งงาน</label>
+                        <input id="searchKeyword" type="text" placeholder="พิมพ์ชื่อตำแหน่งงาน" oninput="filterJobsNoScroll();" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
                     </div>
-                    <div class="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
-                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold mb-3">เงินเดือนสูง</p>
-                        <p class="text-lg font-semibold text-slate-900">ตำแหน่งที่ให้ค่าตอบแทนแข่งขัน</p>
-                        <p class="text-sm text-slate-500 mt-3">ค้นหาตำแหน่งพร้อมเงินเดือนที่น่าสนใจ</p>
+                    <div class="grid gap-2">
+                        <label class="text-xs font-bold text-slate-500" for="locationKeyword">พื้นที่ทำงาน</label>
+                        <input id="locationKeyword" type="text" placeholder="ชลบุรี / ระยอง / ฉะเชิงเทรา" oninput="filterJobsNoScroll();" class="w-full h-14 rounded-[1.25rem] border border-slate-200 bg-white px-5 text-sm text-slate-900 focus:border-kcblue focus:outline-none" />
                     </div>
-                    <div class="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
-                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold mb-3">ใกล้บ้าน</p>
-                        <p class="text-lg font-semibold text-slate-900">สถานที่ทำงานสะดวกสบาย</p>
-                        <p class="text-sm text-slate-500 mt-3">ค้นหางานตามพื้นที่ใกล้บ้านคุณ</p>
-                    </div>
-                    <div class="rounded-3xl bg-white border border-slate-200 p-5 shadow-sm">
-                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold mb-3">ล่าสุด</p>
-                        <p class="text-lg font-semibold text-slate-900">ประกาศใหม่ล่าสุด</p>
-                        <p class="text-sm text-slate-500 mt-3">ดูตำแหน่งงานที่อัปเดตเข้ามาใหม่</p>
-                    </div>
-                </div>
- 
-                <section id="about-section" class="rounded-3xl bg-white border border-slate-200 p-6 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold mb-3">เกี่ยวกับเรา</p>
-                    <h2 class="text-2xl font-extrabold text-slate-900">แพลตฟอร์มหางานสำหรับพนักงาน KC Clean Trade</h2>
-                    <p class="mt-4 text-slate-600 leading-relaxed">PRIFF-HMS Recruitment Platform ออกแบบเพื่อผู้หางานในเครือ KC Clean Trade โดยเฉพาะ มีทั้งการค้นหางานแบบรวดเร็ว และการแสดงผลตำแหน่งงานที่ชัดเจนในรูปแบบสมัยใหม่</p>
-                    <div class="mt-6 grid gap-3 sm:grid-cols-2">
-                        <div class="rounded-3xl bg-slate-50 p-4">
-                            <p class="text-xs uppercase tracking-[0.3em] text-slate-500 font-semibold">สะดวกบนมือถือ</p>
-                            <p class="mt-2 text-sm text-slate-700">ใช้งานง่ายทุกอุปกรณ์</p>
-                        </div>
-                        <div class="rounded-3xl bg-slate-50 p-4">
-                            <p class="text-xs uppercase tracking-[0.3em] text-slate-500 font-semibold">อ่านง่าย</p>
-                            <p class="mt-2 text-sm text-slate-700">ข้อมูลสำคัญเห็นชัดใน 3 วินาที</p>
-                        </div>
-                    </div>
-                </section>
+                </form>
             </div>
- 
-           <aside id="searchPanel" class="hidden sm:block bg-white border border-slate-200 rounded-3xl p-6 shadow-sm sm:sticky sm:top-24">
-                <div class="flex items-center justify-between gap-3 mb-5">
-                    <div>
-                        <p class="text-sm font-bold text-slate-900">ตัวกรองงาน</p>
-                        <p class="text-xs text-slate-500">ปรับผลลัพธ์ให้ตรงความต้องการ</p>
-                    </div>
-                    <button onclick="toggleFilterPanel()" class="sm:hidden rounded-full bg-slate-100 text-slate-700 px-3 py-2 text-xs font-semibold">ปิด</button>
-                </div>
+
+            <!-- Detailed Mode Form -->
+            <div id="detailedSearchForm" class="hidden rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 mb-2">จังหวัด</label>
@@ -165,32 +93,88 @@
                         <label id="lblDd3" class="block text-xs font-bold text-slate-500 mb-2">...</label>
                         <select id="dd3" class="w-full h-12 rounded-2xl border border-slate-300 px-4 text-sm focus:border-kcblue outline-none bg-white"></select>
                     </div>
-                    <div class="grid gap-3">
-                        <button onclick="filterJobs()" class="w-full rounded-2xl bg-kcblue text-white py-3 text-sm font-bold hover:bg-kcyellow hover:text-kcblue transition-colors">ค้นหางาน</button>
-                        <button onclick="resetFilters()" class="w-full rounded-2xl bg-slate-100 text-slate-700 py-3 text-sm font-bold hover:bg-slate-200 transition-colors">ล้างตัวกรอง</button>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button onclick="filterJobs(true)" class="w-full rounded-2xl bg-kcblue text-white py-3 text-sm font-bold hover:bg-kcyellow hover:text-kcblue transition-colors">ค้นหางาน</button>
+                        <button onclick="resetFilters()" class="w-full rounded-2xl bg-white border border-slate-200 text-slate-700 py-3 text-sm font-bold hover:bg-slate-100 transition-colors">ล้างตัวกรอง</button>
                     </div>
                 </div>
-                <div id="welfare-section" class="mt-8 rounded-3xl bg-slate-50 border border-slate-200 p-5">
-                    <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold mb-3">สวัสดิการพื้นฐาน</p>
+            </div>
+        </div>
+    </section>
+ 
+    <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-6 lg:py-8">
+        <section class="space-y-6 lg:space-y-8">
+            <section class="rounded-[2rem] bg-white border border-slate-200 p-5 lg:p-6 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">แนะนำสำหรับคุณ</p>
+                        <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">งานแนะนำวันนี้</h2>
+                        <p class="mt-2 text-sm text-slate-500">คัดมาให้แล้ว ดูชื่อตำแหน่ง พื้นที่ และรายได้แบบสั้นๆ</p>
+                    </div>
+                    <span id="featuredJobsSummary" class="inline-flex items-center rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">กำลังโหลด...</span>
+                </div>
+                <div id="featuredJobsGrid" class="mt-5 grid gap-3">
+                    <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 text-sm text-slate-400">กำลังโหลดตำแหน่งแนะนำ...</div>
+                </div>
+            </section>
+
+            <section id="jobs-section" class="rounded-[2rem] bg-white border border-slate-200 p-5 lg:p-6 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">ตำแหน่งงาน</p>
+                        <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-kcblue leading-tight">งานเปิดรับตอนนี้</h2>
+                        <p class="text-sm text-slate-500 mt-2">ดูตำแหน่ง พื้นที่ และเงินเดือนก่อนสมัคร</p>
+                    </div>
+                </div>
+
+                <div id="jobGrid" class="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5"></div>
+                <div id="paginationControls" class="mt-8 flex flex-wrap justify-center items-center gap-2"></div>
+            </section>
+
+            <section id="welfare-section" class="rounded-[2rem] bg-slate-50 border border-slate-200 p-5 lg:p-6 shadow-sm">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">สวัสดิการ</p>
+                        <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">สวัสดิการที่ใช้งานได้จริง</h2>
+                        <p class="mt-2 text-sm text-slate-500">ข้อมูลเสริมหลังจากเห็นงานที่สนใจแล้ว</p>
+                    </div>
+                </div>
+                <div class="mt-5">
                     <ul id="welfareList" class="space-y-3 text-sm text-slate-600">
                         <li id="welfareLoading" class="flex items-start gap-2">✔️ <span class="text-slate-400">กำลังดึงข้อมูล...</span></li>
                     </ul>
-                    <a href="apply.html" class="mt-5 inline-flex w-full justify-center rounded-2xl bg-kcyellow text-kcblue font-bold py-3 text-sm hover:bg-kcblue hover:text-white transition-colors">สมัครงาน / ฝากประวัติ</a>
                 </div>
-            </aside>
-        </section>
- 
-        <main id="jobs-section" class="pb-24 lg:pb-12">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-5 gap-4">
+                <a href="apply.html" class="mt-5 inline-flex w-full justify-center rounded-2xl bg-kcyellow text-kcblue font-bold py-3 text-sm hover:bg-kcblue hover:text-white transition-colors">สมัครงานเลย</a>
+            </section>
+
+            <section class="rounded-[2rem] bg-gradient-to-br from-[#fffdf5] via-white to-blue-50 border border-slate-200 p-5 lg:p-6 shadow-sm">
                 <div>
-                    <h2 class="text-2xl lg:text-3xl font-extrabold text-kcblue leading-tight">ตำแหน่งงานที่เปิดรับสมัคร</h2>
-                    <p class="text-sm text-slate-500 mt-1">อัปเดตอัตโนมัติจากระบบรับสมัครงาน</p>
+                    <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">ทำไมต้อง KC</p>
+                    <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">จุดเด่นของการร่วมงาน</h2>
                 </div>
-            </div>
- 
-            <div id="jobGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-5"></div>
-            <div id="paginationControls" class="mt-10 flex flex-wrap justify-center items-center gap-2"></div>
-        </main>
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
+                        <p class="text-sm font-extrabold text-slate-900">สมัครง่าย</p>
+                        <p class="mt-2 text-sm text-slate-500">กดสมัครจากงานที่สนใจได้เลย</p>
+                    </div>
+                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
+                        <p class="text-sm font-extrabold text-slate-900">มีรถรับส่งบางพื้นที่</p>
+                        <p class="mt-2 text-sm text-slate-500">ช่วยลดภาระการเดินทางไปทำงาน</p>
+                    </div>
+                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
+                        <p class="text-sm font-extrabold text-slate-900">เหมาะกับงานหน้างาน</p>
+                        <p class="mt-2 text-sm text-slate-500">รองรับงานปฏิบัติการ คลังสินค้า ทำความสะอาด และหัวหน้างาน</p>
+                    </div>
+                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
+                        <p class="text-sm font-extrabold text-slate-900">งานใกล้บ้าน</p>
+                        <p class="mt-2 text-sm text-slate-500">คัดงานจากพื้นที่ที่เดินทางสะดวก</p>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <a href="apply.html" class="inline-flex items-center justify-center rounded-2xl bg-kcblue px-6 py-3 text-sm font-bold text-white hover:bg-kcyellow hover:text-kcblue transition-colors">สมัครงานเลย</a>
+                </div>
+            </section>
+        </section>
     </div>
 
     <div id="jobModal" class="hidden fixed inset-0 z-50 bg-black/80 py-6 px-4 overflow-y-auto fade-in">
