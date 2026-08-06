@@ -45,7 +45,7 @@ function renderWelfareCards(welfares) {
     if (!container) return;
 
     if (!welfares || welfares.length === 0) {
-        container.innerHTML = '<div class="rounded-2xl bg-white/10 border border-white/10 p-4 text-sm text-blue-100/70 sm:col-span-2 lg:col-span-3">ยังไม่มีข้อมูลสวัสดิการ</div>';
+        container.innerHTML = '<div class="rounded-2xl bg-white/10 border border-white/10 p-4 text-sm text-blue-100/70 sm:col-span-2 lg:col-span-4">ยังไม่มีข้อมูลสวัสดิการ</div>';
         return;
     }
 
