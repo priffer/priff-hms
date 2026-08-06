@@ -49,10 +49,12 @@ async function run() {
     if (existingEmp.rows.length > 0) {
       employeeId = existingEmp.rows[0].id;
       console.log('Using existing employees row:', employeeId);
+      // ตั้ง available_start_date ให้ด้วยถ้ายังไม่มี (จำเป็นสำหรับ demo ฟีเจอร์ลาพักร้อนตามอายุงาน/ระเบียบที่ 7)
+      await client.query(`UPDATE public.employees SET available_start_date = COALESCE(available_start_date, '2020-03-10') WHERE id = $1;`, [employeeId]);
     } else {
       const empRes = await client.query(`
-        INSERT INTO public.employees (full_name, emp_id, email, phone_number, company_id, status)
-        VALUES ('พนักงานทดสอบสาธิต (Demo)', $1, $2, $3, $4, 'hired')
+        INSERT INTO public.employees (full_name, emp_id, email, phone_number, company_id, status, available_start_date)
+        VALUES ('พนักงานทดสอบสาธิต (Demo)', $1, $2, $3, $4, 'hired', '2020-03-10')
         RETURNING id;
       `, [EMP_ID, EMAIL, PHONE, COMPANY_ID]);
       employeeId = empRes.rows[0].id;

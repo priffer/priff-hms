@@ -463,9 +463,8 @@ function countLeaveDays(startStr, endStr) {
 async function openLeaveModal() {
     const modal = document.getElementById('leaveModal');
     if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
-    await loadLeaveTypes();
-    await loadLeaveHistory();
     await loadLeaveBalanceSummary();
+    await loadLeaveHistory();
 }
 function closeLeaveModal() {
     const modal = document.getElementById('leaveModal');
@@ -478,8 +477,43 @@ const leaveTypeColorClass = {
     annual: 'border-emerald-200 bg-emerald-50',
     maternity: 'border-pink-200 bg-pink-50',
     ordination: 'border-violet-200 bg-violet-50',
-    unpaid: 'border-slate-200 bg-slate-50'
+    unpaid: 'border-slate-200 bg-slate-50',
+    funeral: 'border-slate-300 bg-slate-50',
+    wedding: 'border-fuchsia-200 bg-fuchsia-50',
+    paternity: 'border-sky-200 bg-sky-50'
 };
+
+// เก็บผลลัพธ์ล่าสุดไว้ในหน่วยความจำ เพื่อให้ dropdown เลือกประเภทลาและตัวแสดงยอดคงเหลือ
+// ใช้ข้อมูลชุดเดียวกัน (ไม่ fetch ซ้ำ) และรู้ requiresAttachment/isEligible ของแต่ละประเภท
+let leaveBalanceCache = [];
+
+// การ์ดแสดงยอดสำหรับประเภท "โควตารายปี" (ลาพักร้อน/ป่วย/กิจ/ไม่รับค่าจ้าง)
+function renderQuotaLeaveCard(item) {
+    return `
+        <div class="rounded-xl border ${leaveTypeColorClass[item.code] || 'border-[#e6edf7] bg-[#f7faff]'} p-3">
+            <p class="text-xs font-bold text-slate-700">${item.nameTh}</p>
+            <p class="text-lg font-extrabold text-kcdark mt-0.5">${item.remaining === null ? '∞' : item.remaining}<span class="text-xs font-normal text-slate-500"> / ${item.entitled === null ? 'ไม่จำกัด' : item.entitled} วัน</span></p>
+            ${item.used > 0 ? `<p class="text-[11px] text-slate-400 mt-0.5">ใช้ไปแล้ว ${item.used} วัน</p>` : ''}
+            ${item.workYear ? `<p class="text-[11px] text-slate-400 mt-0.5">ปีที่ทำงานปีที่ ${item.workYear}</p>` : ''}
+            ${item.cycleNote ? `<p class="text-[11px] text-red-500 mt-0.5">${item.cycleNote}</p>` : ''}
+        </div>`;
+}
+
+// การ์ดแสดงสถานะสำหรับประเภท "สิทธิ์ตามเหตุการณ์" (งานศพ/แต่งงาน/คลอดบุตร/บวช) ไม่ใช่โควตารายปี
+function renderEventBasedLeaveCard(item) {
+    const lifetimeText = item.maxOccurrencesLifetime
+        ? `${item.usedOccurrences} / ${item.maxOccurrencesLifetime} ครั้ง (ตลอดการทำงาน)`
+        : `ใช้ไปแล้ว ${item.usedOccurrences} ครั้ง (ไม่จำกัดจำนวนครั้ง)`;
+    const exhausted = item.maxOccurrencesLifetime && item.usedOccurrences >= item.maxOccurrencesLifetime;
+    return `
+        <div class="rounded-xl border ${leaveTypeColorClass[item.code] || 'border-[#e6edf7] bg-[#f7faff]'} p-3 ${(!item.isEligible || exhausted) ? 'opacity-50' : ''}">
+            <p class="text-xs font-bold text-slate-700">${item.nameTh}</p>
+            <p class="text-sm font-bold text-kcdark mt-0.5">สูงสุด ${item.maxDaysPerOccurrence || '-'} วัน/ครั้ง</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">${lifetimeText}</p>
+            ${!item.isEligible ? `<p class="text-[11px] text-red-500 mt-0.5">⚠️ ${item.ineligibleReason}</p>` : ''}
+            ${exhausted ? `<p class="text-[11px] text-red-500 mt-0.5">⚠️ ใช้สิทธิ์ครบแล้ว</p>` : ''}
+        </div>`;
+}
 
 async function loadLeaveBalanceSummary() {
     const yearEl = document.getElementById('leaveBalanceYear');
@@ -493,40 +527,54 @@ async function loadLeaveBalanceSummary() {
     }
     try {
         const summary = await window.EmployeeSelfService.getMyLeaveBalanceSummary(emp.employee_id, emp.emp_id);
-        if (!summary || summary.length === 0) {
+        leaveBalanceCache = summary || [];
+        if (leaveBalanceCache.length === 0) {
             containerEl.innerHTML = '<p class="col-span-2 text-center text-slate-400 text-sm py-4">ยังไม่มีข้อมูลประเภทการลา</p>';
-            return;
+        } else {
+            containerEl.innerHTML = leaveBalanceCache.map(item =>
+                item.entitlementModel === 'event_based' ? renderEventBasedLeaveCard(item) : renderQuotaLeaveCard(item)
+            ).join('');
         }
-        containerEl.innerHTML = summary.map(item => `
-            <div class="rounded-xl border ${leaveTypeColorClass[item.code] || 'border-[#e6edf7] bg-[#f7faff]'} p-3">
-                <p class="text-xs font-bold text-slate-700">${item.nameTh}</p>
-                <p class="text-lg font-extrabold text-kcdark mt-0.5">${item.remaining === null ? '∞' : item.remaining}<span class="text-xs font-normal text-slate-500"> / ${item.entitled === null ? 'ไม่จำกัด' : item.entitled} วัน</span></p>
-                ${item.used > 0 ? `<p class="text-[11px] text-slate-400 mt-0.5">ใช้ไปแล้ว ${item.used} วัน</p>` : ''}
-            </div>
-        `).join('');
+        populateLeaveTypeSelect();
     } catch (err) {
         console.error('loadLeaveBalanceSummary error', err);
         containerEl.innerHTML = '<p class="col-span-2 text-center text-red-500 text-sm py-4">โหลดข้อมูลไม่สำเร็จ</p>';
     }
 }
 
-async function loadLeaveTypes() {
+// เติม dropdown ประเภทลาจาก cache เดียวกับยอดคงเหลือ (ไม่ fetch ซ้ำ) - ประเภทที่ไม่มีสิทธิ์
+// (อายุงานไม่ถึง/ใช้สิทธิ์ครบแล้ว) แสดงเป็น disabled พร้อมเหตุผล กันพนักงานยื่นคำขอที่รู้อยู่แล้วว่าไม่ผ่าน
+function populateLeaveTypeSelect() {
     const select = document.getElementById('leaveTypeSelect');
     if (!select) return;
-    try {
-        const types = await window.EmployeeSelfService.getLeaveTypes();
-        select.innerHTML = '<option value="">-- เลือกประเภทการลา --</option>';
-        (types || []).forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id;
-            opt.textContent = `${t.name_th}${t.is_paid ? '' : ' (ไม่รับค่าจ้าง)'}`;
-            select.appendChild(opt);
-        });
-    } catch (err) {
-        console.error('loadLeaveTypes error', err);
-        select.innerHTML = '<option value="">❌ โหลดประเภทการลาไม่สำเร็จ</option>';
-    }
+    select.innerHTML = '<option value="">-- เลือกประเภทการลา --</option>';
+    leaveBalanceCache.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.leaveTypeId;
+        opt.dataset.requiresAttachment = item.requiresAttachment ? '1' : '0';
+        let label = `${item.nameTh}${item.isPaid ? '' : ' (ไม่รับค่าจ้าง)'}`;
+        if (item.entitlementModel === 'event_based') {
+            const exhausted = item.maxOccurrencesLifetime && item.usedOccurrences >= item.maxOccurrencesLifetime;
+            if (!item.isEligible) { label += ` — ${item.ineligibleReason}`; opt.disabled = true; }
+            else if (exhausted) { label += ' — ใช้สิทธิ์ครบแล้ว'; opt.disabled = true; }
+        }
+        opt.textContent = label;
+        select.appendChild(opt);
+    });
+    toggleLeaveAttachmentField();
 }
+
+// แสดง/ซ่อนช่องอัปโหลดไฟล์แนบ ตามว่าประเภทลาที่เลือกต้องแนบเอกสารหรือไม่ (requires_attachment)
+function toggleLeaveAttachmentField() {
+    const select = document.getElementById('leaveTypeSelect');
+    const wrapper = document.getElementById('leaveAttachmentWrapper');
+    if (!select || !wrapper) return;
+    const opt = select.options[select.selectedIndex];
+    const requires = opt && opt.dataset.requiresAttachment === '1';
+    wrapper.classList.toggle('hidden', !requires);
+}
+
+
 
 async function loadLeaveHistory() {
     const listEl = document.getElementById('leaveHistoryList');
@@ -574,6 +622,11 @@ async function cancelMyLeaveRequest(id) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const leaveTypeSelectEl = document.getElementById('leaveTypeSelect');
+    if (leaveTypeSelectEl) {
+        leaveTypeSelectEl.addEventListener('change', toggleLeaveAttachmentField);
+    }
+
     const form = document.getElementById('leaveForm');
     if (form) {
         form.addEventListener('submit', async (e) => {
@@ -583,6 +636,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const startDate = document.getElementById('leaveStartDate').value;
             const endDate = document.getElementById('leaveEndDate').value;
             const reason = document.getElementById('leaveReason').value.trim();
+            const attachmentInput = document.getElementById('leaveAttachmentFile');
+            const attachmentFile = attachmentInput ? attachmentInput.files[0] : null;
             const btn = document.getElementById('leaveSubmitBtn');
 
             if (!emp || !emp.emp_id || !emp.employee_id) { showToast('⚠️ ไม่พบข้อมูลพนักงานของคุณ'); return; }
@@ -591,8 +646,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalDays = countLeaveDays(startDate, endDate);
             if (totalDays <= 0) { showToast('⚠️ ช่วงวันที่ลาไม่ถูกต้อง'); return; }
 
+            const selectedType = leaveBalanceCache.find(t => t.leaveTypeId === leaveTypeId);
+            if (selectedType && selectedType.requiresAttachment && !attachmentFile) {
+                showToast('⚠️ ประเภทการลานี้ต้องแนบเอกสารประกอบ กรุณาแนบไฟล์ก่อนส่งคำขอ');
+                return;
+            }
+
             btn.disabled = true; btn.classList.add('opacity-50');
             try {
+                let attachmentUrl = null;
+                if (attachmentFile) {
+                    const fileName = `${emp.emp_id}/${Date.now()}_${attachmentFile.name}`;
+                    attachmentUrl = await window.EmployeeSelfService.uploadLeaveAttachment(attachmentFile, fileName);
+                }
                 await window.EmployeeSelfService.createLeaveRequest({
                     empId: emp.emp_id,
                     employeeId: emp.employee_id,
@@ -601,10 +667,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     startDate,
                     endDate,
                     totalDays,
-                    reason
+                    reason,
+                    attachmentUrl
                 });
                 showToast('✅ ส่งคำขอลางานสำเร็จ รอการอนุมัติ');
                 form.reset();
+                await loadLeaveBalanceSummary();
                 await loadLeaveHistory();
             } catch (err) {
                 console.error('createLeaveRequest error', err);

@@ -218,6 +218,11 @@
             <label class="block text-xs font-bold text-slate-600 mb-1">เหตุผลการลา <span class="text-red-500">*</span></label>
             <textarea id="leaveReason" rows="2" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-[#f7faff] transition-all" placeholder="ระบุเหตุผลการลา"></textarea>
           </div>
+          <div id="leaveAttachmentWrapper" class="hidden">
+            <label class="block text-xs font-bold text-slate-600 mb-1">เอกสารประกอบการลา <span class="text-red-500">*</span></label>
+            <input type="file" id="leaveAttachmentFile" accept="image/*,.pdf" class="w-full rounded-xl border border-[#e6edf7] p-2 text-xs bg-white">
+            <p class="text-[11px] text-slate-400 mt-1">เช่น ใบมรณบัตร / การ์ดเชิญแต่งงาน / สูติบัตร ตามประเภทการลาที่เลือก</p>
+          </div>
           <button type="submit" id="leaveSubmitBtn" class="w-full rounded-2xl bg-kcblue text-white font-bold py-3 shadow-sm hover:bg-kcdark transition-colors">ส่งคำขอลางาน</button>
         </form>
         <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">ประวัติการลาของคุณ</h4>
