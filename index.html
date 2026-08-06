@@ -122,9 +122,9 @@
         </div>
     </section>
  
-    <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-6 lg:py-8">
-        <section class="space-y-6 lg:space-y-8">
-            <section class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
+    <div class="max-w-350 w-full mx-auto px-4 lg:px-8 py-6 lg:py-10">
+        <section class="space-y-7 lg:space-y-10">
+            <section class="rounded-[2rem] bg-white border border-[#e6edf7] p-6 lg:p-8 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">แนะนำสำหรับคุณ</p>
@@ -133,12 +133,12 @@
                     </div>
                     <span id="featuredJobsSummary" class="inline-flex items-center rounded-full bg-[#eef5ff] px-4 py-2 text-sm font-bold text-kcdark">กำลังโหลด...</span>
                 </div>
-                <div id="featuredJobsGrid" class="mt-5 grid gap-3">
+                <div id="featuredJobsGrid" class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
                     <div class="rounded-[1.75rem] border border-[#e6edf7] bg-white p-5 text-sm text-slate-400">กำลังโหลดตำแหน่งแนะนำ...</div>
                 </div>
             </section>
 
-            <section id="jobs-section" class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
+            <section id="jobs-section" class="rounded-[2rem] bg-white border border-[#e6edf7] p-6 lg:p-8 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                     <div>
                         <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">ตำแหน่งงาน</p>
@@ -147,51 +147,61 @@
                     </div>
                 </div>
 
-                <div id="jobGrid" class="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5"></div>
+                <div id="jobGrid" class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5"></div>
                 <div id="paginationControls" class="mt-8 flex flex-wrap justify-center items-center gap-2"></div>
             </section>
 
-            <section id="welfare-section" class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
-                <div class="flex items-start justify-between gap-4">
+            <section id="welfare-section" class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-kcdark via-[#123268] to-kcblue p-6 lg:p-9 shadow-[0_24px_50px_rgba(15,43,115,0.18)]">
+                <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-kcyellow/10 blur-3xl"></div>
+                <div class="absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-white/5 blur-3xl"></div>
+
+                <div class="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
                     <div>
-                        <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">สวัสดิการ</p>
-                        <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">สวัสดิการที่ใช้งานได้จริง</h2>
-                        <p class="mt-2 text-sm text-slate-500">ข้อมูลเสริมหลังจากเห็นงานที่สนใจแล้ว</p>
+                        <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-kcyellow">✨ สวัสดิการพนักงาน</span>
+                        <h2 class="mt-3 text-2xl lg:text-4xl font-extrabold text-white leading-tight">ให้มากกว่าที่กฎหมายกำหนด<br class="hidden sm:block"> เพราะคนทำงานดี สมควรได้รับการดูแลที่ดี</h2>
+                        <p class="mt-3 text-sm lg:text-base text-blue-100/80 max-w-xl">นี่คือสิ่งที่คุณจะได้รับจริงตั้งแต่วันแรกที่เริ่มงานกับเรา ไม่ใช่แค่คำโฆษณา</p>
                     </div>
+                    <a href="apply.html" class="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-kcyellow text-kcdark font-extrabold px-7 py-4 text-sm lg:text-base shadow-[0_12px_24px_rgba(255,199,44,0.35)] hover:bg-white transition-colors">
+                        อยากได้สวัสดิการนี้ สมัครเลย <span aria-hidden="true">→</span>
+                    </a>
                 </div>
-                <div class="mt-5">
-                    <ul id="welfareList" class="space-y-3 text-sm text-slate-600">
-                        <li id="welfareLoading" class="flex items-start gap-2">✔️ <span class="text-slate-400">กำลังดึงข้อมูล...</span></li>
-                    </ul>
+
+                <div id="welfareList" class="relative mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+                    <div id="welfareLoading" class="rounded-2xl bg-white/10 border border-white/10 p-4 text-sm text-blue-100/70 sm:col-span-2 lg:col-span-3">กำลังดึงข้อมูลสวัสดิการ...</div>
                 </div>
-                <a href="apply.html" class="mt-5 inline-flex w-full justify-center rounded-2xl bg-kcyellow text-kcdark font-bold py-3 text-sm hover:bg-kcblue hover:text-white transition-colors">สมัครงานเลย</a>
             </section>
 
-            <section class="rounded-[2rem] bg-white border border-[#e6edf7] p-5 lg:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
-                <div>
+            <section class="rounded-[2rem] bg-white border border-[#e6edf7] p-6 lg:p-9 shadow-[0_16px_30px_rgba(15,43,115,0.04)]">
+                <div class="max-w-2xl">
                     <p class="text-xs uppercase tracking-[0.3em] text-kcblue font-bold">ทำไมต้อง KC</p>
-                    <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">จุดเด่นของการร่วมงาน</h2>
+                    <h2 class="mt-2 text-2xl lg:text-3xl font-extrabold text-slate-900">ทำงานที่นี่แล้วชีวิตคุณจะง่ายขึ้นยังไง</h2>
+                    <p class="mt-2 text-sm text-slate-500">ไม่ใช่แค่ตำแหน่งงาน แต่คือทีมที่ดูแลกันจริง</p>
                 </div>
-                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
-                        <p class="text-sm font-extrabold text-slate-900">สมัครง่าย</p>
-                        <p class="mt-2 text-sm text-slate-500">กดสมัครจากงานที่สนใจได้เลย</p>
+                <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="group rounded-[1.75rem] bg-[#f7faff] p-5 border border-[#e6edf7] hover:border-kcblue hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(15,43,115,0.08)] transition-all">
+                        <div class="w-12 h-12 rounded-2xl bg-kcblue/10 text-2xl flex items-center justify-center">⚡</div>
+                        <p class="mt-4 text-base font-extrabold text-slate-900">สมัครไว ไม่ต้องรอนาน</p>
+                        <p class="mt-1.5 text-sm text-slate-500">สแกน ดูตำแหน่ง กดสมัครได้ทันที ไม่ต้องปริ้นใบสมัคร ไม่ต้องรอเดินทางมายื่นเอกสาร</p>
                     </div>
-                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
-                        <p class="text-sm font-extrabold text-slate-900">มีรถรับส่งบางพื้นที่</p>
-                        <p class="mt-2 text-sm text-slate-500">ช่วยลดภาระการเดินทางไปทำงาน</p>
+                    <div class="group rounded-[1.75rem] bg-[#fff9ec] p-5 border border-[#f5e6bf] hover:border-kcyellow hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(255,199,44,0.15)] transition-all">
+                        <div class="w-12 h-12 rounded-2xl bg-kcyellow/20 text-2xl flex items-center justify-center">🚐</div>
+                        <p class="mt-4 text-base font-extrabold text-slate-900">มีรถรับส่งบางพื้นที่</p>
+                        <p class="mt-1.5 text-sm text-slate-500">ลดภาระค่าเดินทาง ไม่ต้องกังวลเรื่องรถตกหรือรถติดตอนเช้า</p>
                     </div>
-                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
-                        <p class="text-sm font-extrabold text-slate-900">เหมาะกับงานหน้างาน</p>
-                        <p class="mt-2 text-sm text-slate-500">รองรับงานปฏิบัติการ คลังสินค้า ทำความสะอาด และหัวหน้างาน</p>
+                    <div class="group rounded-[1.75rem] bg-[#f0fbf5] p-5 border border-[#cdeedd] hover:border-emerald-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(16,185,129,0.15)] transition-all">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-2xl flex items-center justify-center">🛠️</div>
+                        <p class="mt-4 text-base font-extrabold text-slate-900">รับทุกระดับ ไม่ต้องมีประสบการณ์</p>
+                        <p class="mt-1.5 text-sm text-slate-500">งานปฏิบัติการ คลังสินค้า ทำความสะอาด จนถึงหัวหน้างาน มีทีมสอนงานให้</p>
                     </div>
-                    <div class="rounded-[1.5rem] bg-white p-4 border border-slate-200">
-                        <p class="text-sm font-extrabold text-slate-900">งานใกล้บ้าน</p>
-                        <p class="mt-2 text-sm text-slate-500">คัดงานจากพื้นที่ที่เดินทางสะดวก</p>
+                    <div class="group rounded-[1.75rem] bg-[#f5f3ff] p-5 border border-[#e3ddfa] hover:border-violet-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(139,92,246,0.15)] transition-all">
+                        <div class="w-12 h-12 rounded-2xl bg-violet-500/10 text-2xl flex items-center justify-center">🏡</div>
+                        <p class="mt-4 text-base font-extrabold text-slate-900">งานใกล้บ้าน เดินทางสะดวก</p>
+                        <p class="mt-1.5 text-sm text-slate-500">คัดเฉพาะตำแหน่งในพื้นที่ที่คุณเลือก ไม่ต้องเสียเวลาเดินทางไกล</p>
                     </div>
                 </div>
-                <div class="mt-6">
-                    <a href="apply.html" class="inline-flex items-center justify-center rounded-2xl bg-kcblue px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-kcdark transition-colors">สมัครงานเลย</a>
+                <div class="mt-7 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-[#f7faff] border border-[#e6edf7] px-5 py-4">
+                    <p class="text-sm font-bold text-slate-700 text-center sm:text-left">พร้อมเริ่มงานแล้วใช่ไหม? เลือกตำแหน่งที่ใช่แล้วสมัครได้เลยวันนี้</p>
+                    <a href="apply.html" class="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-kcblue px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-kcdark transition-colors">สมัครงานเลย <span aria-hidden="true">→</span></a>
                 </div>
             </section>
         </section>

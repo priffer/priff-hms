@@ -197,19 +197,19 @@ function renderFeaturedJobs(jobs) {
     }
 
     container.innerHTML = featuredJobs.map(job => `
-        <button type="button" onclick="openJobModal(${job.id})" class="group w-full rounded-[1.5rem] border border-[#e6edf7] bg-white p-4 text-left transition-colors hover:border-kcblue hover:shadow-[0_12px_30px_rgba(15,43,115,0.08)]">
+        <button type="button" onclick="openJobModal(${job.id})" class="group w-full rounded-[1.75rem] border border-[#e6edf7] bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:border-kcblue hover:shadow-[0_14px_32px_rgba(15,43,115,0.08)]">
             <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0 flex-1 space-y-2">
+                <div class="min-w-0 flex-1 space-y-2.5">
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 border border-[#e6edf7]">${escapeHtml(getJobAudienceLabel(job))}</span>
                         <span class="inline-flex items-center rounded-full bg-kclight px-3 py-1 text-xs font-bold text-kcdark">${escapeHtml(getJobLocationSummary(job.zone_name).primary)}</span>
                     </div>
-                    <p class="text-base sm:text-lg font-extrabold text-kcdark leading-snug line-clamp-2">${escapeHtml(job.title || 'ไม่ระบุชื่อตำแหน่ง')}</p>
+                    <p class="text-base sm:text-lg font-extrabold text-kcdark leading-snug line-clamp-2 group-hover:text-kcblue transition-colors">${escapeHtml(job.title || 'ไม่ระบุชื่อตำแหน่ง')}</p>
                     <p class="text-sm text-slate-500 line-clamp-1">${escapeHtml(job.zone_name || 'ไม่ระบุพื้นที่')}</p>
                 </div>
                 <div class="shrink-0 text-right">
-                    <p class="text-sm font-bold text-kcblue">${escapeHtml(job.salary_text || 'ตามตกลง')}</p>
-                    <p class="mt-2 text-xs text-slate-400">ดูรายละเอียด</p>
+                    <p class="text-sm font-extrabold text-kcblue">${escapeHtml(job.salary_text || 'ตามตกลง')}</p>
+                    <p class="mt-2 text-xs text-slate-400">ดูรายละเอียด →</p>
                 </div>
             </div>
         </button>
