@@ -207,38 +207,43 @@
         </section>
     </div>
 
-    <div id="jobModal" class="hidden fixed inset-0 z-50 bg-black/80 py-6 px-4 overflow-y-auto fade-in">
-        <div class="bg-white w-full max-w-5xl rounded-[2rem] shadow-2xl relative mx-auto overflow-hidden border border-slate-200 max-h-[calc(100vh-4rem)]">
-            <button onclick="closeModal()" class="absolute -top-4 -right-4 bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl hover:bg-red-700 shadow-lg border-2 border-white z-10">✕</button>
+    <div id="jobModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm py-6 px-4 overflow-y-auto fade-in">
+        <div class="bg-white w-full max-w-3xl rounded-[2rem] shadow-2xl relative mx-auto overflow-hidden border border-[#e6edf7] max-h-[calc(100vh-3rem)] flex flex-col">
+            <!-- Close button lives outside the scrollable/clipped content so it's never covered -->
+            <button onclick="closeModal()" aria-label="ปิด" class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/95 text-slate-500 flex items-center justify-center font-bold text-lg shadow-md border border-[#e6edf7] hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors">✕</button>
 
-            <div id="modalMediaContainer" class="w-full bg-gray-200 hidden border-b border-slate-200 relative h-64 sm:h-96 rounded-t-2xl overflow-hidden">
+            <div id="modalMediaContainer" class="w-full bg-[#f7faff] hidden border-b border-[#e6edf7] relative h-64 sm:h-80 shrink-0 overflow-hidden">
                 <img id="modalImage" src="" alt="Job Flyer" class="w-full h-full object-contain hidden">
                 <iframe id="modalPdf" src="" class="w-full h-full hidden" frameborder="0"></iframe>
             </div>
 
-            <div class="p-6 md:p-8">
-                <div class="flex flex-wrap items-center gap-2 mb-3">
-                    <span id="modalZone" class="inline-block bg-blue-100 text-kcblue font-bold px-2 py-1 text-xs border border-kcblue">โซน: ...</span>
+            <div class="p-6 md:p-8 overflow-y-auto">
+                <div class="flex flex-wrap items-center gap-2 mb-4 pr-12">
+                    <span id="modalZone" class="inline-flex items-center rounded-full bg-[#eef5ff] px-3 py-1.5 text-xs font-bold text-kcblue border border-kcblue/20">โซน: ...</span>
                 </div>
-                
-                <h2 id="modalTitle" class="text-2xl md:text-3xl font-bold text-gray-800 mb-1 leading-tight">ชื่อตำแหน่งงาน</h2>
-                <p id="modalCompany" class="text-lg font-bold text-kcblue mb-4">ชื่อโรงงาน / บริษัท</p>
-                <p id="modalSalary" class="text-xl font-bold text-green-600 mb-6 pb-4 border-b-2 border-gray-200">รายได้: ...</p>
-                
-                <div id="modalContent" class="text-gray-700 whitespace-pre-line mb-8 text-sm md:text-base leading-relaxed"></div>
-                
-                <div class="bg-gray-50 p-4 border-2 border-gray-200 mb-6">
-                    <p class="text-sm font-bold text-gray-600 mb-3 text-center">แชร์งานนี้ให้เพื่อน</p>
+
+                <h2 id="modalTitle" class="text-2xl md:text-3xl font-extrabold text-kcdark mb-1.5 leading-snug">ชื่อตำแหน่งงาน</h2>
+                <p id="modalCompany" class="text-base font-bold text-kcblue mb-5">ชื่อโรงงาน / บริษัท</p>
+
+                <div class="rounded-2xl bg-[#f7faff] border border-[#e6edf7] px-5 py-4 mb-6">
+                    <p class="text-xs uppercase tracking-[0.25em] text-slate-500">เงินเดือน / รายได้</p>
+                    <p id="modalSalary" class="mt-1.5 text-2xl font-extrabold text-kcdark">รายได้: ...</p>
+                </div>
+
+                <div id="modalContent" class="text-slate-600 whitespace-pre-line mb-7 text-sm md:text-base leading-relaxed"></div>
+
+                <div class="rounded-2xl bg-[#f7faff] border border-[#e6edf7] p-4 mb-6">
+                    <p class="text-sm font-bold text-slate-600 mb-3 text-center">แชร์งานนี้ให้เพื่อน</p>
                     <div class="flex flex-wrap justify-center gap-3">
-                        <button onclick="shareJob('line')" class="bg-[#00B900] text-white px-6 py-2 text-sm font-bold hover:bg-green-700 transition-colors">แชร์ลง LINE</button>
-                        <button onclick="shareJob('facebook')" class="bg-[#1877F2] text-white px-6 py-2 text-sm font-bold hover:bg-blue-700 transition-colors">แชร์ลง Facebook</button>
-                        <button onclick="shareJob('copy')" class="bg-gray-800 text-white px-6 py-2 text-sm font-bold hover:bg-black transition-colors">คัดลอกลิงก์</button>
+                        <button onclick="shareJob('line')" class="rounded-full bg-[#00B900] text-white px-5 py-2 text-sm font-bold hover:bg-green-700 transition-colors">แชร์ลง LINE</button>
+                        <button onclick="shareJob('facebook')" class="rounded-full bg-[#1877F2] text-white px-5 py-2 text-sm font-bold hover:bg-blue-700 transition-colors">แชร์ลง Facebook</button>
+                        <button onclick="shareJob('copy')" class="rounded-full bg-slate-800 text-white px-5 py-2 text-sm font-bold hover:bg-black transition-colors">คัดลอกลิงก์</button>
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <button onclick="applyForThisJob()" class="flex-1 bg-kcblue text-white font-bold py-4 text-lg hover:bg-kcyellow hover:text-kcblue border-2 border-kcblue transition-colors shadow-md">
-                        สมัครงานตำแหน่งนี้
+                    <button onclick="applyForThisJob()" class="flex-1 rounded-2xl bg-kcblue text-white font-bold py-4 text-base shadow-sm hover:bg-kcdark transition-colors">
+                        สมัครงานตำแหน่งนี้ →
                     </button>
                 </div>
             </div>
