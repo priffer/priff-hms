@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showAlert(message, type = 'error') {
         alertBox.textContent = message;
-        alertBox.className = `mb-6 p-4 border text-center font-bold text-sm block ${
-            type === 'error' ? 'bg-red-50 border-red-300 text-red-700' : 'bg-green-50 border-green-300 text-green-700'
+        alertBox.className = `mb-6 p-4 rounded-2xl border text-center font-bold text-sm block ${
+            type === 'error' ? 'bg-red-50 border-red-200 text-red-600' : 'bg-emerald-50 border-emerald-200 text-emerald-600'
         }`;
     }
 
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Login Error:', err);
             if (err.isPortalMismatch) {
                 alertBox.innerHTML = `❌ ${err.message} <a href="login.html" class="underline font-bold">ไปที่ Admin Portal</a>`;
-                alertBox.className = 'mb-6 p-4 border text-center font-bold text-sm block bg-red-50 border-red-300 text-red-700';
+                alertBox.className = 'mb-6 p-4 rounded-2xl border text-center font-bold text-sm block bg-red-50 border-red-200 text-red-600';
             } else {
                 showAlert(err.message);
             }

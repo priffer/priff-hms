@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="th" class="overflow-x-hidden">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - ประกาศบริษัท & ปฏิทินวันหยุด | PRIFF HMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config/supabase.js"></script>
+  <script src="js/auth/auth-guard.js"></script>
+  <style>body{visibility:hidden}</style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kcblue: '#165DFF',
+            kcdark: '#0F2B73',
+            kclight: '#EEF5FF',
+            kcyellow: '#FFC72C',
+            kcsoft: '#F7FAFF',
+            kcborder: '#E6EDF7'
+          },
+          fontFamily: { sans: ['Sarabun', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#f7faff] font-sans text-slate-800 antialiased min-h-screen flex flex-col overflow-x-hidden">
+
+  <div id="global-navbar"></div>
+
+  <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1 min-w-0">
+    <div class="bg-white rounded-[2rem] border border-[#e6edf7] shadow-[0_16px_30px_rgba(15,43,115,0.06)] p-4 md:p-6">
+
+      <div class="flex flex-wrap gap-2 mb-6 border-b border-[#e6edf7] pb-4">
+        <button onclick="switchAnnAdminTab('feed')" id="annAdminTab-feed" class="px-5 py-2 rounded-full font-bold text-sm bg-kcblue text-white cursor-pointer transition-colors">📢 ประกาศบริษัท</button>
+        <button onclick="switchAnnAdminTab('company')" id="annAdminTab-company" class="px-5 py-2 rounded-full font-bold text-sm bg-[#f7faff] border border-[#e6edf7] text-slate-600 cursor-pointer transition-colors hover:bg-[#eef5ff]">🗓️ วันหยุดบริษัท</button>
+        <button onclick="switchAnnAdminTab('client')" id="annAdminTab-client" class="px-5 py-2 rounded-full font-bold text-sm bg-[#f7faff] border border-[#e6edf7] text-slate-600 cursor-pointer transition-colors hover:bg-[#eef5ff]">🏢 วันหยุดไซต์ลูกค้า</button>
+      </div>
+
+      <!-- TAB: ประกาศบริษัท -->
+      <div id="annAdminView-feed">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div class="lg:col-span-2">
+            <h3 class="font-bold text-kcdark border-l-4 border-kcyellow pl-3 mb-4">สร้างประกาศใหม่</h3>
+            <form id="announcementForm" class="space-y-3 bg-[#f7faff] border border-[#e6edf7] rounded-2xl p-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">หัวข้อ <span class="text-red-500">*</span></label>
+                <input type="text" id="annTitle" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] bg-white">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">รายละเอียด <span class="text-red-500">*</span></label>
+                <textarea id="annBody" rows="4" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] bg-white"></textarea>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">หมวดหมู่</label>
+                  <select id="annCategory" class="w-full h-10 rounded-xl border border-[#e6edf7] px-2 text-sm outline-none focus:border-kcblue bg-white">
+                    <option value="general">📰 ทั่วไป</option>
+                    <option value="policy">📋 ระเบียบ</option>
+                    <option value="benefit">🎁 สวัสดิการ</option>
+                    <option value="safety">🦺 ความปลอดภัย</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">แสดงให้ role</label>
+                  <select id="annTargetRoles" multiple class="w-full h-10 rounded-xl border border-[#e6edf7] px-2 text-xs outline-none focus:border-kcblue bg-white">
+                    <option value="employee">พนักงาน</option>
+                    <option value="supervisor">หัวหน้างาน</option>
+                  </select>
+                </div>
+              </div>
+              <p class="text-[11px] text-slate-400 -mt-1">ไม่เลือก role ใดเลย = แสดงให้ทุกคนเห็น</p>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">ไฟล์แนบ (ถ้ามี)</label>
+                <input type="file" id="annAttachmentFile" class="w-full text-xs">
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="annPinned" class="rounded">
+                <label for="annPinned" class="text-xs font-bold text-slate-600">📌 ปักหมุดประกาศนี้ไว้บนสุด</label>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="annPublishNow" checked class="rounded">
+                <label for="annPublishNow" class="text-xs font-bold text-slate-600">เผยแพร่ทันที (ไม่ติ๊ก = บันทึกเป็นแบบร่าง)</label>
+              </div>
+              <button type="submit" id="annSubmitBtn" class="w-full rounded-2xl bg-kcblue text-white font-bold py-2.5 text-sm shadow-sm hover:bg-kcdark transition-colors">บันทึกประกาศ</button>
+            </form>
+          </div>
+          <div class="lg:col-span-3">
+            <h3 class="font-bold text-kcdark border-l-4 border-kcyellow pl-3 mb-4">ประกาศทั้งหมด</h3>
+            <div id="announcementAdminList" class="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
+              <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: วันหยุดบริษัท -->
+      <div id="annAdminView-company" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div class="lg:col-span-2">
+            <h3 class="font-bold text-kcdark border-l-4 border-kcyellow pl-3 mb-4">เพิ่มวันหยุดบริษัท</h3>
+            <form id="companyHolidayForm" class="space-y-3 bg-[#f7faff] border border-[#e6edf7] rounded-2xl p-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">วันที่ <span class="text-red-500">*</span></label>
+                <input type="date" id="chDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm outline-none focus:border-kcblue bg-white">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">ชื่อวันหยุด <span class="text-red-500">*</span></label>
+                <input type="text" id="chName" required placeholder="เช่น วันสงกรานต์" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm outline-none focus:border-kcblue bg-white">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">ประเภท</label>
+                <select id="chType" class="w-full h-10 rounded-xl border border-[#e6edf7] px-2 text-sm outline-none focus:border-kcblue bg-white">
+                  <option value="public">วันหยุดนักขัตฤกษ์</option>
+                  <option value="company_special">วันหยุดพิเศษของบริษัท</option>
+                  <option value="substitution">วันหยุดชดเชย</option>
+                </select>
+              </div>
+              <button type="submit" class="w-full rounded-2xl bg-kcblue text-white font-bold py-2.5 text-sm shadow-sm hover:bg-kcdark transition-colors">เพิ่มวันหยุด</button>
+            </form>
+          </div>
+          <div class="lg:col-span-3">
+            <h3 class="font-bold text-kcdark border-l-4 border-kcyellow pl-3 mb-4">รายการวันหยุดบริษัททั้งหมด</h3>
+            <div id="companyHolidayAdminList" class="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
+              <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: วันหยุดไซต์ลูกค้า -->
+      <div id="annAdminView-client" class="hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div class="lg:col-span-2">
+            <h3 class="font-bold text-kcdark border-l-4 border-kcyellow pl-3 mb-4">เพิ่มวันหยุดไซต์ลูกค้า</h3>
+            <form id="clientHolidayForm" class="space-y-3 bg-[#f7faff] border border-[#e6edf7] rounded-2xl p-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">ไซต์ลูกค้า <span class="text-red-500">*</span></label>
+                <select id="chClientSelect" required class="w-full h-10 rounded-xl border border-[#e6edf7] px-2 text-sm outline-none focus:border-kcblue bg-white">
+                  <option value="">-- กำลังโหลดไซต์งาน --</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">วันที่ <span class="text-red-500">*</span></label>
+                <input type="date" id="clhDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm outline-none focus:border-kcblue bg-white">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">ชื่อวันหยุด <span class="text-red-500">*</span></label>
+                <input type="text" id="clhName" required placeholder="เช่น วันหยุดประจำปีของลูกค้า" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm outline-none focus:border-kcblue bg-white">
+              </div>
+              <button type="submit" class="w-full rounded-2xl bg-kcblue text-white font-bold py-2.5 text-sm shadow-sm hover:bg-kcdark transition-colors">เพิ่มวันหยุด</button>
+            </form>
+          </div>
+          <div class="lg:col-span-3">
+            <h3 class="font-bold text-kcdark border-l-4 border-kcyellow pl-3 mb-4">รายการวันหยุดไซต์ลูกค้าทั้งหมด</h3>
+            <div id="clientHolidayAdminList" class="space-y-2 max-h-[32rem] overflow-y-auto pr-1">
+              <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="globalToast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-[60] bg-kcdark text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-sm border-l-4 border-kcyellow transition-all max-w-sm text-center">
+    <span id="toastMessage">ข้อความแจ้งเตือน</span>
+  </div>
+
+  <script src="js/components/navbar.js"></script>
+  <script src="js/services/announcementService.js"></script>
+  <script src="js/pages/admin-announcements.js"></script>
+  <script>
+  (async () => {
+    const ok = await window.PriffAuthGuard.requireAuth(['admin', 'payroll']);
+    if (!ok) return;
+    document.body.style.visibility = 'visible';
+    if (typeof initAdminAnnouncementsPage === 'function') initAdminAnnouncementsPage();
+  })();
+  </script>
+</body>
+</html>

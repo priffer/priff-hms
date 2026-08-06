@@ -65,6 +65,7 @@ async function viewEmployeeDetails(id) {
                                 </div>
                                 <div>${statusBadge}</div>
                             </div>
+                            ${adv.employee_remark ? `<p class="text-xs text-gray-600 mt-1">📝 หมายเหตุจากพนักงาน: ${adv.employee_remark}</p>` : ''}
                             ${actionHtml}
                         </div>
                     `;

@@ -10,40 +10,52 @@
   <script src="js/config/supabase.js"></script>
   <script>
     tailwind.config = {
-      theme: { extend: { colors: { kcblue: '#003366', kcyellow: '#FFCC00' }, fontFamily: { sans: ['Sarabun', 'sans-serif'] } } }
+      theme: {
+        extend: {
+          colors: {
+            kcblue: '#165DFF',
+            kcdark: '#0F2B73',
+            kclight: '#EEF5FF',
+            kcyellow: '#FFC72C',
+            kcsoft: '#F7FAFF',
+            kcborder: '#E6EDF7'
+          },
+          fontFamily: { sans: ['Sarabun', 'sans-serif'] }
+        }
+      }
     }
   </script>
-  <style>* { border-radius: 0 !important; }</style>
 </head>
-<body class="bg-gray-50 font-sans min-h-screen flex items-center justify-center p-4">
+<body class="bg-[#f7faff] font-sans text-slate-800 antialiased min-h-screen flex items-center justify-center p-4">
 
-  <div class="w-full max-w-sm bg-white border border-gray-200 shadow-sm p-8 border-t-8 border-t-kcblue">
+  <div class="w-full max-w-sm bg-white rounded-[2rem] border border-[#e6edf7] shadow-[0_16px_30px_rgba(15,43,115,0.06)] p-8">
     <div class="text-center mb-8">
-      <h2 class="text-2xl font-bold text-kcblue tracking-wide">EMPLOYEE LOGIN</h2>
-      <p class="text-gray-500 text-sm mt-1 font-bold">ระบบบริการพนักงาน (ESS)</p>
+      <div class="w-14 h-14 rounded-2xl bg-kcblue text-white font-black flex items-center justify-center text-xl shadow-md mx-auto mb-4">KC</div>
+      <h2 class="text-2xl font-extrabold text-kcdark tracking-wide">EMPLOYEE LOGIN</h2>
+      <p class="text-slate-500 text-sm mt-1 font-bold">ระบบบริการพนักงาน (ESS)</p>
     </div>
 
-    <div id="alertBox" class="hidden mb-6 p-4 border text-center font-bold text-sm" role="alert"></div>
+    <div id="alertBox" class="hidden mb-6 p-4 rounded-2xl text-center font-bold text-sm" role="alert"></div>
 
     <form id="employeeLoginForm" class="space-y-5">
       <div>
-        <label class="block text-sm font-bold text-gray-700 mb-2">รหัสพนักงาน หรือ อีเมล</label>
-        <input type="text" id="empId" placeholder="เช่น KC260501001 หรือ email@domain.com" required class="w-full border border-gray-300 p-3 focus:outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+        <label class="block text-sm font-bold text-slate-700 mb-2">รหัสพนักงาน หรือ อีเมล</label>
+        <input type="text" id="empId" placeholder="เช่น KC260501001 หรือ email@domain.com" required class="w-full rounded-xl border border-[#e6edf7] bg-white p-3 text-sm focus:outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
       </div>
       <div>
-        <label class="block text-sm font-bold text-gray-700 mb-2">เบอร์โทรศัพท์ (รหัสผ่านเริ่มต้น) หรือ รหัสผ่าน</label>
-        <input type="password" id="empPhone" placeholder="กรอกเบอร์โทรศัพท์ 10 หลัก หรือรหัสผ่าน" required class="w-full border border-gray-300 p-3 focus:outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+        <label class="block text-sm font-bold text-slate-700 mb-2">เบอร์โทรศัพท์ (รหัสผ่านเริ่มต้น) หรือ รหัสผ่าน</label>
+        <input type="password" id="empPhone" placeholder="กรอกเบอร์โทรศัพท์ 10 หลัก หรือรหัสผ่าน" required class="w-full rounded-xl border border-[#e6edf7] bg-white p-3 text-sm focus:outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
       </div>
-      
+
       <div class="pt-2">
-        <button type="submit" id="loginBtn" class="w-full bg-kcblue text-white font-bold py-3 hover:bg-kcyellow hover:text-kcblue transition-colors border border-kcblue">เข้าสู่ระบบพนักงาน</button>
+        <button type="submit" id="loginBtn" class="w-full rounded-2xl bg-kcblue text-white font-bold py-3 shadow-sm hover:bg-kcdark transition-colors">เข้าสู่ระบบพนักงาน</button>
       </div>
     </form>
-    
+
     <div class="text-center mt-6 space-y-2">
-      <p class="text-xs text-gray-400">สำหรับพนักงาน และ หัวหน้างาน เท่านั้น</p>
-      <a href="login.html" class="block text-sm text-gray-600 font-bold hover:underline">Admin / Payroll เข้าสู่ระบบที่นี่ (Admin Portal) →</a>
-      <a href="index.html" class="block text-sm text-gray-500 hover:text-kcblue transition-colors font-bold">← กลับไปหน้าเว็บไซต์หลัก</a>
+      <p class="text-xs text-slate-400">สำหรับพนักงาน และ หัวหน้างาน เท่านั้น</p>
+      <a href="login.html" class="block text-sm text-slate-600 font-bold hover:text-kcblue transition-colors">Admin / Payroll เข้าสู่ระบบที่นี่ (Admin Portal) →</a>
+      <a href="index.html" class="block text-sm text-slate-500 hover:text-kcblue transition-colors font-bold">← กลับไปหน้าเว็บไซต์หลัก</a>
     </div>
   </div>
 
