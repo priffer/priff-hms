@@ -180,5 +180,63 @@ const CandidateService = {
             .eq('id', id)
             .eq('company_id', this.getCompanyId());
         if (error) throw error;
+    },
+
+    // ---------- ผูกไซต์ลูกค้าประจำ (สำหรับปฏิทินวันหยุดฝั่งพนักงานปฏิบัติการ) ----------
+    async getClientSites() {
+        const { data, error } = await supabaseClient
+            .from('clients')
+            .select('id, client_name')
+            .order('client_name', { ascending: true });
+        if (error) throw error;
+        return data;
+    },
+
+    // คืน user_profiles ของพนักงานคนนี้ (ถ้ายังไม่เคยมีบัญชี ESS จะคืน null แทน error)
+    async getUserProfileByEmployeeId(employeeId) {
+        const { data, error } = await supabaseClient
+            .from('user_profiles')
+            .select('id, role, primary_client_id, employee_id')
+            .eq('employee_id', employeeId)
+            .eq('company_id', this.getCompanyId())
+            .maybeSingle();
+        if (error) throw error;
+        return data;
+    },
+
+    async updatePrimaryClientSite(userProfileId, clientId) {
+        const { error } = await supabaseClient
+            .from('user_profiles')
+            .update({ primary_client_id: clientId || null })
+            .eq('id', userProfileId)
+            .eq('company_id', this.getCompanyId());
+        if (error) throw error;
+    },
+
+    async getSupervisorAssignedClientIds(userProfileId) {
+        const { data, error } = await supabaseClient
+            .from('supervisor_client_assignments')
+            .select('client_id')
+            .eq('user_profile_id', userProfileId);
+        if (error) throw error;
+        return (data || []).map(r => r.client_id);
+    },
+
+    // แทนที่รายการไซต์ที่ supervisor คนนี้ดูแลทั้งหมดด้วยรายการใหม่ (ลบของเดิมทิ้งก่อนเพิ่มใหม่)
+    async setSupervisorClientAssignments(userProfileId, clientIds) {
+        const companyId = this.getCompanyId();
+        const { error: delErr } = await supabaseClient
+            .from('supervisor_client_assignments')
+            .delete()
+            .eq('user_profile_id', userProfileId);
+        if (delErr) throw delErr;
+
+        if (clientIds && clientIds.length > 0) {
+            const rows = clientIds.map(clientId => ({ user_profile_id: userProfileId, client_id: clientId, company_id: companyId }));
+            const { error: insErr } = await supabaseClient
+                .from('supervisor_client_assignments')
+                .insert(rows);
+            if (insErr) throw insErr;
+        }
     }
 };

@@ -121,6 +121,29 @@ async function processTransfer(id) {
     }
 }
 
+async function saveSiteAssignment(userProfileId) {
+    const select = document.getElementById('siteAssignSelect');
+    if (!select) return;
+    const clientId = select.value || null;
+    try {
+        await CandidateService.updatePrimaryClientSite(userProfileId, clientId);
+        alert(clientId ? 'ผูกไซต์ลูกค้าให้พนักงานเรียบร้อยแล้วครับ' : 'ตั้งค่าเป็นพนักงานออฟฟิศ (ไม่ประจำไซต์ลูกค้า) เรียบร้อยแล้ว');
+    } catch (err) {
+        alert('บันทึกไซต์ลูกค้าไม่สำเร็จ: ' + err.message);
+    }
+}
+
+async function saveSupervisorSites(userProfileId) {
+    const checkboxes = document.querySelectorAll('.supervisorSiteCheckbox:checked');
+    const clientIds = Array.from(checkboxes).map(cb => cb.value);
+    try {
+        await CandidateService.setSupervisorClientAssignments(userProfileId, clientIds);
+        alert('บันทึกไซต์ที่ดูแลเรียบร้อยแล้วครับ');
+    } catch (err) {
+        alert('บันทึกไซต์ที่ดูแลไม่สำเร็จ: ' + err.message);
+    }
+}
+
 async function handleLogout() {
     if (typeof supabaseClient !== 'undefined' && supabaseClient.auth) {
         await supabaseClient.auth.signOut();

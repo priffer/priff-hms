@@ -25,6 +25,54 @@ async function viewEmployeeDetails(id) {
             console.error("โหลดแผนกไม่สำเร็จ:", deptErr);
         }
 
+        // 🌟 1.5 ผูกไซต์ลูกค้าประจำ (เพื่อกำหนดว่าพนักงานคนนี้เห็นปฏิทินวันหยุดของไซต์ไหนในหน้า ESS)
+        let siteAssignmentHtml = '<p class="text-sm text-gray-500">กำลังโหลด...</p>';
+        try {
+            const [clientSites, userProfile] = await Promise.all([
+                CandidateService.getClientSites(),
+                emp.emp_id ? CandidateService.getUserProfileByEmployeeId(emp.id) : Promise.resolve(null)
+            ]);
+
+            if (!userProfile) {
+                siteAssignmentHtml = `
+                    <p class="text-sm text-gray-500 bg-gray-50 border border-gray-200 p-3">
+                        ℹ️ พนักงานคนนี้ยังไม่มีบัญชี ESS (user_profiles) จึงยังไม่สามารถผูกไซต์งานได้ในตอนนี้
+                    </p>`;
+            } else if (userProfile.role === 'supervisor') {
+                const assignedIds = await CandidateService.getSupervisorAssignedClientIds(userProfile.id);
+                const checkboxesHtml = (clientSites || []).map(site => `
+                    <label class="flex items-center gap-2 text-sm border border-gray-200 px-3 py-2 bg-white hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="supervisorSiteCheckbox" value="${site.id}" ${assignedIds.includes(site.id) ? 'checked' : ''}>
+                        ${site.client_name}
+                    </label>
+                `).join('') || '<p class="text-sm text-gray-500">ยังไม่มีไซต์ลูกค้าในระบบ</p>';
+
+                siteAssignmentHtml = `
+                    <p class="text-xs text-gray-500 mb-2">ตำแหน่งนี้คือ <strong>Supervisor</strong> — เลือกได้หลายไซต์ที่ดูแล พนักงานจะเห็นปฏิทินวันหยุดของทุกไซต์ที่เลือกไว้</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">${checkboxesHtml}</div>
+                    <button onclick="saveSupervisorSites('${userProfile.id}')" class="bg-emerald-600 text-white px-4 py-2 text-sm font-bold hover:bg-emerald-700 border-0 cursor-pointer">บันทึกไซต์ที่ดูแล</button>
+                `;
+            } else {
+                const siteOptionsHtml = (clientSites || []).map(site =>
+                    `<option value="${site.id}" ${userProfile.primary_client_id === site.id ? 'selected' : ''}>${site.client_name}</option>`
+                ).join('');
+
+                siteAssignmentHtml = `
+                    <p class="text-xs text-gray-500 mb-2">พนักงานปฏิบัติการที่ประจำไซต์ลูกค้า จะเห็นปฏิทินวันหยุดของไซต์นี้แทนปฏิทินบริษัท (ถ้าไซต์นี้มีการตั้งค่าปฏิทินของตัวเอง) — ถ้าเป็นพนักงานออฟฟิศ ให้เลือก "ไม่ประจำไซต์ลูกค้า (พนักงานออฟฟิศ)"</p>
+                    <div class="flex gap-2 max-w-md">
+                        <select id="siteAssignSelect" class="w-full border border-gray-300 p-2 text-sm outline-none bg-white focus:border-kcblue">
+                            <option value="">-- ไม่ประจำไซต์ลูกค้า (พนักงานออฟฟิศ) --</option>
+                            ${siteOptionsHtml}
+                        </select>
+                        <button onclick="saveSiteAssignment('${userProfile.id}')" class="bg-emerald-600 text-white px-4 py-2 text-sm font-bold hover:bg-emerald-700 border-0 cursor-pointer shrink-0">บันทึก</button>
+                    </div>
+                `;
+            }
+        } catch (siteErr) {
+            console.error('โหลดข้อมูลผูกไซต์ลูกค้าไม่สำเร็จ:', siteErr);
+            siteAssignmentHtml = '<p class="text-sm text-red-500">โหลดข้อมูลไซต์ลูกค้าไม่สำเร็จ</p>';
+        }
+
         // ประวัติการเบิกเงิน (คงโค้ดเดิมของคุณไว้ 100%)
         let advanceListHtml = '';
         if (emp.emp_id) {
@@ -162,6 +210,13 @@ async function viewEmployeeDetails(id) {
                                     <div class="mt-4 flex justify-end">
                                         <button onclick="processTransfer('${emp.id}')" class="bg-blue-600 text-white px-6 py-2 text-sm font-bold border-0 cursor-pointer hover:bg-blue-700 shadow-sm transition-colors">บันทึกการโยกย้าย</button>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-lg text-emerald-800 border-b border-gray-200 pb-2 mb-4">🏢 ผูกไซต์ลูกค้าประจำ (สำหรับปฏิทินวันหยุด ESS)</h3>
+                                <div class="bg-emerald-50/50 p-4 border border-emerald-200 max-w-2xl border-dashed">
+                                    ${siteAssignmentHtml}
                                 </div>
                             </div>
 

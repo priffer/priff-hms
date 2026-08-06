@@ -262,15 +262,29 @@
           <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
         </div>
         <div id="announcementHolidayView" class="hidden space-y-5">
-          <div>
-            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">วันหยุดบริษัท</h4>
-            <div id="companyHolidayList" class="space-y-2"></div>
-          </div>
-          <div>
-            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-emerald-400 pl-3">วันหยุดเฉพาะไซต์งาน</h4>
-            <div id="clientHolidayList" class="space-y-2"></div>
+          <div id="holidayScopeNote" class="hidden text-xs text-slate-500 bg-[#f7faff] border border-[#e6edf7] rounded-xl px-3 py-2"></div>
+          <div id="holidayCalendarContainer" class="space-y-5">
+            <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📄 หน้ารายละเอียดประกาศ: อ่านแบบ "หน้ากระดาษ A4" เต็มจอบนมือถือ / กึ่งกลางจอบนเดสก์ท็อป -->
+  <div id="announcementDetailModal" class="hidden fixed inset-0 z-[55] bg-[#0f2b73]/80 backdrop-blur-sm md:items-center md:justify-center md:p-6">
+    <div class="bg-white w-full h-full md:h-auto md:max-w-3xl md:rounded-[1.5rem] md:max-h-[92vh] shadow-2xl flex flex-col overflow-hidden mx-auto">
+      <div class="flex justify-between items-start gap-3 px-6 sm:px-10 py-5 border-b border-[#e6edf7] shrink-0 bg-[#f7faff]">
+        <div class="min-w-0">
+          <span id="annDetailCategory" class="inline-block text-[11px] font-bold text-kcblue bg-kclight px-3 py-1 rounded-full mb-2"></span>
+          <h2 id="annDetailTitle" class="text-xl sm:text-2xl font-bold text-kcdark leading-snug"></h2>
+          <p id="annDetailDate" class="text-xs text-slate-400 mt-1"></p>
+        </div>
+        <button onclick="closeAnnouncementDetail()" class="shrink-0 text-slate-400 hover:text-red-500 font-bold text-2xl leading-none cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="flex-1 overflow-y-auto no-scrollbar px-6 sm:px-10 py-8 bg-white">
+        <div id="annDetailBody" class="prose prose-slate max-w-[68ch] mx-auto text-[15px] leading-[1.9] text-slate-700 whitespace-pre-line"></div>
+        <div id="annDetailAttachment" class="hidden max-w-[68ch] mx-auto mt-8 pt-6 border-t border-[#e6edf7]"></div>
       </div>
     </div>
   </div>

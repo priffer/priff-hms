@@ -154,6 +154,10 @@
               </div>
               <button type="submit" class="w-full rounded-2xl bg-kcblue text-white font-bold py-2.5 text-sm shadow-sm hover:bg-kcdark transition-colors">เพิ่มวันหยุด</button>
             </form>
+            <div class="mt-4 bg-[#fff9ec] border border-kcyellow rounded-2xl p-4 space-y-2">
+              <p class="text-xs text-slate-600">⚠️ <strong>ปฏิทินของไซต์นี้จะ "แทนที่" ปฏิทินบริษัททั้งหมด</strong> ไม่ใช่บวกรวมกัน — ถ้าไซต์นี้มีวันหยุดตั้งไว้แล้วอย่างน้อย 1 วัน พนักงานที่ประจำไซต์นี้จะเห็นเฉพาะวันหยุดที่กำหนดไว้นี้เท่านั้น</p>
+              <button type="button" onclick="copyCompanyHolidaysToSelectedClient()" class="w-full rounded-xl bg-white border border-kcyellow text-kcdark font-bold py-2 text-xs hover:bg-kcyellow/20 transition-colors">📋 คัดลอกวันหยุดบริษัททั้งหมดมาเป็นฐานตั้งต้นของไซต์นี้</button>
+            </div>
           </div>
           <div class="lg:col-span-3">
             <h3 class="font-bold text-kcdark border-l-4 border-kcyellow pl-3 mb-4">รายการวันหยุดไซต์ลูกค้าทั้งหมด</h3>
