@@ -4,7 +4,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof initLocationFilters === 'function') {
         initLocationFilters();
     }
+    initFeaturedJobsScroller();
 });
+
+// Lets desktop/mouse users scroll the horizontal featured-jobs carousel with the
+// vertical mouse wheel (native horizontal-only overflow otherwise ignores wheel input).
+function initFeaturedJobsScroller() {
+    const el = document.getElementById('featuredJobsGrid');
+    if (!el) return;
+
+    el.addEventListener('wheel', (event) => {
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+        event.preventDefault();
+        el.scrollLeft += event.deltaY;
+    }, { passive: false });
+}
+
+// Moves the featured-jobs carousel by ~80% of its visible width per click,
+// used by the prev/next arrow buttons shown on larger screens.
+function scrollFeaturedJobs(direction) {
+    const el = document.getElementById('featuredJobsGrid');
+    if (!el) return;
+    el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: 'smooth' });
+}
 
 async function fetchActiveJobs() {
     const grid = document.getElementById('jobGrid');
