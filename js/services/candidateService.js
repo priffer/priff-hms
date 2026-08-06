@@ -238,5 +238,57 @@ const CandidateService = {
                 .insert(rows);
             if (insErr) throw insErr;
         }
+    },
+
+    // ---------- กะการทำงาน (สำหรับตรวจจับมาสาย/ครึ่งวัน/ทำงานเกินกะ) ----------
+    // คืนกะที่ "กำลังใช้งานอยู่" ของพนักงานคนนี้ (effective_to IS NULL) ถ้าไม่มีคืน null
+    async getCurrentShiftAssignment(employeeId) {
+        const { data, error } = await supabaseClient
+            .from('employee_shift_assignments')
+            .select('*')
+            .eq('employee_id', employeeId)
+            .is('effective_to', null)
+            .maybeSingle();
+        if (error) throw error;
+        return data;
+    },
+
+    async getShiftAssignmentHistory(employeeId) {
+        const { data, error } = await supabaseClient
+            .from('employee_shift_assignments')
+            .select('*')
+            .eq('employee_id', employeeId)
+            .order('effective_from', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    // ตั้งกะใหม่ให้พนักงาน: ปิดกะเก่า (effective_to = เมื่อวาน) แล้วเปิดกะใหม่ (effective_from = วันนี้)
+    // เก็บประวัติกะเก่าไว้เสมอ ไม่ลบทิ้ง เพื่อให้ข้อมูล attendance ย้อนหลังยังอ้างอิงกะที่ถูกต้องตามช่วงเวลานั้นได้
+    async setEmployeeShift(employeeId, { shiftName, shiftStart, shiftEnd, standardHours }) {
+        const companyId = this.getCompanyId();
+        const today = new Date().toISOString().split('T')[0];
+        const current = await this.getCurrentShiftAssignment(employeeId);
+        if (current) {
+            const y = new Date(); y.setDate(y.getDate() - 1);
+            const yesterday = y.toISOString().split('T')[0];
+            const { error: closeErr } = await supabaseClient
+                .from('employee_shift_assignments')
+                .update({ effective_to: yesterday })
+                .eq('id', current.id);
+            if (closeErr) throw closeErr;
+        }
+        const { error: insErr } = await supabaseClient
+            .from('employee_shift_assignments')
+            .insert([{
+                company_id: companyId,
+                employee_id: employeeId,
+                shift_name: shiftName || null,
+                shift_start: shiftStart,
+                shift_end: shiftEnd,
+                standard_hours: standardHours,
+                effective_from: today
+            }]);
+        if (insErr) throw insErr;
     }
 };

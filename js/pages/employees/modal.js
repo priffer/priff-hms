@@ -73,6 +73,38 @@ async function viewEmployeeDetails(id) {
             siteAssignmentHtml = '<p class="text-sm text-red-500">โหลดข้อมูลไซต์ลูกค้าไม่สำเร็จ</p>';
         }
 
+        // 🌟 1.6 กะการทำงาน (สำหรับตรวจจับมาสาย/ครึ่งวัน/ทำงานเกินกะในหน้า ESS และเตรียมพร้อมสำหรับฟีเจอร์ขอโอที)
+        let shiftAssignmentHtml = '<p class="text-sm text-gray-500">กำลังโหลด...</p>';
+        try {
+            const currentShift = await CandidateService.getCurrentShiftAssignment(emp.id);
+            const s = currentShift || {};
+            shiftAssignmentHtml = `
+                <p class="text-xs text-gray-500 mb-2">กำหนดเวลากะปกติของพนักงานคนนี้ ใช้คำนวณมาสาย/ออกก่อน/ทำงานเกินกะ ในหน้า ESS ${currentShift ? `<br><span class="text-emerald-600 font-bold">กะปัจจุบัน: ${s.shift_name ? s.shift_name + ' ' : ''}${s.shift_start}-${s.shift_end} (${s.standard_hours} ชม./วัน)${s.shift_end < s.shift_start ? ' 🌙 กะข้ามคืน' : ''}</span>` : '<br><span class="text-amber-600 font-bold">ยังไม่ได้กำหนดกะ</span>'}</p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-2xl">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">ชื่อกะ (ถ้ามี)</label>
+                        <input type="text" id="shiftNameInput" value="${s.shift_name || ''}" placeholder="เช่น กะเช้า" class="w-full border border-gray-300 p-2 text-sm outline-none bg-white focus:border-kcblue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">เวลาเข้า *</label>
+                        <input type="time" id="shiftStartInput" value="${s.shift_start ? s.shift_start.slice(0,5) : '08:00'}" class="w-full border border-gray-300 p-2 text-sm outline-none bg-white focus:border-kcblue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">เวลาออก *</label>
+                        <input type="time" id="shiftEndInput" value="${s.shift_end ? s.shift_end.slice(0,5) : '17:00'}" class="w-full border border-gray-300 p-2 text-sm outline-none bg-white focus:border-kcblue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">ชม.ปกติ/วัน *</label>
+                        <input type="number" id="shiftStandardHoursInput" value="${s.standard_hours || 8}" min="1" max="24" step="0.5" class="w-full border border-gray-300 p-2 text-sm outline-none bg-white focus:border-kcblue">
+                    </div>
+                </div>
+                <button onclick="saveEmployeeShift('${emp.id}')" class="mt-3 bg-emerald-600 text-white px-4 py-2 text-sm font-bold hover:bg-emerald-700 border-0 cursor-pointer">บันทึกกะการทำงาน</button>
+            `;
+        } catch (shiftErr) {
+            console.error('โหลดข้อมูลกะการทำงานไม่สำเร็จ:', shiftErr);
+            shiftAssignmentHtml = '<p class="text-sm text-red-500">โหลดข้อมูลกะการทำงานไม่สำเร็จ</p>';
+        }
+
         // ประวัติการเบิกเงิน (คงโค้ดเดิมของคุณไว้ 100%)
         let advanceListHtml = '';
         if (emp.emp_id) {
@@ -217,6 +249,13 @@ async function viewEmployeeDetails(id) {
                                 <h3 class="font-bold text-lg text-emerald-800 border-b border-gray-200 pb-2 mb-4">🏢 ผูกไซต์ลูกค้าประจำ (สำหรับปฏิทินวันหยุด ESS)</h3>
                                 <div class="bg-emerald-50/50 p-4 border border-emerald-200 max-w-2xl border-dashed">
                                     ${siteAssignmentHtml}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-lg text-sky-800 border-b border-gray-200 pb-2 mb-4">⏰ กะการทำงาน (สำหรับตรวจจับมาสาย/ทำงานเกินกะ)</h3>
+                                <div class="bg-sky-50/50 p-4 border border-sky-200 max-w-2xl border-dashed">
+                                    ${shiftAssignmentHtml}
                                 </div>
                             </div>
 

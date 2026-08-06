@@ -144,6 +144,25 @@ async function saveSupervisorSites(userProfileId) {
     }
 }
 
+async function saveEmployeeShift(employeeId) {
+    const shiftName = document.getElementById('shiftNameInput').value.trim();
+    const shiftStart = document.getElementById('shiftStartInput').value;
+    const shiftEnd = document.getElementById('shiftEndInput').value;
+    const standardHours = Number(document.getElementById('shiftStandardHoursInput').value);
+
+    if (!shiftStart || !shiftEnd) { alert('กรุณาระบุเวลาเข้า-ออกงานให้ครบถ้วน'); return; }
+    if (!standardHours || standardHours <= 0) { alert('กรุณาระบุจำนวนชั่วโมงทำงานปกติ/วันให้ถูกต้อง'); return; }
+
+    try {
+        await CandidateService.setEmployeeShift(employeeId, { shiftName, shiftStart, shiftEnd, standardHours });
+        alert('บันทึกกะการทำงานเรียบร้อยแล้วครับ');
+        await viewEmployeeDetails(employeeId); // รีโหลดแฟ้มประวัติเพื่อแสดงกะล่าสุด
+        switchEmpTab('settings'); // กลับไปแท็บเดิมที่ผู้ใช้กำลังทำงานอยู่
+    } catch (err) {
+        alert('บันทึกกะการทำงานไม่สำเร็จ: ' + err.message);
+    }
+}
+
 async function handleLogout() {
     if (typeof supabaseClient !== 'undefined' && supabaseClient.auth) {
         await supabaseClient.auth.signOut();

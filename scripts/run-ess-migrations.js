@@ -30,6 +30,8 @@ async function run() {
     path.resolve(__dirname, '..', 'database', '11_advance_payment_eligibility.sql'),
     path.resolve(__dirname, '..', 'database', '12_leave_policy_enhancements.sql'),
     path.resolve(__dirname, '..', 'database', '13_leave_requests_rls_recursion_fix.sql'),
+    path.resolve(__dirname, '..', 'database', '14_employee_shift_assignments.sql'),
+    path.resolve(__dirname, '..', 'database', '15_attendance_correction_requests.sql'),
   ];
 
   const results = [];

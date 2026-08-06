@@ -243,6 +243,131 @@ const EmployeeSelfService = {
             .limit(limit);
         if (error) throw error;
         return data;
+    },
+
+    // ---------- กะการทำงาน (ใช้คำนวณมาสาย/ออกก่อน/ทำงานเกินกะในหน้าประวัติลงเวลา) ----------
+    // คืนประวัติกะทั้งหมด (ไม่ใช่แค่กะปัจจุบัน) เพราะ work_date ในอดีตอาจอยู่ในช่วงกะเก่าที่ถูก
+    // เปลี่ยนไปแล้ว - ฝั่ง UI จะเลือกกะที่ตรงกับ effective_from/effective_to ของแต่ละ work_date เอง
+    async getMyShiftHistory(employeeId) {
+        const { data, error } = await supabaseClient
+            .from('employee_shift_assignments')
+            .select('*')
+            .eq('employee_id', employeeId)
+            .order('effective_from', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    // ---------- ขอแก้ไขเวลาเข้า-ออกงาน (attendance_correction_requests) ----------
+    async getMyCorrectionRequests(empId) {
+        const { data, error } = await supabaseClient
+            .from('attendance_correction_requests')
+            .select('*, clients:requested_client_id(client_name)')
+            .eq('emp_id', empId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    // เรียก RPC หาว่าใครควรเป็นผู้อนุมัติคำขอนี้ (ไซต์ที่ประจำอยู่ -> หัวหน้างานไซต์นั้น
+    // หรือ fallback ไปแอดมิน/payroll) - ต้องเรียกก่อน insert เสมอ เพราะ RLS บังคับให้ค่าที่ส่งไป
+    // ตรงกับผลลัพธ์ของฟังก์ชันนี้เป๊ะๆ (กันพนักงานปลอมแปลงว่าใครควรอนุมัติ)
+    async resolveApproverForEmployee(employeeId) {
+        const { data, error } = await supabaseClient.rpc('resolve_approver_for_employee', { p_employee_id: employeeId });
+        if (error) throw error;
+        return (data && data[0]) || { approver_role: 'admin', approver_user_profile_id: null };
+    },
+
+    async createCorrectionRequest({ empId, employeeId, companyId, attendanceLogId, workDate, requestedCheckIn, requestedCheckOut, requestedClientId, reason, attachmentUrl }) {
+        const approver = await this.resolveApproverForEmployee(employeeId);
+        const payload = {
+            emp_id: empId,
+            employee_id: employeeId,
+            company_id: companyId,
+            attendance_log_id: attendanceLogId || null,
+            work_date: workDate,
+            requested_check_in: requestedCheckIn || null,
+            requested_check_out: requestedCheckOut || null,
+            requested_client_id: requestedClientId || null,
+            reason,
+            attachment_url: attachmentUrl || null,
+            status: 'pending',
+            resolved_approver_role: approver.approver_role,
+            resolved_approver_user_profile_id: approver.approver_user_profile_id
+        };
+        const { error } = await supabaseClient.from('attendance_correction_requests').insert([payload]);
+        if (error) throw error;
+    },
+
+    // อัปโหลดไฟล์แนบประกอบคำขอแก้ไขเวลา (bucket เดียวกับไฟล์แนบลา แยก prefix)
+    async uploadCorrectionAttachment(file, fileName) {
+        const path = `attendance_corrections/${fileName}`;
+        const { error } = await supabaseClient.storage
+            .from('announcement_attachments')
+            .upload(path, file, { upsert: true });
+        if (error) throw error;
+        const { data } = supabaseClient.storage.from('announcement_attachments').getPublicUrl(path);
+        return data.publicUrl;
+    },
+
+    // ---------- กล่องอนุมัติสำหรับหัวหน้างาน (ใน ESS เพราะ supervisor เข้า Admin Portal ไม่ได้) ----------
+    async getPendingApprovalsForSupervisor(userProfileId) {
+        const { data, error } = await supabaseClient
+            .from('attendance_correction_requests')
+            .select('*, employees(full_name, emp_id), clients:requested_client_id(client_name)')
+            .eq('resolved_approver_user_profile_id', userProfileId)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        return data;
+    },
+
+    async approveCorrectionRequest(requestId) {
+        const { data: req, error: fetchErr } = await supabaseClient
+            .from('attendance_correction_requests')
+            .select('*')
+            .eq('id', requestId)
+            .single();
+        if (fetchErr) throw fetchErr;
+
+        // อัปเดต/สร้างแถวใน attendance_logs ให้ตรงกับที่ขอ - ใช้ trigger fn_attendance_audit ที่มีอยู่แล้ว
+        // บันทึก audit log การเปลี่ยนแปลงอัตโนมัติ ไม่ต้องเขียนเพิ่ม
+        if (req.attendance_log_id) {
+            const updatePayload = { manual_override_reason: `แก้ไขตามคำขอพนักงาน: ${req.reason}`, status: 'present' };
+            if (req.requested_check_in) updatePayload.check_in = req.requested_check_in;
+            if (req.requested_check_out) updatePayload.check_out = req.requested_check_out;
+            if (req.requested_client_id) updatePayload.client_id = req.requested_client_id;
+            const { error: updErr } = await supabaseClient.from('attendance_logs').update(updatePayload).eq('id', req.attendance_log_id);
+            if (updErr) throw updErr;
+        } else {
+            const { error: insErr } = await supabaseClient.from('attendance_logs').insert([{
+                emp_id: req.emp_id,
+                employee_id: req.employee_id,
+                company_id: req.company_id,
+                client_id: req.requested_client_id,
+                work_date: req.work_date,
+                check_in: req.requested_check_in,
+                check_out: req.requested_check_out,
+                status: 'present',
+                check_in_method: 'correction_request',
+                manual_override_reason: `สร้างจากคำขอแก้ไขเวลาของพนักงาน: ${req.reason}`
+            }]);
+            if (insErr) throw insErr;
+        }
+
+        const { error } = await supabaseClient
+            .from('attendance_correction_requests')
+            .update({ status: 'approved', approved_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
+    },
+
+    async rejectCorrectionRequest(requestId, rejectionReason) {
+        const { error } = await supabaseClient
+            .from('attendance_correction_requests')
+            .update({ status: 'rejected', rejection_reason: rejectionReason || null, approved_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
     }
 };
 
