@@ -24,6 +24,9 @@ function getWelfareIcon(text) {
     const rules = [
         { test: /ประกันสังคม|กองทุนเงินทดแทน|สปส/, emoji: '🛡️', bg: 'bg-blue-500/10' },
         { test: /ประกันสุขภาพ|ประกันชีวิต|อุบัติเหตุ|พยาบาล/, emoji: '❤️‍🩹', bg: 'bg-rose-500/10' },
+        { test: /เบี้ยขยัน/, emoji: '🌟', bg: 'bg-amber-400/20' },
+        { test: /รางวัลอายุงาน|อายุงาน/, emoji: '🏆', bg: 'bg-fuchsia-500/10' },
+        { test: /ฌาปนกิจ|เสียชีวิต|ค่าทำศพ/, emoji: '🤍', bg: 'bg-slate-400/10' },
         { test: /โบนัส|bonus/, emoji: '💰', bg: 'bg-kcyellow/20' },
         { test: /ปรับ|ขึ้นเงินเดือน|เงินเดือน/, emoji: '📈', bg: 'bg-emerald-500/10' },
         { test: /ยูนิฟอร์ม|ชุด|uniform/, emoji: '👕', bg: 'bg-violet-500/10' },
