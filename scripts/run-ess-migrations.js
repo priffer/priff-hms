@@ -27,6 +27,7 @@ async function run() {
     path.resolve(__dirname, '..', 'database', '08_announcements_holidays.sql'),
     path.resolve(__dirname, '..', 'database', '09_site_assignment_rls.sql'),
     path.resolve(__dirname, '..', 'database', '10_announcement_storage_policy.sql'),
+    path.resolve(__dirname, '..', 'database', '11_advance_payment_eligibility.sql'),
   ];
 
   const results = [];

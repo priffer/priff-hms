@@ -39,10 +39,55 @@ async function checkEmployeeSession() {
         }
         document.getElementById('empNameDisplay').textContent = profile.display_name || profile.full_name || 'พนักงาน';
         document.getElementById('empIdDisplay').textContent = profile.employee_emp_id || profile.emp_id || '';
+        advanceEligibleCache = await computeAdvanceEligibility(profile);
+        applyAdvanceEligibilityUI();
     } catch (err) {
         console.error("Session/profile error", err);
         // Fallback: redirect to login
         window.location.href = 'employee-login.html';
+    }
+}
+
+// ขอเบิกเงินล่วงหน้า: จำกัดเฉพาะพนักงานปฏิบัติการที่ผูกไซต์ลูกค้าประจำแล้ว (primary_client_id
+// สำหรับ role employee, หรือมีไซต์ที่ดูแลอย่างน้อย 1 ไซต์ผ่าน supervisor_client_assignments
+// สำหรับ role supervisor) พนักงานออฟฟิศ (ไม่ผูกไซต์) จะเห็นปุ่มแบบจางลงพร้อมป้ายอธิบาย
+// แทนที่จะซ่อนปุ่มไปเลย เพื่อไม่ให้สับสนว่าเป็น bug - บังคับจริงอีกชั้นที่ RLS
+// (database/11_advance_payment_eligibility.sql, public.is_site_assigned_employee())
+let advanceEligibleCache = false;
+
+async function computeAdvanceEligibility(profile) {
+    if (!profile) return false;
+    if (profile.primary_client_id) return true;
+    if (profile.role === 'supervisor') {
+        try {
+            const { count, error } = await supabaseClient
+                .from('supervisor_client_assignments')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_profile_id', profile.id);
+            if (error) throw error;
+            return (count || 0) > 0;
+        } catch (err) {
+            console.error('computeAdvanceEligibility (supervisor) error', err);
+            return false;
+        }
+    }
+    return false;
+}
+
+function isAdvanceEligible() {
+    return advanceEligibleCache;
+}
+
+function applyAdvanceEligibilityUI() {
+    const btn = document.getElementById('advanceCardBtn');
+    const badge = document.getElementById('advanceEligibilityBadge');
+    if (!btn) return;
+    if (!isAdvanceEligible()) {
+        btn.classList.add('opacity-50', 'grayscale', 'hover:!translate-y-0', 'hover:!shadow-none');
+        if (badge) badge.classList.remove('hidden');
+    } else {
+        btn.classList.remove('opacity-50', 'grayscale', 'hover:!translate-y-0', 'hover:!shadow-none');
+        if (badge) badge.classList.add('hidden');
     }
 }
 
@@ -325,6 +370,11 @@ function statusBadgeHtml(status) {
 
 async function openAdvanceModal() {
     const modal = document.getElementById('advanceModal');
+    const form = document.getElementById('advanceForm');
+    const notice = document.getElementById('advanceIneligibleNotice');
+    const eligible = isAdvanceEligible();
+    if (form) form.classList.toggle('hidden', !eligible);
+    if (notice) notice.classList.toggle('hidden', eligible);
     if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
     await loadAdvanceHistory();
 }
@@ -376,6 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('advanceSubmitBtn');
             const amount = Number(amountInput.value);
             if (!emp || !emp.emp_id) { showToast('⚠️ ไม่พบรหัสพนักงานของคุณ'); return; }
+            if (!isAdvanceEligible()) { showToast('⚠️ ฟีเจอร์นี้เปิดให้เฉพาะพนักงานปฏิบัติการที่ประจำไซต์ลูกค้าเท่านั้น'); return; }
             if (!amount || amount <= 0) { showToast('⚠️ กรุณากรอกจำนวนเงินให้ถูกต้อง'); return; }
 
             btn.disabled = true; btn.classList.add('opacity-50');

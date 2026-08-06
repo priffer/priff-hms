@@ -75,9 +75,10 @@
           <div class="md:col-span-7">
               <h3 class="text-sm md:text-lg font-bold text-slate-800 mb-4 border-l-4 border-kcyellow pl-3">บริการอื่นๆ (Self-Service)</h3>
               <div class="grid grid-cols-2 gap-3 md:gap-4">
-                <button onclick="openAdvanceModal()" class="group rounded-[1.75rem] bg-[#fff9ec] border border-[#f5e6bf] p-6 md:p-8 text-center hover:border-kcyellow hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(255,199,44,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
+                <button id="advanceCardBtn" onclick="openAdvanceModal()" class="group rounded-[1.75rem] bg-[#fff9ec] border border-[#f5e6bf] p-6 md:p-8 text-center hover:border-kcyellow hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(255,199,44,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
                   <div class="w-12 h-12 rounded-2xl bg-kcyellow/20 text-2xl flex items-center justify-center">💸</div>
                   <span class="text-sm md:text-base font-bold text-slate-700">ขอเบิกเงินล่วงหน้า</span>
+                  <span id="advanceEligibilityBadge" class="hidden text-[10px] font-bold text-slate-400">เฉพาะพนักงานปฏิบัติการ</span>
                 </button>
                 <button onclick="openLeaveModal()" class="group rounded-[1.75rem] bg-[#f0fbf5] border border-[#cdeedd] p-6 md:p-8 text-center hover:border-emerald-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(16,185,129,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
                   <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-2xl flex items-center justify-center">🏖️</div>
@@ -162,6 +163,10 @@
         <button onclick="closeAdvanceModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
       </div>
       <div class="p-6 overflow-y-auto no-scrollbar">
+        <div id="advanceIneligibleNotice" class="hidden rounded-2xl border border-amber-200 bg-amber-50 p-4 mb-6 text-sm text-amber-800">
+          ℹ️ ฟีเจอร์นี้เปิดให้เฉพาะ<strong>พนักงานฝ่ายปฏิบัติการที่ประจำไซต์ลูกค้า</strong>เท่านั้น
+          หากคุณคิดว่าควรมีสิทธิ์ใช้งานนี้ กรุณาติดต่อฝ่ายบุคคล/แอดมิน
+        </div>
         <form id="advanceForm" class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">จำนวนเงินที่ต้องการเบิก (บาท) <span class="text-red-500">*</span></label>
