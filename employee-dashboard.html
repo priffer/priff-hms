@@ -99,6 +99,13 @@
                     <span id="announcementTeaser" class="text-xs text-slate-400">แตะเพื่อดูประกาศล่าสุดและวันหยุดที่กำลังจะถึง</span>
                   </div>
                 </button>
+                <button id="supervisorApprovalBtn" onclick="openApprovalInboxModal()" class="hidden group col-span-2 rounded-[1.75rem] bg-[#fffbeb] border border-amber-200 p-5 md:p-6 text-left hover:border-amber-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(245,158,11,0.12)] transition-all cursor-pointer flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-2xl flex items-center justify-center shrink-0">📋</div>
+                  <div class="min-w-0">
+                    <span class="text-sm md:text-base font-bold text-slate-700 block">คำขอรออนุมัติ (หัวหน้างาน)</span>
+                    <span id="approvalInboxTeaser" class="text-xs text-slate-400">คำขอแก้ไขเวลาจากพนักงานในไซต์ที่คุณดูแล</span>
+                  </div>
+                </button>
               </div>
           </div>
       </div>
@@ -254,7 +261,57 @@
         <button onclick="closeAttendanceHistoryModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
       </div>
       <div class="p-6 overflow-y-auto no-scrollbar">
+        <button onclick="openCorrectionModal(null, '')" class="w-full mb-4 rounded-2xl border-2 border-dashed border-kcblue/40 text-kcblue font-bold text-sm py-3 hover:bg-[#eef5ff] transition-colors cursor-pointer">✏️ ขอแก้ไขเวลาเข้า-ออกงาน (วันอื่น/ลืมสแกนทั้งวัน)</button>
         <div id="attendanceHistoryList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✏️ ขอแก้ไขเวลาเข้า-ออกงาน -->
+  <div id="correctionModal" class="hidden fixed inset-0 z-[52] bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">✏️ ขอแก้ไขเวลาเข้า-ออกงาน</h3>
+        <button onclick="closeCorrectionModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <form id="correctionForm" class="space-y-4 mb-6">
+          <input type="hidden" id="correctionLogId">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">วันที่ต้องการแก้ไข <span class="text-red-500">*</span></label>
+            <input type="date" id="correctionWorkDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">เวลาเข้างานที่ถูกต้อง</label>
+              <input type="time" id="correctionCheckIn" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">เวลาออกงานที่ถูกต้อง</label>
+              <input type="time" id="correctionCheckOut" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+          </div>
+          <div id="correctionClientWrap" class="hidden">
+            <label class="block text-xs font-bold text-slate-600 mb-1">ไซต์งานที่ปฏิบัติงานวันนั้น <span class="text-red-500">*</span></label>
+            <select id="correctionClientSelect" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all bg-white">
+              <option value="">-- เลือกไซต์งาน --</option>
+            </select>
+            <p class="text-[11px] text-slate-400 mt-1">ระบบยังไม่พบข้อมูลลงเวลาของวันนี้ กรุณาระบุไซต์งานเพื่อให้หัวหน้างานที่ถูกต้องอนุมัติ</p>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">เหตุผล <span class="text-red-500">*</span></label>
+            <textarea id="correctionReason" rows="2" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-[#f7faff] transition-all" placeholder="เช่น ลืมสแกนตอนเลิกงาน"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">หลักฐานประกอบ (ถ้ามี)</label>
+            <input type="file" id="correctionAttachmentFile" accept="image/*,.pdf" class="w-full rounded-xl border border-[#e6edf7] p-2 text-xs bg-white">
+          </div>
+          <button type="submit" id="correctionSubmitBtn" class="w-full rounded-2xl bg-kcblue text-white font-bold py-3 shadow-sm hover:bg-kcdark transition-colors">ส่งคำขอแก้ไขเวลา</button>
+        </form>
+        <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">ประวัติคำขอของคุณ</h4>
+        <div id="correctionHistoryList" class="space-y-3">
           <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
@@ -299,6 +356,21 @@
       <div class="flex-1 overflow-y-auto no-scrollbar px-6 sm:px-10 py-8 bg-white">
         <div id="annDetailBody" class="prose prose-slate max-w-[68ch] mx-auto text-[15px] leading-[1.9] text-slate-700 whitespace-pre-line"></div>
         <div id="annDetailAttachment" class="hidden max-w-[68ch] mx-auto mt-8 pt-6 border-t border-[#e6edf7]"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📋 กล่องอนุมัติสำหรับหัวหน้างาน (คำขอแก้ไขเวลาที่ต้องอนุมัติ) -->
+  <div id="approvalInboxModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">📋 คำขอรออนุมัติ</h3>
+        <button onclick="closeApprovalInboxModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <div id="approvalInboxList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
       </div>
     </div>
   </div>

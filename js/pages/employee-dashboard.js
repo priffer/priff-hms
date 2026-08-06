@@ -41,6 +41,11 @@ async function checkEmployeeSession() {
         document.getElementById('empIdDisplay').textContent = profile.employee_emp_id || profile.emp_id || '';
         advanceEligibleCache = await computeAdvanceEligibility(profile);
         applyAdvanceEligibilityUI();
+        if (profile.role === 'supervisor') {
+            const btn = document.getElementById('supervisorApprovalBtn');
+            if (btn) btn.classList.remove('hidden');
+            refreshApprovalInboxTeaser();
+        }
     } catch (err) {
         console.error("Session/profile error", err);
         // Fallback: redirect to login
@@ -757,6 +762,67 @@ const attendanceStatusLabel = {
     absent: '<span class="inline-block bg-red-50 text-red-600 border border-red-200 rounded-full px-2.5 py-1 text-[11px] font-bold">ขาดงาน</span>'
 };
 
+// หากะที่มีผลบังคับใช้ ณ วันที่ work_date นั้น (ไม่ใช่กะปัจจุบันเสมอ เพราะกะอาจถูกเปลี่ยนไปแล้ว
+// หลังจากวันนั้น) จากประวัติกะทั้งหมดที่โหลดมา
+function findShiftForDate(shiftHistory, workDateStr) {
+    return (shiftHistory || []).find(s =>
+        workDateStr >= s.effective_from && (s.effective_to === null || workDateStr <= s.effective_to)
+    ) || null;
+}
+
+// คำนวณสถิติมาสาย/ออกก่อน/ทำงานเกินกะ แบบ "ประมาณการเพื่อแสดงผลเท่านั้น" ไม่ใช่ตัวเลขที่ใช้จ่ายเงินจริง
+// (ตัวเลขที่ใช้จ่ายเงินจริงต้องรอ Payroll Engine) รองรับกะข้ามเที่ยงคืน (กะกลางคืน) ด้วยการเช็คว่า
+// เวลาออกงาน "น้อยกว่า" เวลาเข้างานตามนาฬิกา = ข้ามวันไปแล้ว
+function computeShiftStats(shift, checkIn, checkOut) {
+    if (!shift) return { noShift: true };
+    const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    if (!checkIn) return { noShift: false, incomplete: true, note: 'ยังไม่มีการลงเวลาเข้างาน' };
+
+    const shiftStartMin = toMin(shift.shift_start);
+    const checkInMin = toMin(checkIn);
+    const lateMinutes = Math.max(checkInMin - shiftStartMin, 0);
+
+    if (!checkOut) {
+        return { noShift: false, incomplete: true, lateMinutes, note: 'ยังไม่มีการลงเวลาออกงาน (อาจลืมสแกน)' };
+    }
+
+    const checkOutMin = toMin(checkOut);
+    const workedMinutes = checkOutMin >= checkInMin ? (checkOutMin - checkInMin) : ((24 * 60 - checkInMin) + checkOutMin);
+    const standardMinutes = Number(shift.standard_hours) * 60;
+    const otMinutesEstimate = Math.max(workedMinutes - standardMinutes, 0);
+    const earlyLeaveMinutes = Math.max(standardMinutes - workedMinutes - lateMinutes, 0);
+
+    return {
+        noShift: false,
+        incomplete: false,
+        lateMinutes,
+        earlyLeaveMinutes,
+        workedHours: Math.round((workedMinutes / 60) * 100) / 100,
+        otHoursEstimate: Math.round((otMinutesEstimate / 60) * 100) / 100
+    };
+}
+
+function renderShiftStatsBadges(stats) {
+    if (!stats || stats.noShift) return '<p class="text-[11px] text-slate-400 mt-2">ℹ️ ยังไม่ได้กำหนดกะการทำงาน - ติดต่อฝ่ายบุคคล</p>';
+    const badges = [];
+    if (stats.incomplete) {
+        badges.push(`<span class="inline-block bg-red-50 text-red-600 border border-red-200 rounded-full px-2 py-0.5 text-[10px] font-bold">⚠️ ${stats.note}</span>`);
+    }
+    if (stats.lateMinutes > 0) {
+        badges.push(`<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold">🐢 สาย ${stats.lateMinutes} นาที</span>`);
+    }
+    if (!stats.incomplete && stats.earlyLeaveMinutes > 0) {
+        badges.push(`<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold">🚪 ออกก่อนเวลา ${stats.earlyLeaveMinutes} นาที</span>`);
+    }
+    if (!stats.incomplete && stats.otHoursEstimate > 0) {
+        badges.push(`<span class="inline-block bg-sky-50 text-sky-700 border border-sky-200 rounded-full px-2 py-0.5 text-[10px] font-bold">⏱️ ทำงานเกินกะ ~${stats.otHoursEstimate} ชม.</span>`);
+    }
+    if (badges.length === 0 && !stats.incomplete) {
+        badges.push('<span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5 text-[10px] font-bold">✅ ตรงเวลา</span>');
+    }
+    return badges.length > 0 ? `<div class="flex flex-wrap gap-1.5 mt-2">${badges.join('')}</div>` : '';
+}
+
 async function loadAttendanceHistory() {
     const listEl = document.getElementById('attendanceHistoryList');
     const emp = window.currentUserProfile;
@@ -765,12 +831,18 @@ async function loadAttendanceHistory() {
         return;
     }
     try {
-        const list = await window.EmployeeSelfService.getMyAttendanceHistory(emp.emp_id, { limit: 30 });
+        const [list, shiftHistory] = await Promise.all([
+            window.EmployeeSelfService.getMyAttendanceHistory(emp.emp_id, { limit: 30 }),
+            emp.employee_id ? window.EmployeeSelfService.getMyShiftHistory(emp.employee_id) : Promise.resolve([])
+        ]);
         if (!list || list.length === 0) {
             listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประวัติการลงเวลา</p>';
             return;
         }
-        listEl.innerHTML = list.map(item => `
+        listEl.innerHTML = list.map(item => {
+            const shift = findShiftForDate(shiftHistory, item.work_date);
+            const stats = computeShiftStats(shift, item.check_in, item.check_out);
+            return `
             <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
                 <div class="flex justify-between items-start mb-1">
                     <div>
@@ -783,8 +855,10 @@ async function loadAttendanceHistory() {
                     <p><span class="text-slate-400">เข้างาน:</span> <span class="font-bold text-slate-700">${item.check_in || '--:--'}</span></p>
                     <p><span class="text-slate-400">ออกงาน:</span> <span class="font-bold text-slate-700">${item.check_out || '--:--'}</span></p>
                 </div>
+                ${renderShiftStatsBadges(stats)}
+                ${(!item.check_out) ? `<button onclick="openCorrectionModal('${item.id}', '${item.work_date}')" class="mt-3 text-xs font-bold text-kcblue hover:underline cursor-pointer">✏️ ขอแก้ไขเวลาเข้า-ออกงาน</button>` : ''}
             </div>
-        `).join('');
+        `; }).join('');
     } catch (err) {
         console.error('loadAttendanceHistory error', err);
         listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
@@ -1005,5 +1079,215 @@ async function loadHolidayCalendar() {
     } catch (err) {
         console.error('loadHolidayCalendar error', err);
         if (containerEl) containerEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+// ============================================================
+// ✏️ ขอแก้ไขเวลาเข้า-ออกงาน (attendance_correction_requests)
+// ============================================================
+const correctionStatusLabel = {
+    pending: '<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-1 text-[11px] font-bold">⏳ รอดำเนินการ</span>',
+    approved: '<span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[11px] font-bold">✅ อนุมัติแล้ว</span>',
+    rejected: '<span class="inline-block bg-red-50 text-red-600 border border-red-200 rounded-full px-2.5 py-1 text-[11px] font-bold">❌ ไม่อนุมัติ</span>'
+};
+
+async function openCorrectionModal(logId, workDate) {
+    const modal = document.getElementById('correctionModal');
+    document.getElementById('correctionLogId').value = logId || '';
+    document.getElementById('correctionWorkDate').value = workDate || '';
+    const clientWrap = document.getElementById('correctionClientWrap');
+    const clientSelect = document.getElementById('correctionClientSelect');
+    // ไม่มี attendance_log_id เดิม = ลืมสแกนทั้งวัน -> ต้องเลือกไซต์งานเอง
+    // เพราะไม่มีแถวเดิมให้อ้างอิง client_id (จำเป็นสำหรับสร้าง attendance_logs แถวใหม่)
+    if (!logId) {
+        if (clientWrap) clientWrap.classList.remove('hidden');
+        if (clientSelect) {
+            clientSelect.innerHTML = '<option value="">-- เลือกไซต์งาน --</option>';
+            try {
+                const { data: clients } = await supabaseClient.from('clients').select('id, client_name').order('client_name');
+                (clients || []).forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.client_name;
+                    clientSelect.appendChild(opt);
+                });
+                const emp = window.currentUserProfile;
+                if (emp && emp.primary_client_id) clientSelect.value = emp.primary_client_id;
+            } catch (err) {
+                console.error('load clients for correction modal error', err);
+            }
+        }
+    } else {
+        if (clientWrap) clientWrap.classList.add('hidden');
+        if (clientSelect) clientSelect.value = '';
+    }
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    loadCorrectionHistory();
+}
+function closeCorrectionModal() {
+    const modal = document.getElementById('correctionModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadCorrectionHistory() {
+    const listEl = document.getElementById('correctionHistoryList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp || !emp.emp_id) return;
+    try {
+        const list = await window.EmployeeSelfService.getMyCorrectionRequests(emp.emp_id);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประวัติคำขอแก้ไขเวลา</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
+                <div class="flex justify-between items-start mb-1">
+                    <div>
+                        <p class="text-sm font-bold text-kcdark">${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${item.requested_check_in || '--:--'} - ${item.requested_check_out || '--:--'}</p>
+                    </div>
+                    ${correctionStatusLabel[item.status] || ''}
+                </div>
+                <p class="text-xs text-slate-600 mt-1">เหตุผล: ${item.reason}</p>
+                ${item.status === 'rejected' && item.rejection_reason ? `<p class="text-xs text-red-500 mt-1">เหตุผลที่ไม่อนุมัติ: ${item.rejection_reason}</p>` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadCorrectionHistory error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('correctionForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emp = window.currentUserProfile;
+            const logId = document.getElementById('correctionLogId').value || null;
+            const workDate = document.getElementById('correctionWorkDate').value;
+            const checkIn = document.getElementById('correctionCheckIn').value || null;
+            const checkOut = document.getElementById('correctionCheckOut').value || null;
+            const reason = document.getElementById('correctionReason').value.trim();
+            const attachmentInput = document.getElementById('correctionAttachmentFile');
+            const attachmentFile = attachmentInput ? attachmentInput.files[0] : null;
+            const clientId = document.getElementById('correctionClientSelect').value || null;
+            const btn = document.getElementById('correctionSubmitBtn');
+
+            if (!emp || !emp.emp_id || !emp.employee_id) { showToast('⚠️ ไม่พบข้อมูลพนักงานของคุณ'); return; }
+            if (!workDate) { showToast('⚠️ กรุณาเลือกวันที่ต้องการแก้ไข'); return; }
+            if (!checkIn && !checkOut) { showToast('⚠️ กรุณาระบุเวลาเข้าหรือออกงานที่ถูกต้องอย่างน้อย 1 ช่อง'); return; }
+            if (!reason) { showToast('⚠️ กรุณาระบุเหตุผล'); return; }
+            if (!logId && !clientId) { showToast('⚠️ กรุณาเลือกไซต์งานที่ปฏิบัติงานวันนั้น'); return; }
+
+            btn.disabled = true; btn.classList.add('opacity-50');
+            try {
+                let attachmentUrl = null;
+                if (attachmentFile) {
+                    const fileName = `${emp.emp_id}/${Date.now()}_${attachmentFile.name}`;
+                    attachmentUrl = await window.EmployeeSelfService.uploadCorrectionAttachment(attachmentFile, fileName);
+                }
+                await window.EmployeeSelfService.createCorrectionRequest({
+                    empId: emp.emp_id,
+                    employeeId: emp.employee_id,
+                    companyId: emp.company_id,
+                    attendanceLogId: logId,
+                    workDate,
+                    requestedCheckIn: checkIn,
+                    requestedCheckOut: checkOut,
+                    requestedClientId: clientId,
+                    reason,
+                    attachmentUrl
+                });
+                showToast('✅ ส่งคำขอแก้ไขเวลาสำเร็จ รอการอนุมัติ');
+                form.reset();
+                await loadCorrectionHistory();
+            } catch (err) {
+                console.error('createCorrectionRequest error', err);
+                showToast('❌ ส่งคำขอไม่สำเร็จ: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-50');
+            }
+        });
+    }
+});
+
+// ============================================================
+// 📋 กล่องอนุมัติสำหรับหัวหน้างาน (เฉพาะ role supervisor เห็นปุ่มนี้)
+// ============================================================
+async function refreshApprovalInboxTeaser() {
+    const emp = window.currentUserProfile;
+    const teaserEl = document.getElementById('approvalInboxTeaser');
+    if (!emp || !teaserEl) return;
+    try {
+        const list = await window.EmployeeSelfService.getPendingApprovalsForSupervisor(emp.id);
+        teaserEl.textContent = (list && list.length > 0) ? `🔔 มี ${list.length} คำขอรออนุมัติ` : '';
+    } catch (err) {
+        console.error('refreshApprovalInboxTeaser error', err);
+    }
+}
+
+function openApprovalInboxModal() {
+    const modal = document.getElementById('approvalInboxModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    loadApprovalInbox();
+}
+function closeApprovalInboxModal() {
+    const modal = document.getElementById('approvalInboxModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadApprovalInbox() {
+    const listEl = document.getElementById('approvalInboxList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp) return;
+    listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    try {
+        const list = await window.EmployeeSelfService.getPendingApprovalsForSupervisor(emp.id);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ไม่มีคำขอรออนุมัติในขณะนี้</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <p class="text-sm font-bold text-kcdark">${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
+                <p class="text-xs text-slate-500 mt-0.5">วันที่ ${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} — ขอเป็น ${item.requested_check_in || '--:--'} ถึง ${item.requested_check_out || '--:--'}</p>
+                <p class="text-xs text-slate-600 mt-1">เหตุผล: ${item.reason}</p>
+                ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูหลักฐาน</a>` : ''}
+                <div class="flex gap-2 mt-3">
+                    <button onclick="approveInboxItem('${item.id}')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
+                    <button onclick="rejectInboxItem('${item.id}')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadApprovalInbox error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+async function approveInboxItem(id) {
+    if (!confirm('ยืนยันอนุมัติคำขอแก้ไขเวลานี้?')) return;
+    try {
+        await window.EmployeeSelfService.approveCorrectionRequest(id);
+        showToast('✅ อนุมัติคำขอสำเร็จ');
+        await loadApprovalInbox();
+        await refreshApprovalInboxTeaser();
+    } catch (err) {
+        console.error('approveInboxItem error', err);
+        showToast('❌ อนุมัติไม่สำเร็จ: ' + err.message);
+    }
+}
+
+async function rejectInboxItem(id) {
+    const reason = prompt('ระบุเหตุผลที่ไม่อนุมัติ (ถ้ามี):') || '';
+    try {
+        await window.EmployeeSelfService.rejectCorrectionRequest(id, reason);
+        showToast('✅ บันทึกการไม่อนุมัติสำเร็จ');
+        await loadApprovalInbox();
+        await refreshApprovalInboxTeaser();
+    } catch (err) {
+        console.error('rejectInboxItem error', err);
+        showToast('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
     }
 }
