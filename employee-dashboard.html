@@ -193,6 +193,10 @@
         <button onclick="closeLeaveModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
       </div>
       <div class="p-6 overflow-y-auto no-scrollbar">
+        <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-emerald-400 pl-3">วันลาคงเหลือของคุณ (ปี <span id="leaveBalanceYear"></span>)</h4>
+        <div id="leaveBalanceSummary" class="grid grid-cols-2 gap-2 mb-6">
+          <p class="col-span-2 text-center text-slate-400 text-sm py-4">กำลังโหลดข้อมูล...</p>
+        </div>
         <form id="leaveForm" class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">ประเภทการลา <span class="text-red-500">*</span></label>
