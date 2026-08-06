@@ -68,3 +68,4 @@ Do not add:
 - Avoid dense borders, tiny text, and enterprise dashboard styling on public-facing recruitment pages
 - Use soft shadows sparingly
 - Prefer rounded cards and clear separation
+- **Do not use gradients (`bg-gradient-to-*`, gradient text, gradient borders, etc.) anywhere in the UI.** Use flat, solid colors only.
