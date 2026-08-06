@@ -465,10 +465,49 @@ async function openLeaveModal() {
     if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
     await loadLeaveTypes();
     await loadLeaveHistory();
+    await loadLeaveBalanceSummary();
 }
 function closeLeaveModal() {
     const modal = document.getElementById('leaveModal');
     if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+const leaveTypeColorClass = {
+    sick: 'border-rose-200 bg-rose-50',
+    personal: 'border-amber-200 bg-amber-50',
+    annual: 'border-emerald-200 bg-emerald-50',
+    maternity: 'border-pink-200 bg-pink-50',
+    ordination: 'border-violet-200 bg-violet-50',
+    unpaid: 'border-slate-200 bg-slate-50'
+};
+
+async function loadLeaveBalanceSummary() {
+    const yearEl = document.getElementById('leaveBalanceYear');
+    const containerEl = document.getElementById('leaveBalanceSummary');
+    const emp = window.currentUserProfile;
+    if (yearEl) yearEl.textContent = new Date().getFullYear() + 543; // แสดงเป็น พ.ศ. ให้ตรงกับส่วนอื่นของ ESS
+    if (!containerEl) return;
+    if (!emp || !emp.employee_id || !emp.emp_id) {
+        containerEl.innerHTML = '<p class="col-span-2 text-center text-red-500 text-sm py-4">ไม่พบรหัสพนักงานของคุณ กรุณาติดต่อผู้ดูแลระบบ</p>';
+        return;
+    }
+    try {
+        const summary = await window.EmployeeSelfService.getMyLeaveBalanceSummary(emp.employee_id, emp.emp_id);
+        if (!summary || summary.length === 0) {
+            containerEl.innerHTML = '<p class="col-span-2 text-center text-slate-400 text-sm py-4">ยังไม่มีข้อมูลประเภทการลา</p>';
+            return;
+        }
+        containerEl.innerHTML = summary.map(item => `
+            <div class="rounded-xl border ${leaveTypeColorClass[item.code] || 'border-[#e6edf7] bg-[#f7faff]'} p-3">
+                <p class="text-xs font-bold text-slate-700">${item.nameTh}</p>
+                <p class="text-lg font-extrabold text-kcdark mt-0.5">${item.remaining === null ? '∞' : item.remaining}<span class="text-xs font-normal text-slate-500"> / ${item.entitled === null ? 'ไม่จำกัด' : item.entitled} วัน</span></p>
+                ${item.used > 0 ? `<p class="text-[11px] text-slate-400 mt-0.5">ใช้ไปแล้ว ${item.used} วัน</p>` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadLeaveBalanceSummary error', err);
+        containerEl.innerHTML = '<p class="col-span-2 text-center text-red-500 text-sm py-4">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
 }
 
 async function loadLeaveTypes() {
