@@ -16,7 +16,10 @@ function initFeaturedJobsScroller() {
     el.addEventListener('wheel', (event) => {
         if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
         event.preventDefault();
-        el.scrollLeft += event.deltaY;
+        // Multiply the delta: a regular mouse wheel fires one small, fixed-size
+        // "notch" per click (unlike a trackpad's continuous stream), so without
+        // this it barely nudges the carousel per scroll.
+        el.scrollLeft += event.deltaY * 3;
     }, { passive: false });
 }
 
