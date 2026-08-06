@@ -12,118 +12,275 @@
   <style>body{visibility:hidden}</style>
   <script>
     tailwind.config = {
-      theme: { extend: { colors: { kcblue: '#003366', kcyellow: '#FFCC00' }, fontFamily: { sans: ['Sarabun', 'sans-serif'] } } }
+      theme: {
+        extend: {
+          colors: {
+            kcblue: '#165DFF',
+            kcdark: '#0F2B73',
+            kclight: '#EEF5FF',
+            kcyellow: '#FFC72C',
+            kcsoft: '#F7FAFF',
+            kcborder: '#E6EDF7'
+          },
+          fontFamily: { sans: ['Sarabun', 'sans-serif'] }
+        }
+      }
     }
   </script>
   <style>
-    * { border-radius: 0 !important; }
     body { overscroll-behavior-y: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex justify-center md:items-start md:p-6">
+<body class="bg-[#f7faff] font-sans text-slate-800 antialiased min-h-screen flex justify-center md:items-start md:p-6">
 
-  <div class="w-full max-w-md md:max-w-5xl bg-white min-h-screen md:min-h-[85vh] flex flex-col relative shadow-xl md:rounded-xl overflow-hidden md:mt-4">
+  <div class="w-full max-w-md md:max-w-5xl bg-white min-h-screen md:min-h-[85vh] flex flex-col relative md:rounded-[2rem] overflow-hidden md:shadow-[0_20px_50px_rgba(15,43,115,0.1)] md:border md:border-[#e6edf7] md:mt-4">
     <header class="bg-kcblue text-white p-5 md:p-8 shrink-0 rounded-b-3xl md:rounded-none flex flex-col md:flex-row md:justify-between md:items-center">
       <div class="flex justify-between items-start md:items-center w-full md:w-auto mb-4 md:mb-0">
-        <div>
-          <h1 class="text-xl md:text-2xl font-bold tracking-wide">KC CLEAN TRADE</h1>
-          <p class="text-xs md:text-sm text-blue-200">ระบบบริการพนักงาน (ESS)</p>
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-white/15 text-white font-black flex items-center justify-center text-lg shrink-0">KC</div>
+          <div>
+            <h1 class="text-xl md:text-2xl font-extrabold tracking-wide">KC CLEAN TRADE</h1>
+            <p class="text-xs md:text-sm text-blue-100">ระบบบริการพนักงาน (ESS)</p>
+          </div>
         </div>
-        <button onclick="logoutEmployee()" class="md:hidden text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 font-bold border border-white/50 transition-colors cursor-pointer">ออกจากระบบ</button>
+        <button onclick="logoutEmployee()" class="md:hidden text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-full font-bold transition-colors cursor-pointer">ออกจากระบบ</button>
       </div>
       <div class="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto">
         <div class="flex items-center text-left md:text-right">
             <div>
                 <p id="empNameDisplay" class="font-bold text-lg md:text-xl leading-tight">กำลังโหลดข้อมูล...</p>
                 <p id="empIdDisplay" class="text-sm text-kcyellow font-bold mt-0.5">KC-XXXXX</p>
-                <p id="empRoleDisplay" class="text-xs text-blue-200 mt-0.5"></p>
+                <p id="empRoleDisplay" class="text-xs text-blue-100 mt-0.5"></p>
             </div>
         </div>
-        <button onclick="logoutEmployee()" class="hidden md:block text-sm bg-white/20 hover:bg-white/30 text-white px-4 py-2 font-bold border border-white/50 transition-colors ml-6 cursor-pointer">ออกจากระบบ</button>
+        <button onclick="logoutEmployee()" class="hidden md:block text-sm bg-white/15 hover:bg-white/25 text-white px-4 py-2 rounded-full font-bold transition-colors ml-6 cursor-pointer">ออกจากระบบ</button>
       </div>
     </header>
 
-    <main class="flex-1 p-5 md:p-8 overflow-y-auto pb-24 md:pb-8">
+    <main class="flex-1 p-5 md:p-8 overflow-y-auto pb-24 md:pb-8 no-scrollbar">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 h-full">
           <div class="md:col-span-5 flex flex-col">
-              <div class="bg-white border border-gray-200 p-4 shadow-sm mb-5 text-center relative z-10 md:py-8">
-                <p class="text-sm md:text-base text-gray-500 font-bold mb-1" id="currentDateDisplay">กำลังโหลดวันที่...</p>
-                <h2 class="text-4xl md:text-5xl font-bold text-kcblue tracking-wider" id="currentTimeDisplay">00:00:00</h2>
+              <div class="bg-[#f7faff] border border-[#e6edf7] rounded-[1.75rem] p-4 shadow-sm mb-5 text-center relative z-10 md:py-8">
+                <p class="text-sm md:text-base text-slate-500 font-bold mb-1" id="currentDateDisplay">กำลังโหลดวันที่...</p>
+                <h2 class="text-4xl md:text-5xl font-extrabold text-kcdark tracking-wider" id="currentTimeDisplay">00:00:00</h2>
               </div>
-              <button onclick="openTimestampCamera()" class="w-full bg-kcblue hover:bg-blue-900 text-white p-6 md:p-10 shadow-md border-b-4 border-blue-950 active:border-b-0 active:translate-y-1 transition-all flex flex-col items-center justify-center gap-2 mb-6 cursor-pointer group flex-1">
+              <button onclick="openTimestampCamera()" class="w-full rounded-[1.75rem] bg-kcblue hover:bg-kcdark text-white p-6 md:p-10 shadow-[0_16px_32px_rgba(22,93,255,0.25)] transition-all flex flex-col items-center justify-center gap-2 mb-6 cursor-pointer group flex-1">
                 <span class="text-4xl md:text-6xl group-hover:scale-110 transition-transform mb-2">📸</span>
                 <span class="text-xl md:text-2xl font-bold tracking-wide">ถ่ายรูปลงเวลาเข้า-ออกงาน</span>
-                <span class="text-xs md:text-sm text-blue-200">ระบบบันทึกพิกัด GPS อัตโนมัติ</span>
+                <span class="text-xs md:text-sm text-blue-100">ระบบบันทึกพิกัด GPS อัตโนมัติ</span>
               </button>
           </div>
           <div class="md:col-span-7">
-              <h3 class="text-sm md:text-lg font-bold text-gray-800 mb-4 border-l-4 border-kcyellow pl-3">บริการอื่นๆ (Self-Service)</h3>
+              <h3 class="text-sm md:text-lg font-bold text-slate-800 mb-4 border-l-4 border-kcyellow pl-3">บริการอื่นๆ (Self-Service)</h3>
               <div class="grid grid-cols-2 gap-3 md:gap-4">
-                <button class="bg-gray-50 border border-gray-200 p-6 md:p-8 text-center hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center gap-3"><span class="text-3xl md:text-4xl">💸</span><span class="text-sm md:text-base font-bold text-gray-700">ขอเบิกเงินล่วงหน้า</span></button>
-                <button class="bg-gray-50 border border-gray-200 p-6 md:p-8 text-center hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center gap-3"><span class="text-3xl md:text-4xl">🏖️</span><span class="text-sm md:text-base font-bold text-gray-700">ขออนุมัติลางาน</span></button>
-                <button class="bg-gray-50 border border-gray-200 p-6 md:p-8 text-center hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center gap-3"><span class="text-3xl md:text-4xl">📄</span><span class="text-sm md:text-base font-bold text-gray-700">สลิปเงินเดือน</span></button>
-                <button class="bg-gray-50 border border-gray-200 p-6 md:p-8 text-center hover:bg-gray-100 transition-colors cursor-pointer flex flex-col items-center gap-3"><span class="text-3xl md:text-4xl">🕒</span><span class="text-sm md:text-base font-bold text-gray-700">ประวัติลงเวลา</span></button>
+                <button onclick="openAdvanceModal()" class="group rounded-[1.75rem] bg-[#fff9ec] border border-[#f5e6bf] p-6 md:p-8 text-center hover:border-kcyellow hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(255,199,44,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-kcyellow/20 text-2xl flex items-center justify-center">💸</div>
+                  <span class="text-sm md:text-base font-bold text-slate-700">ขอเบิกเงินล่วงหน้า</span>
+                </button>
+                <button onclick="openLeaveModal()" class="group rounded-[1.75rem] bg-[#f0fbf5] border border-[#cdeedd] p-6 md:p-8 text-center hover:border-emerald-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(16,185,129,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-2xl flex items-center justify-center">🏖️</div>
+                  <span class="text-sm md:text-base font-bold text-slate-700">ขออนุมัติลางาน</span>
+                </button>
+                <button onclick="openPayslipModal()" class="group rounded-[1.75rem] bg-[#f5f3ff] border border-[#e3ddfa] p-6 md:p-8 text-center hover:border-violet-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(139,92,246,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-violet-500/10 text-2xl flex items-center justify-center">📄</div>
+                  <span class="text-sm md:text-base font-bold text-slate-700">สลิปเงินเดือน</span>
+                </button>
+                <button onclick="openAttendanceHistoryModal()" class="group rounded-[1.75rem] bg-[#eef5ff] border border-[#e6edf7] p-6 md:p-8 text-center hover:border-kcblue hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(15,43,115,0.08)] transition-all cursor-pointer flex flex-col items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-kcblue/10 text-2xl flex items-center justify-center">🕒</div>
+                  <span class="text-sm md:text-base font-bold text-slate-700">ประวัติลงเวลา</span>
+                </button>
+                <button onclick="openAnnouncementsModal()" class="group col-span-2 rounded-[1.75rem] bg-[#fef2f2] border border-[#fbdcdc] p-5 md:p-6 text-left hover:border-rose-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(244,63,94,0.12)] transition-all cursor-pointer flex items-center gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-2xl flex items-center justify-center shrink-0">📢</div>
+                  <div class="min-w-0">
+                    <span class="text-sm md:text-base font-bold text-slate-700 block">ประกาศบริษัท & ปฏิทินวันหยุด</span>
+                    <span id="announcementTeaser" class="text-xs text-slate-400">แตะเพื่อดูประกาศล่าสุดและวันหยุดที่กำลังจะถึง</span>
+                  </div>
+                </button>
               </div>
           </div>
       </div>
     </main>
   </div>
 
-  <div id="cameraModal" class="hidden fixed inset-0 z-50 bg-black/80 items-center justify-center p-4">
-      <div class="bg-white w-full max-w-md p-6 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
-          <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
-              <h3 class="text-lg font-bold text-kcblue">📸 ถ่ายรูปเช็คอินหน้างาน</h3>
-              <button onclick="closeTimestampCamera()" class="text-gray-400 hover:text-red-600 font-bold text-xl cursor-pointer">✕</button>
+  <div id="cameraModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+      <div class="bg-white w-full max-w-md rounded-[2rem] p-6 shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-y-auto no-scrollbar">
+          <div class="flex justify-between items-center mb-4 pb-3 border-b border-[#e6edf7]">
+              <h3 class="text-lg font-bold text-kcdark">📸 ถ่ายรูปเช็คอินหน้างาน</h3>
+              <button onclick="closeTimestampCamera()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
           </div>
 
           <div class="mb-3">
-              <label class="block text-xs font-bold text-gray-600 mb-1">เลือกสถานที่ปฏิบัติงาน (ลูกค้า) <span class="text-red-500">*</span></label>
-              <select id="workSiteSelect" class="w-full h-11 border border-gray-300 px-3 text-sm focus:border-kcblue outline-none bg-white font-bold text-gray-800">
+              <label class="block text-xs font-bold text-slate-600 mb-1">เลือกสถานที่ปฏิบัติงาน (ลูกค้า) <span class="text-red-500">*</span></label>
+              <select id="workSiteSelect" class="w-full h-11 rounded-xl border border-[#e6edf7] px-3 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-white font-bold text-slate-800 transition-all">
                   <option value="">-- กำลังโหลดไซต์งาน --</option>
               </select>
           </div>
 
-          <div class="relative w-full aspect-video bg-gray-900 border border-gray-300 overflow-hidden flex items-center justify-center mb-3">
+          <div class="relative w-full aspect-video bg-slate-900 rounded-2xl border border-[#e6edf7] overflow-hidden flex items-center justify-center mb-3">
               <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover"></video>
               <canvas id="captureCanvas" class="hidden"></canvas>
-              <div class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] p-2 font-mono space-y-0.5">
+              <div class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] p-2 rounded-lg font-mono space-y-0.5">
                   <p id="gpsStatusText">🛰️ GPS: กำลังค้นหาตำแหน่ง...</p>
                   <p id="cameraTimeText">⏱️ เวลา: --:--:--</p>
               </div>
           </div>
 
           <div class="mb-4">
-              <label class="block text-xs font-bold text-gray-600 mb-1">หมายเหตุ / แจ้งปัญหาให้แอดมินทราบ (ถ้ามี)</label>
-              <textarea id="employeeRemark" rows="2" class="w-full border border-gray-300 p-2 text-sm focus:border-kcblue outline-none bg-gray-50" placeholder="เช่น เลือกลงไซต์งานผิดตอนเช้า, ลืมกดออกงาน..."></textarea>
+              <label class="block text-xs font-bold text-slate-600 mb-1">หมายเหตุ / แจ้งปัญหาให้แอดมินทราบ (ถ้ามี)</label>
+              <textarea id="employeeRemark" rows="2" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-[#f7faff] transition-all" placeholder="เช่น เลือกลงไซต์งานผิดตอนเช้า, ลืมกดออกงาน..."></textarea>
           </div>
 
           <div class="space-y-3">
-              <button id="snapBtn" onclick="processAttendance()" disabled class="w-full bg-green-600 text-white py-3.5 font-bold hover:bg-green-700 transition-colors shadow-md cursor-not-allowed opacity-50 flex justify-center items-center gap-2">
+              <button id="snapBtn" onclick="processAttendance()" disabled class="w-full rounded-2xl bg-emerald-500 text-white py-3.5 font-bold hover:bg-emerald-600 transition-colors shadow-sm cursor-not-allowed opacity-50 flex justify-center items-center gap-2">
                   <span>📌</span> บันทึกเวลาทำงาน
               </button>
-              <button onclick="closeTimestampCamera()" class="w-full bg-gray-100 border border-gray-300 text-gray-700 py-3 font-bold hover:bg-gray-200 transition-colors cursor-pointer">ยกเลิก</button>
+              <button onclick="closeTimestampCamera()" class="w-full rounded-2xl bg-[#f7faff] border border-[#e6edf7] text-slate-700 py-3 font-bold hover:bg-[#eef5ff] transition-colors cursor-pointer">ยกเลิก</button>
           </div>
       </div>
   </div>
 
-  <div id="logoutConfirmModal" class="hidden fixed inset-0 z-50 bg-black/70 items-center justify-center p-4">
-      <div class="bg-white w-full max-w-sm p-6 shadow-2xl">
+  <div id="logoutConfirmModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-[#e6edf7]">
           <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-gray-200 text-kcblue flex items-center justify-center font-bold text-xl shrink-0">?</div>
-              <h3 class="text-xl font-bold text-gray-900">ยืนยันการออกจากระบบ?</h3>
+              <div class="w-11 h-11 rounded-2xl bg-[#eef5ff] text-kcblue flex items-center justify-center font-bold text-xl shrink-0">?</div>
+              <h3 class="text-xl font-bold text-slate-900">ยืนยันการออกจากระบบ?</h3>
           </div>
-          <p class="text-sm text-gray-600 mb-6">คุณต้องการออกจากระบบบริการพนักงาน (ESS) ใช่หรือไม่?</p>
+          <p class="text-sm text-slate-600 mb-6">คุณต้องการออกจากระบบบริการพนักงาน (ESS) ใช่หรือไม่?</p>
           <div class="flex gap-3">
-              <button onclick="cancelLogout()" class="flex-1 border border-gray-300 bg-gray-100 text-gray-700 py-3 text-sm font-bold hover:bg-gray-200 transition-colors cursor-pointer">ยกเลิก</button>
-              <button onclick="confirmLogout()" class="flex-1 bg-kcblue text-white py-3 text-sm font-bold hover:bg-blue-900 transition-colors cursor-pointer">ออกจากระบบ</button>
+              <button onclick="cancelLogout()" class="flex-1 rounded-2xl border border-[#e6edf7] bg-[#f7faff] text-slate-700 py-3 text-sm font-bold hover:bg-[#eef5ff] transition-colors cursor-pointer">ยกเลิก</button>
+              <button onclick="confirmLogout()" class="flex-1 rounded-2xl bg-kcblue text-white py-3 text-sm font-bold hover:bg-kcdark transition-colors cursor-pointer">ออกจากระบบ</button>
           </div>
       </div>
   </div>
 
-  <div id="globalToast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-6 py-4 shadow-2xl font-bold text-sm border-l-4 border-kcyellow transition-all max-w-sm text-center">
+  <div id="advanceModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">💸 ขอเบิกเงินล่วงหน้า</h3>
+        <button onclick="closeAdvanceModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <form id="advanceForm" class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">จำนวนเงินที่ต้องการเบิก (บาท) <span class="text-red-500">*</span></label>
+            <input type="number" id="advanceAmount" min="1" step="1" required placeholder="เช่น 1000" class="w-full rounded-xl border border-[#e6edf7] p-3 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">หมายเหตุ (ถ้ามี)</label>
+            <textarea id="advanceRemark" rows="2" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-[#f7faff] transition-all" placeholder="เหตุผลในการขอเบิกเงินล่วงหน้า"></textarea>
+          </div>
+          <button type="submit" id="advanceSubmitBtn" class="w-full rounded-2xl bg-kcblue text-white font-bold py-3 shadow-sm hover:bg-kcdark transition-colors">ส่งคำขอเบิกเงิน</button>
+        </form>
+        <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">ประวัติคำขอของคุณ</h4>
+        <div id="advanceHistoryList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="leaveModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">🏖️ ขออนุมัติลางาน</h3>
+        <button onclick="closeLeaveModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <form id="leaveForm" class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">ประเภทการลา <span class="text-red-500">*</span></label>
+            <select id="leaveTypeSelect" required class="w-full h-11 rounded-xl border border-[#e6edf7] px-3 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-white font-bold text-slate-800 transition-all">
+              <option value="">-- กำลังโหลดประเภทการลา --</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">วันที่เริ่มลา <span class="text-red-500">*</span></label>
+              <input type="date" id="leaveStartDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">วันที่สิ้นสุด <span class="text-red-500">*</span></label>
+              <input type="date" id="leaveEndDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">เหตุผลการลา <span class="text-red-500">*</span></label>
+            <textarea id="leaveReason" rows="2" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-[#f7faff] transition-all" placeholder="ระบุเหตุผลการลา"></textarea>
+          </div>
+          <button type="submit" id="leaveSubmitBtn" class="w-full rounded-2xl bg-kcblue text-white font-bold py-3 shadow-sm hover:bg-kcdark transition-colors">ส่งคำขอลางาน</button>
+        </form>
+        <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">ประวัติการลาของคุณ</h4>
+        <div id="leaveHistoryList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="payslipModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">📄 สลิปเงินเดือน</h3>
+        <button onclick="closePayslipModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <div id="payslipList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="attendanceHistoryModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">🕒 ประวัติลงเวลา</h3>
+        <button onclick="closeAttendanceHistoryModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <div id="attendanceHistoryList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="announcementsModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">📢 ประกาศบริษัท & ปฏิทินวันหยุด</h3>
+        <button onclick="closeAnnouncementsModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="flex gap-2 px-6 pt-4 shrink-0">
+        <button id="annTab-feed" onclick="switchAnnouncementTab('feed')" class="flex-1 rounded-full py-2 text-sm font-bold bg-kcblue text-white transition-colors cursor-pointer">ประกาศ</button>
+        <button id="annTab-holidays" onclick="switchAnnouncementTab('holidays')" class="flex-1 rounded-full py-2 text-sm font-bold bg-[#f7faff] text-slate-600 border border-[#e6edf7] transition-colors cursor-pointer">ปฏิทินวันหยุด</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <div id="announcementFeedView" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+        <div id="announcementHolidayView" class="hidden space-y-5">
+          <div>
+            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">วันหยุดบริษัท</h4>
+            <div id="companyHolidayList" class="space-y-2"></div>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-emerald-400 pl-3">วันหยุดเฉพาะไซต์งาน</h4>
+            <div id="clientHolidayList" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="globalToast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-[60] bg-kcdark text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-sm border-l-4 border-kcyellow transition-all max-w-sm text-center">
       <span id="toastMessage">ข้อความแจ้งเตือน</span>
   </div>
 
+  <script src="js/services/employeeSelfService.js"></script>
+  <script src="js/services/announcementService.js"></script>
   <script src="js/pages/employee-dashboard.js"></script>
   <script>
   (async ()=>{
@@ -134,7 +291,7 @@
     window.currentUserProfile = profile;
     if (profile) {
       document.getElementById('empNameDisplay').textContent = profile.display_name || profile.email || 'พนักงาน';
-      document.getElementById('empIdDisplay').textContent = profile.employee_emp_id || '';
+      document.getElementById('empIdDisplay').textContent = profile.emp_id || '';
       const roleLabels = { supervisor: 'หัวหน้างาน (Supervisor)', employee: 'พนักงาน (Employee)' };
       const roleEl = document.getElementById('empRoleDisplay');
       if (roleEl) roleEl.textContent = [profile.email, roleLabels[profile.role] || profile.role].filter(Boolean).join(' · ');
@@ -142,6 +299,7 @@
     document.body.style.visibility = 'visible';
     // load other employee data
     if (typeof loadWorkSites === 'function') loadWorkSites();
+    if (typeof loadAnnouncementTeaser === 'function') loadAnnouncementTeaser();
   })();
   </script>
 </body>

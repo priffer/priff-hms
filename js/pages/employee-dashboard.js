@@ -309,3 +309,463 @@ async function confirmLogout() {
         window.location.href = 'employee-login.html';
     }
 }
+
+// ============================================================
+// 💸 ขอเบิกเงินล่วงหน้า (advance_payments)
+// ============================================================
+function statusBadgeHtml(status) {
+    const map = {
+        pending: '<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-1 text-[11px] font-bold">⏳ รอดำเนินการ</span>',
+        approved: '<span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[11px] font-bold">✅ อนุมัติแล้ว</span>',
+        rejected: '<span class="inline-block bg-red-50 text-red-600 border border-red-200 rounded-full px-2.5 py-1 text-[11px] font-bold">❌ ไม่อนุมัติ</span>',
+        cancelled: '<span class="inline-block bg-slate-100 text-slate-500 border border-slate-200 rounded-full px-2.5 py-1 text-[11px] font-bold">ยกเลิกแล้ว</span>'
+    };
+    return map[status] || `<span class="inline-block bg-slate-100 text-slate-500 border border-slate-200 rounded-full px-2.5 py-1 text-[11px] font-bold">${status}</span>`;
+}
+
+async function openAdvanceModal() {
+    const modal = document.getElementById('advanceModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    await loadAdvanceHistory();
+}
+function closeAdvanceModal() {
+    const modal = document.getElementById('advanceModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadAdvanceHistory() {
+    const listEl = document.getElementById('advanceHistoryList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp || !emp.emp_id) {
+        if (listEl) listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">ไม่พบรหัสพนักงานของคุณ กรุณาติดต่อผู้ดูแลระบบ</p>';
+        return;
+    }
+    try {
+        const list = await window.EmployeeSelfService.getMyAdvancePayments(emp.emp_id);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประวัติการขอเบิกเงินล่วงหน้า</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
+                <div class="flex justify-between items-start mb-1">
+                    <div>
+                        <p class="text-xs text-slate-500 font-bold">${new Date(item.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        <p class="text-lg font-extrabold text-kcdark mt-0.5">฿${Number(item.amount).toLocaleString()}</p>
+                    </div>
+                    ${statusBadgeHtml(item.status)}
+                </div>
+                ${item.employee_remark ? `<p class="text-xs text-slate-600 mt-1">หมายเหตุ: ${item.employee_remark}</p>` : ''}
+                ${item.transfer_slip_url ? `<a href="${item.transfer_slip_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📄 ดูสลิปโอนเงิน</a>` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadAdvanceHistory error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('advanceForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emp = window.currentUserProfile;
+            const amountInput = document.getElementById('advanceAmount');
+            const remarkInput = document.getElementById('advanceRemark');
+            const btn = document.getElementById('advanceSubmitBtn');
+            const amount = Number(amountInput.value);
+            if (!emp || !emp.emp_id) { showToast('⚠️ ไม่พบรหัสพนักงานของคุณ'); return; }
+            if (!amount || amount <= 0) { showToast('⚠️ กรุณากรอกจำนวนเงินให้ถูกต้อง'); return; }
+
+            btn.disabled = true; btn.classList.add('opacity-50');
+            try {
+                await window.EmployeeSelfService.createAdvancePaymentRequest({
+                    empId: emp.emp_id,
+                    companyId: emp.company_id,
+                    amount,
+                    remark: remarkInput.value.trim()
+                });
+                showToast('✅ ส่งคำขอเบิกเงินล่วงหน้าสำเร็จ รอการอนุมัติ');
+                form.reset();
+                await loadAdvanceHistory();
+            } catch (err) {
+                console.error('createAdvancePaymentRequest error', err);
+                showToast('❌ ส่งคำขอไม่สำเร็จ: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-50');
+            }
+        });
+    }
+});
+
+// ============================================================
+// 🏖️ ขออนุมัติลางาน (leave_requests)
+// ============================================================
+function countLeaveDays(startStr, endStr) {
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    const diffMs = end.setHours(0,0,0,0) - start.setHours(0,0,0,0);
+    return Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+}
+
+async function openLeaveModal() {
+    const modal = document.getElementById('leaveModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    await loadLeaveTypes();
+    await loadLeaveHistory();
+}
+function closeLeaveModal() {
+    const modal = document.getElementById('leaveModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadLeaveTypes() {
+    const select = document.getElementById('leaveTypeSelect');
+    if (!select) return;
+    try {
+        const types = await window.EmployeeSelfService.getLeaveTypes();
+        select.innerHTML = '<option value="">-- เลือกประเภทการลา --</option>';
+        (types || []).forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = `${t.name_th}${t.is_paid ? '' : ' (ไม่รับค่าจ้าง)'}`;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        console.error('loadLeaveTypes error', err);
+        select.innerHTML = '<option value="">❌ โหลดประเภทการลาไม่สำเร็จ</option>';
+    }
+}
+
+async function loadLeaveHistory() {
+    const listEl = document.getElementById('leaveHistoryList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp || !emp.emp_id) {
+        if (listEl) listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">ไม่พบรหัสพนักงานของคุณ กรุณาติดต่อผู้ดูแลระบบ</p>';
+        return;
+    }
+    try {
+        const list = await window.EmployeeSelfService.getMyLeaveRequests(emp.emp_id);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประวัติการลางาน</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
+                <div class="flex justify-between items-start mb-1">
+                    <div>
+                        <p class="text-sm font-bold text-kcdark">${item.leave_types?.name_th || 'การลา'}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${item.start_date} ถึง ${item.end_date} (${item.total_days} วัน)</p>
+                    </div>
+                    ${statusBadgeHtml(item.status)}
+                </div>
+                ${item.reason ? `<p class="text-xs text-slate-600 mt-2">เหตุผล: ${item.reason}</p>` : ''}
+                ${item.status === 'pending' ? `<button onclick="cancelMyLeaveRequest('${item.id}')" class="mt-2 text-xs font-bold text-red-500 hover:underline cursor-pointer">ยกเลิกคำขอนี้</button>` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadLeaveHistory error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+async function cancelMyLeaveRequest(id) {
+    const emp = window.currentUserProfile;
+    if (!emp || !emp.emp_id) return;
+    try {
+        await window.EmployeeSelfService.cancelLeaveRequest(id, emp.emp_id);
+        showToast('✅ ยกเลิกคำขอลางานสำเร็จ');
+        await loadLeaveHistory();
+    } catch (err) {
+        console.error('cancelMyLeaveRequest error', err);
+        showToast('❌ ยกเลิกไม่สำเร็จ: ' + err.message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('leaveForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emp = window.currentUserProfile;
+            const leaveTypeId = document.getElementById('leaveTypeSelect').value;
+            const startDate = document.getElementById('leaveStartDate').value;
+            const endDate = document.getElementById('leaveEndDate').value;
+            const reason = document.getElementById('leaveReason').value.trim();
+            const btn = document.getElementById('leaveSubmitBtn');
+
+            if (!emp || !emp.emp_id || !emp.employee_id) { showToast('⚠️ ไม่พบข้อมูลพนักงานของคุณ'); return; }
+            if (!leaveTypeId) { showToast('⚠️ กรุณาเลือกประเภทการลา'); return; }
+            if (!startDate || !endDate) { showToast('⚠️ กรุณาเลือกวันที่ลา'); return; }
+            const totalDays = countLeaveDays(startDate, endDate);
+            if (totalDays <= 0) { showToast('⚠️ ช่วงวันที่ลาไม่ถูกต้อง'); return; }
+
+            btn.disabled = true; btn.classList.add('opacity-50');
+            try {
+                await window.EmployeeSelfService.createLeaveRequest({
+                    empId: emp.emp_id,
+                    employeeId: emp.employee_id,
+                    companyId: emp.company_id,
+                    leaveTypeId,
+                    startDate,
+                    endDate,
+                    totalDays,
+                    reason
+                });
+                showToast('✅ ส่งคำขอลางานสำเร็จ รอการอนุมัติ');
+                form.reset();
+                await loadLeaveHistory();
+            } catch (err) {
+                console.error('createLeaveRequest error', err);
+                showToast('❌ ส่งคำขอไม่สำเร็จ: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-50');
+            }
+        });
+    }
+});
+
+// ============================================================
+// 📄 สลิปเงินเดือน (payroll_payslips)
+// ============================================================
+async function openPayslipModal() {
+    const modal = document.getElementById('payslipModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    await loadPayslips();
+}
+function closePayslipModal() {
+    const modal = document.getElementById('payslipModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadPayslips() {
+    const listEl = document.getElementById('payslipList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp || !emp.employee_id) {
+        if (listEl) listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">ไม่พบข้อมูลพนักงานของคุณ กรุณาติดต่อผู้ดูแลระบบ</p>';
+        return;
+    }
+    try {
+        const list = await window.EmployeeSelfService.getMyPayslips(emp.employee_id);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = `
+                <div class="text-center py-10">
+                    <div class="text-4xl mb-3">🗓️</div>
+                    <p class="text-slate-500 font-bold text-sm">ยังไม่มีสลิปเงินเดือนให้แสดง</p>
+                    <p class="text-slate-400 text-xs mt-1">ระบบจะแสดงสลิปหลังจากฝ่ายบัญชีประมวลผลรอบการจ่ายเงินเดือนแล้ว</p>
+                </div>`;
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-sm font-bold text-kcdark">รอบวันที่ ${item.payslip_date}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">เลขที่สลิป: ${item.payslip_number}</p>
+                    </div>
+                    <span class="inline-block bg-[#eef5ff] text-kcblue border border-kcblue/20 rounded-full px-2.5 py-1 text-[11px] font-bold">${item.status}</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div><p class="text-slate-400">รายรับรวม</p><p class="font-bold text-emerald-600">฿${Number(item.gross_amount).toLocaleString()}</p></div>
+                    <div><p class="text-slate-400">รายการหัก</p><p class="font-bold text-red-500">฿${Number(item.deduction_amount).toLocaleString()}</p></div>
+                    <div><p class="text-slate-400">ยอดสุทธิ</p><p class="font-bold text-kcdark">฿${Number(item.net_amount).toLocaleString()}</p></div>
+                </div>
+                ${item.payslip_url ? `<a href="${item.payslip_url}" target="_blank" class="block mt-3 text-xs font-bold text-kcblue hover:underline">📄 ดูสลิปฉบับเต็ม</a>` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadPayslips error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+// ============================================================
+// 🕒 ประวัติลงเวลา (attendance_logs)
+// ============================================================
+async function openAttendanceHistoryModal() {
+    const modal = document.getElementById('attendanceHistoryModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    await loadAttendanceHistory();
+}
+function closeAttendanceHistoryModal() {
+    const modal = document.getElementById('attendanceHistoryModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+const attendanceStatusLabel = {
+    present: '<span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[11px] font-bold">ปกติ</span>',
+    flagged: '<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-1 text-[11px] font-bold">มีหมายเหตุ</span>',
+    absent: '<span class="inline-block bg-red-50 text-red-600 border border-red-200 rounded-full px-2.5 py-1 text-[11px] font-bold">ขาดงาน</span>'
+};
+
+async function loadAttendanceHistory() {
+    const listEl = document.getElementById('attendanceHistoryList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp || !emp.emp_id) {
+        if (listEl) listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">ไม่พบรหัสพนักงานของคุณ กรุณาติดต่อผู้ดูแลระบบ</p>';
+        return;
+    }
+    try {
+        const list = await window.EmployeeSelfService.getMyAttendanceHistory(emp.emp_id, { limit: 30 });
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประวัติการลงเวลา</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
+                <div class="flex justify-between items-start mb-1">
+                    <div>
+                        <p class="text-sm font-bold text-kcdark">${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${item.clients?.client_name || 'ไม่ระบุไซต์งาน'}</p>
+                    </div>
+                    ${attendanceStatusLabel[item.status] || ''}
+                </div>
+                <div class="flex gap-4 text-xs mt-2">
+                    <p><span class="text-slate-400">เข้างาน:</span> <span class="font-bold text-slate-700">${item.check_in || '--:--'}</span></p>
+                    <p><span class="text-slate-400">ออกงาน:</span> <span class="font-bold text-slate-700">${item.check_out || '--:--'}</span></p>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadAttendanceHistory error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+// ============================================================
+// 📢 ประกาศบริษัท & ปฏิทินวันหยุด (announcements / company_holidays / client_holidays)
+// ============================================================
+function formatHolidayDate(dateStr) {
+    return new Date(dateStr).toLocaleDateString('th-TH', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+async function loadAnnouncementTeaser() {
+    const teaserEl = document.getElementById('announcementTeaser');
+    if (!teaserEl || !window.AnnouncementService) return;
+    try {
+        const list = await window.AnnouncementService.getPublishedAnnouncements(1);
+        if (list && list.length > 0) {
+            teaserEl.textContent = `📌 ${list[0].title}`;
+        }
+    } catch (err) {
+        console.error('loadAnnouncementTeaser error', err);
+    }
+}
+
+async function openAnnouncementsModal() {
+    const modal = document.getElementById('announcementsModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    switchAnnouncementTab('feed');
+}
+function closeAnnouncementsModal() {
+    const modal = document.getElementById('announcementsModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+function switchAnnouncementTab(tab) {
+    const feedBtn = document.getElementById('annTab-feed');
+    const holidaysBtn = document.getElementById('annTab-holidays');
+    const feedView = document.getElementById('announcementFeedView');
+    const holidaysView = document.getElementById('announcementHolidayView');
+    const activeCls = ['bg-kcblue', 'text-white'];
+    const inactiveCls = ['bg-[#f7faff]', 'text-slate-600', 'border', 'border-[#e6edf7]'];
+
+    if (tab === 'feed') {
+        feedView.classList.remove('hidden');
+        holidaysView.classList.add('hidden');
+        feedBtn.classList.add(...activeCls);
+        feedBtn.classList.remove(...inactiveCls);
+        holidaysBtn.classList.remove(...activeCls);
+        holidaysBtn.classList.add(...inactiveCls);
+        loadAnnouncementFeed();
+    } else {
+        holidaysView.classList.remove('hidden');
+        feedView.classList.add('hidden');
+        holidaysBtn.classList.add(...activeCls);
+        holidaysBtn.classList.remove(...inactiveCls);
+        feedBtn.classList.remove(...activeCls);
+        feedBtn.classList.add(...inactiveCls);
+        loadHolidayCalendar();
+    }
+}
+
+const announcementCategoryLabel = {
+    general: '📰 ทั่วไป',
+    policy: '📋 ระเบียบ',
+    benefit: '🎁 สวัสดิการ',
+    safety: '🦺 ความปลอดภัย'
+};
+
+async function loadAnnouncementFeed() {
+    const listEl = document.getElementById('announcementFeedView');
+    if (!listEl) return;
+    listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    try {
+        const list = await window.AnnouncementService.getPublishedAnnouncements(20);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประกาศในขณะนี้</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border ${item.is_pinned ? 'border-kcyellow bg-[#fff9ec]' : 'border-[#e6edf7] bg-[#f7faff]'} p-4">
+                <div class="flex justify-between items-start gap-2 mb-1">
+                    <p class="text-sm font-bold text-kcdark">${item.is_pinned ? '📌 ' : ''}${item.title}</p>
+                    <span class="shrink-0 text-[11px] font-bold text-slate-400">${announcementCategoryLabel[item.category] || item.category}</span>
+                </div>
+                <p class="text-xs text-slate-600 whitespace-pre-line">${item.body}</p>
+                <div class="flex justify-between items-center mt-2">
+                    <p class="text-[11px] text-slate-400">${new Date(item.published_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                    ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูเอกสารแนบ</a>` : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadAnnouncementFeed error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+async function loadHolidayCalendar() {
+    const companyEl = document.getElementById('companyHolidayList');
+    const clientEl = document.getElementById('clientHolidayList');
+    if (companyEl) companyEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">กำลังโหลดข้อมูล...</p>';
+    if (clientEl) clientEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">กำลังโหลดข้อมูล...</p>';
+
+    try {
+        const holidays = await window.AnnouncementService.getUpcomingCompanyHolidays();
+        if (companyEl) {
+            companyEl.innerHTML = (!holidays || holidays.length === 0)
+                ? '<p class="text-center text-slate-400 text-sm py-4">ยังไม่มีวันหยุดที่กำลังจะถึง</p>'
+                : holidays.map(h => `
+                    <div class="flex justify-between items-center rounded-xl border border-[#e6edf7] bg-[#f7faff] px-3 py-2">
+                        <span class="text-xs font-bold text-slate-700">${h.name_th}</span>
+                        <span class="text-xs text-slate-400">${formatHolidayDate(h.holiday_date)}</span>
+                    </div>
+                `).join('');
+        }
+    } catch (err) {
+        console.error('loadHolidayCalendar (company) error', err);
+        if (companyEl) companyEl.innerHTML = '<p class="text-center text-red-500 text-sm py-4">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+
+    try {
+        const clientHolidays = await window.AnnouncementService.getUpcomingClientHolidays(null);
+        if (clientEl) {
+            clientEl.innerHTML = (!clientHolidays || clientHolidays.length === 0)
+                ? '<p class="text-center text-slate-400 text-sm py-4">ไม่มีวันหยุดเฉพาะไซต์งานที่กำลังจะถึง</p>'
+                : clientHolidays.map(h => `
+                    <div class="flex justify-between items-center rounded-xl border border-[#cdeedd] bg-[#f0fbf5] px-3 py-2">
+                        <div>
+                            <span class="text-xs font-bold text-slate-700">${h.name_th}</span>
+                            <span class="block text-[11px] text-emerald-600 font-bold">${h.clients?.client_name || 'ไม่ระบุไซต์งาน'}</span>
+                        </div>
+                        <span class="text-xs text-slate-400 shrink-0">${formatHolidayDate(h.holiday_date)}</span>
+                    </div>
+                `).join('');
+        }
+    } catch (err) {
+        console.error('loadHolidayCalendar (client) error', err);
+        if (clientEl) clientEl.innerHTML = '<p class="text-center text-red-500 text-sm py-4">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}

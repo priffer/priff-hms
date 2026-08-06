@@ -3,6 +3,7 @@ const ADMIN_NAV_LINKS = [
     { href: 'admin-employees.html', match: 'admin-employees.html', label: 'จัดการพนักงาน', roles: ['admin', 'payroll'] },
     { href: 'admin-jobs.html', match: 'admin-jobs.html', label: 'จัดการเว็บและประกาศงาน', roles: ['admin', 'payroll'] },
     { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'จัดการเวลาทำงาน (ESS)', roles: ['admin', 'payroll'] },
+    { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ & วันหยุด', roles: ['admin', 'payroll'] },
 ];
 
 const ROLE_LABELS = {
