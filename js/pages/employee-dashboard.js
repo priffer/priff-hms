@@ -697,6 +697,9 @@ const announcementCategoryLabel = {
     safety: '🦺 ความปลอดภัย'
 };
 
+// เก็บ cache รายการประกาศที่โหลดล่าสุดไว้ในหน่วยความจำ เพื่อให้เปิดหน้ารายละเอียดได้ทันทีโดยไม่ต้อง fetch ซ้ำ
+let announcementCache = {};
+
 async function loadAnnouncementFeed() {
     const listEl = document.getElementById('announcementFeedView');
     if (!listEl) return;
@@ -707,16 +710,19 @@ async function loadAnnouncementFeed() {
             listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประกาศในขณะนี้</p>';
             return;
         }
+        announcementCache = {};
+        list.forEach(item => { announcementCache[item.id] = item; });
+
         listEl.innerHTML = list.map(item => `
-            <div class="rounded-2xl border ${item.is_pinned ? 'border-kcyellow bg-[#fff9ec]' : 'border-[#e6edf7] bg-[#f7faff]'} p-4">
+            <div onclick="openAnnouncementDetail('${item.id}')" class="rounded-2xl border ${item.is_pinned ? 'border-kcyellow bg-[#fff9ec]' : 'border-[#e6edf7] bg-[#f7faff]'} p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all">
                 <div class="flex justify-between items-start gap-2 mb-1">
                     <p class="text-sm font-bold text-kcdark">${item.is_pinned ? '📌 ' : ''}${item.title}</p>
                     <span class="shrink-0 text-[11px] font-bold text-slate-400">${announcementCategoryLabel[item.category] || item.category}</span>
                 </div>
-                <p class="text-xs text-slate-600 whitespace-pre-line">${item.body}</p>
+                <p class="text-xs text-slate-600 line-clamp-2">${item.body}</p>
                 <div class="flex justify-between items-center mt-2">
                     <p class="text-[11px] text-slate-400">${new Date(item.published_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                    ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูเอกสารแนบ</a>` : ''}
+                    <span class="text-xs font-bold text-kcblue">${item.attachment_url ? '📎 มีไฟล์แนบ · ' : ''}อ่านต่อ →</span>
                 </div>
             </div>
         `).join('');
@@ -726,46 +732,120 @@ async function loadAnnouncementFeed() {
     }
 }
 
-async function loadHolidayCalendar() {
-    const companyEl = document.getElementById('companyHolidayList');
-    const clientEl = document.getElementById('clientHolidayList');
-    if (companyEl) companyEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">กำลังโหลดข้อมูล...</p>';
-    if (clientEl) clientEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">กำลังโหลดข้อมูล...</p>';
+// 📄 เปิดหน้ารายละเอียดประกาศแบบเต็ม (สไตล์อ่านหน้ากระดาษ) จาก cache ที่โหลดไว้แล้ว
+function openAnnouncementDetail(id) {
+    const item = announcementCache[id];
+    if (!item) return;
 
-    try {
-        const holidays = await window.AnnouncementService.getUpcomingCompanyHolidays();
-        if (companyEl) {
-            companyEl.innerHTML = (!holidays || holidays.length === 0)
-                ? '<p class="text-center text-slate-400 text-sm py-4">ยังไม่มีวันหยุดที่กำลังจะถึง</p>'
-                : holidays.map(h => `
-                    <div class="flex justify-between items-center rounded-xl border border-[#e6edf7] bg-[#f7faff] px-3 py-2">
-                        <span class="text-xs font-bold text-slate-700">${h.name_th}</span>
-                        <span class="text-xs text-slate-400">${formatHolidayDate(h.holiday_date)}</span>
-                    </div>
-                `).join('');
+    const modal = document.getElementById('announcementDetailModal');
+    const categoryEl = document.getElementById('annDetailCategory');
+    const titleEl = document.getElementById('annDetailTitle');
+    const dateEl = document.getElementById('annDetailDate');
+    const bodyEl = document.getElementById('annDetailBody');
+    const attachmentEl = document.getElementById('annDetailAttachment');
+    if (!modal || !categoryEl || !titleEl || !dateEl || !bodyEl || !attachmentEl) return;
+
+    categoryEl.textContent = `${item.is_pinned ? '📌 ปักหมุด · ' : ''}${announcementCategoryLabel[item.category] || item.category}`;
+    titleEl.textContent = item.title;
+    dateEl.textContent = `เผยแพร่เมื่อ ${new Date(item.published_at).toLocaleDateString('th-TH', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}`;
+    bodyEl.textContent = item.body;
+
+    if (item.attachment_url) {
+        const isPdf = /\.pdf(\?|$)/i.test(item.attachment_url);
+        const isImage = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(item.attachment_url);
+        let previewHtml = '';
+        if (isPdf) {
+            previewHtml = `
+                <div class="rounded-xl border border-[#e6edf7] overflow-hidden bg-[#f7faff]">
+                    <iframe src="${item.attachment_url}#toolbar=0" class="w-full h-[60vh] md:h-[65vh]" title="เอกสารแนบ"></iframe>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">หากไฟล์ไม่แสดงผล (เช่น เปิดผ่านแอปแชท) ให้กดลิงก์ด้านล่างเพื่อเปิด/ดาวน์โหลดโดยตรง</p>`;
+        } else if (isImage) {
+            previewHtml = `<img src="${item.attachment_url}" alt="ไฟล์แนบ" class="w-full rounded-xl border border-[#e6edf7]">`;
         }
-    } catch (err) {
-        console.error('loadHolidayCalendar (company) error', err);
-        if (companyEl) companyEl.innerHTML = '<p class="text-center text-red-500 text-sm py-4">โหลดข้อมูลไม่สำเร็จ</p>';
+        attachmentEl.innerHTML = `
+            ${previewHtml}
+            <a href="${item.attachment_url}" target="_blank" rel="noopener" class="mt-4 inline-flex items-center gap-2 rounded-full bg-kcblue text-white text-sm font-bold px-5 py-2.5 hover:bg-kcdark transition-colors">
+                📎 เปิดแบบเต็มจอ / ดาวน์โหลดไฟล์แนบ
+            </a>`;
+        attachmentEl.classList.remove('hidden');
+    } else {
+        attachmentEl.innerHTML = '';
+        attachmentEl.classList.add('hidden');
     }
 
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeAnnouncementDetail() {
+    const modal = document.getElementById('announcementDetailModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+
+// เรนเดอร์รายการวันหยุด (ใช้ร่วมกันทั้งปฏิทินบริษัทและปฏิทินไซต์)
+function renderHolidayList(holidays, colorClass) {
+    if (!holidays || holidays.length === 0) {
+        return '<p class="text-center text-slate-400 text-sm py-3">ยังไม่มีวันหยุดที่กำลังจะถึง</p>';
+    }
+    return holidays.map(h => `
+        <div class="flex justify-between items-center rounded-xl border ${colorClass} px-3 py-2">
+            <span class="text-xs font-bold text-slate-700">${h.name_th}</span>
+            <span class="text-xs text-slate-400 shrink-0">${formatHolidayDate(h.holiday_date)}</span>
+        </div>
+    `).join('');
+}
+
+async function loadHolidayCalendar() {
+    const containerEl = document.getElementById('holidayCalendarContainer');
+    const noteEl = document.getElementById('holidayScopeNote');
+    if (containerEl) containerEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    if (noteEl) noteEl.classList.add('hidden');
+
     try {
-        const clientHolidays = await window.AnnouncementService.getUpcomingClientHolidays(null);
-        if (clientEl) {
-            clientEl.innerHTML = (!clientHolidays || clientHolidays.length === 0)
-                ? '<p class="text-center text-slate-400 text-sm py-4">ไม่มีวันหยุดเฉพาะไซต์งานที่กำลังจะถึง</p>'
-                : clientHolidays.map(h => `
-                    <div class="flex justify-between items-center rounded-xl border border-[#cdeedd] bg-[#f0fbf5] px-3 py-2">
-                        <div>
-                            <span class="text-xs font-bold text-slate-700">${h.name_th}</span>
-                            <span class="block text-[11px] text-emerald-600 font-bold">${h.clients?.client_name || 'ไม่ระบุไซต์งาน'}</span>
-                        </div>
-                        <span class="text-xs text-slate-400 shrink-0">${formatHolidayDate(h.holiday_date)}</span>
-                    </div>
-                `).join('');
+        const profile = window.currentUserProfile || null;
+        const result = await window.AnnouncementService.getMyEffectiveHolidayCalendar(profile);
+
+        let noteText = '';
+        let html = '';
+
+        if (result.scope === 'site') {
+            // ประจำไซต์ลูกค้า 1 ไซต์ -> ใช้ปฏิทินไซต์นั้น "แทนที่" ปฏิทินบริษัททั้งหมด
+            const site = result.sites[0];
+            noteText = `📍 คุณประจำไซต์งาน "${site.clientName}" — วันหยุดของคุณยึดตามปฏิทินไซต์นี้เท่านั้น (ไม่ใช่ปฏิทินบริษัท)`;
+            html = `
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-emerald-400 pl-3">วันหยุดไซต์ "${site.clientName}"</h4>
+                    <div class="space-y-2">${renderHolidayList(site.holidays, 'border-[#cdeedd] bg-[#f0fbf5]')}</div>
+                </div>`;
+        } else if (result.scope === 'multi-site') {
+            // Supervisor ดูแลหลายไซต์ -> แสดงแยกเป็นกลุ่มตามไซต์ ไซต์ไหนยังไม่ตั้งปฏิทิน ให้ fallback เป็นปฏิทินบริษัท
+            noteText = `📍 คุณดูแล ${result.sites.length} ไซต์งาน — แต่ละไซต์มีปฏิทินวันหยุดของตัวเอง (ไซต์ที่ยังไม่ตั้งค่าจะใช้ปฏิทินบริษัทไปก่อน)`;
+            html = result.sites.map(site => `
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-emerald-400 pl-3">
+                        วันหยุดไซต์ "${site.clientName}"${site.holidays === null ? ' <span class="text-[11px] font-normal text-slate-400">(ยังไม่ตั้งปฏิทิน ใช้ปฏิทินบริษัทแทน)</span>' : ''}
+                    </h4>
+                    <div class="space-y-2">${renderHolidayList(site.holidays || result.companyHolidays, 'border-[#cdeedd] bg-[#f0fbf5]')}</div>
+                </div>
+            `).join('');
+        } else {
+            // scope === 'company': พนักงานออฟฟิศ หรือ fallback เพราะไซต์ยังไม่ตั้งปฏิทิน
+            noteText = result.usingCompanyFallback
+                ? '📍 ไซต์งานของคุณยังไม่ได้ตั้งปฏิทินวันหยุดของตัวเอง จึงแสดงปฏิทินบริษัทไปก่อน'
+                : '📍 คุณเป็นพนักงานออฟฟิศ (ไม่ได้ประจำไซต์ลูกค้า) — วันหยุดยึดตามปฏิทินบริษัท';
+            html = `
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">วันหยุดบริษัท</h4>
+                    <div class="space-y-2">${renderHolidayList(result.companyHolidays, 'border-[#e6edf7] bg-[#f7faff]')}</div>
+                </div>`;
         }
+
+        if (noteEl) { noteEl.textContent = noteText; noteEl.classList.remove('hidden'); }
+        if (containerEl) containerEl.innerHTML = html;
     } catch (err) {
-        console.error('loadHolidayCalendar (client) error', err);
-        if (clientEl) clientEl.innerHTML = '<p class="text-center text-red-500 text-sm py-4">โหลดข้อมูลไม่สำเร็จ</p>';
+        console.error('loadHolidayCalendar error', err);
+        if (containerEl) containerEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
     }
 }

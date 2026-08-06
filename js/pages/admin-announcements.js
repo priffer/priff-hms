@@ -184,6 +184,25 @@ async function deleteClientHolidayItem(id) {
     }
 }
 
+async function copyCompanyHolidaysToSelectedClient() {
+    const clientId = document.getElementById('chClientSelect').value;
+    if (!clientId) { showToast('⚠️ กรุณาเลือกไซต์ลูกค้าก่อน'); return; }
+    if (!confirm('คัดลอกวันหยุดบริษัททั้งหมดมาเป็นฐานตั้งต้นของไซต์นี้?\n(วันที่ไซต์นี้มีอยู่แล้วจะถูกข้าม ไม่ทับข้อมูลเดิม)')) return;
+    try {
+        const result = await window.AnnouncementService.copyCompanyHolidaysToClient(clientId);
+        if (result.total === 0) {
+            showToast('⚠️ ยังไม่มีวันหยุดบริษัทให้คัดลอก');
+        } else {
+            const skipped = result.total - result.copied;
+            showToast(`✅ คัดลอกสำเร็จ ${result.copied} วัน${skipped > 0 ? ` (ข้าม ${skipped} วันที่มีอยู่แล้ว)` : ''}`);
+        }
+        loadClientHolidayAdminList();
+    } catch (err) {
+        console.error('copyCompanyHolidaysToClient error', err);
+        showToast('❌ คัดลอกไม่สำเร็จ: ' + err.message);
+    }
+}
+
 // ---------- Form bindings ----------
 function bindAnnouncementForms() {
     const annForm = document.getElementById('announcementForm');
