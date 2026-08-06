@@ -90,20 +90,24 @@ function renderJobGrid() {
 
     paginatedItems.forEach(job => {
         const companyName = job.company_name || getElementText('dynamicCompanyName', 'KC Clean Trade');
-        const jobType = job.job_type || job.position_type || job.hiring_type || 'งานประจำ';
         const locationSummary = getJobLocationSummary(job.zone_name);
         const salaryText = job.salary_text || 'ตามตกลง';
         const audienceLabel = getJobAudienceLabel(job);
+        const style = getJobCategoryStyle(job);
+        const newBadge = isJobNew(job)
+            ? `<span class="absolute top-4 right-4 inline-flex items-center gap-1 rounded-full bg-kcyellow px-3 py-1 text-[11px] font-extrabold text-kcdark shadow-sm">🔥 ใหม่</span>`
+            : '';
 
         grid.innerHTML += `
             <article class="group relative overflow-hidden bg-white border border-[#e6edf7] rounded-[2rem] p-5 lg:p-6 shadow-[0_12px_30px_rgba(15,43,115,0.04)] hover:shadow-[0_18px_40px_rgba(15,43,115,0.08)] hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between gap-5">
-                <div class="absolute inset-x-0 top-0 h-1 bg-kcblue"></div>
+                <div class="absolute inset-x-0 top-0 h-1.5 ${style.bar}"></div>
+                ${newBadge}
                 <div class="space-y-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0 space-y-3">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center rounded-full bg-[#f7faff] px-3 py-1 text-xs font-bold text-slate-700 border border-[#e6edf7]">${jobType}</span>
-                                <span class="inline-flex items-center rounded-full bg-kcyellow px-3 py-1 text-xs font-bold text-kcdark">${audienceLabel}</span>
+                                <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl ${style.iconBg} text-base">${style.icon}</span>
+                                <span class="inline-flex items-center rounded-full ${style.chip} border px-3 py-1 text-xs font-bold">${audienceLabel}</span>
                             </div>
                             <h3 class="font-extrabold text-kcdark text-xl lg:text-2xl leading-snug line-clamp-2">${job.title || 'ไม่ระบุชื่อตำแหน่ง'}</h3>
                             <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
@@ -188,7 +192,7 @@ function renderFeaturedJobs(jobs) {
     const container = document.getElementById('featuredJobsGrid');
     if (!container) return;
 
-    const featuredJobs = jobs.slice(0, 5);
+    const featuredJobs = jobs.slice(0, 8);
     setText('featuredJobsSummary', featuredJobs.length > 0 ? `${featuredJobs.length} งาน` : 'ยังไม่มีตำแหน่งแนะนำ');
 
     if (featuredJobs.length === 0) {
@@ -196,24 +200,29 @@ function renderFeaturedJobs(jobs) {
         return;
     }
 
-    container.innerHTML = featuredJobs.map(job => `
-        <button type="button" onclick="openJobModal(${job.id})" class="group w-full rounded-[1.75rem] border border-[#e6edf7] bg-white p-5 text-left transition-all hover:-translate-y-0.5 hover:border-kcblue hover:shadow-[0_14px_32px_rgba(15,43,115,0.08)]">
-            <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0 flex-1 space-y-2.5">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 border border-[#e6edf7]">${escapeHtml(getJobAudienceLabel(job))}</span>
-                        <span class="inline-flex items-center rounded-full bg-kclight px-3 py-1 text-xs font-bold text-kcdark">${escapeHtml(getJobLocationSummary(job.zone_name).primary)}</span>
-                    </div>
-                    <p class="text-base sm:text-lg font-extrabold text-kcdark leading-snug line-clamp-2 group-hover:text-kcblue transition-colors">${escapeHtml(job.title || 'ไม่ระบุชื่อตำแหน่ง')}</p>
-                    <p class="text-sm text-slate-500 line-clamp-1">${escapeHtml(job.zone_name || 'ไม่ระบุพื้นที่')}</p>
-                </div>
-                <div class="shrink-0 text-right">
-                    <p class="text-sm font-extrabold text-kcblue">${escapeHtml(job.salary_text || 'ตามตกลง')}</p>
-                    <p class="mt-2 text-xs text-slate-400">ดูรายละเอียด →</p>
-                </div>
+    container.innerHTML = featuredJobs.map(job => {
+        const style = getJobCategoryStyle(job);
+        const newBadge = isJobNew(job)
+            ? `<span class="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-kcyellow px-2.5 py-1 text-[10px] font-extrabold text-kcdark shadow-sm">🔥 ใหม่</span>`
+            : '';
+
+        return `
+        <button type="button" onclick="openJobModal(${job.id})" class="group relative overflow-hidden shrink-0 snap-start w-[250px] sm:w-[280px] rounded-[1.75rem] border border-[#e6edf7] bg-white p-4 sm:p-5 text-left transition-all hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(15,43,115,0.1)]">
+            <div class="absolute inset-x-0 top-0 h-1.5 ${style.bar}"></div>
+            ${newBadge}
+            <div class="flex items-center gap-2.5 mb-3">
+                <span class="w-10 h-10 shrink-0 rounded-2xl ${style.iconBg} flex items-center justify-center text-lg">${style.icon}</span>
+                <span class="inline-flex items-center rounded-full bg-kclight px-3 py-1 text-xs font-bold text-kcdark truncate">${escapeHtml(getJobLocationSummary(job.zone_name).primary)}</span>
+            </div>
+            <p class="text-base font-extrabold text-kcdark leading-snug line-clamp-2 group-hover:text-kcblue transition-colors">${escapeHtml(job.title || 'ไม่ระบุชื่อตำแหน่ง')}</p>
+            <p class="mt-1 text-sm text-slate-500 line-clamp-1">${escapeHtml(job.zone_name || 'ไม่ระบุพื้นที่')}</p>
+            <div class="mt-4 flex items-center justify-between gap-2">
+                <p class="text-sm font-extrabold text-kcblue truncate">${escapeHtml(job.salary_text || 'ตามตกลง')}</p>
+                <span class="shrink-0 text-xs text-slate-400">ดูเพิ่ม →</span>
             </div>
         </button>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function buildPopularAreas(jobs) {
@@ -309,6 +318,28 @@ function getJobAudienceLabel(job) {
     if (/แม่บ้าน|ทำความสะอาด|clean/.test(title)) return 'งานทำความสะอาด';
 
     return 'หน้างาน';
+}
+
+// Maps each job "category" (derived from audience label) to a consistent icon + color
+// scheme, so job cards read at a glance instead of everything looking the same white card.
+function getJobCategoryStyle(job) {
+    const label = getJobAudienceLabel(job);
+    const map = {
+        'หัวหน้างาน': { icon: '👔', bar: 'bg-violet-500', chip: 'bg-violet-50 text-violet-700 border-violet-100', iconBg: 'bg-violet-100' },
+        'คลังสินค้า': { icon: '📦', bar: 'bg-amber-500', chip: 'bg-amber-50 text-amber-700 border-amber-100', iconBg: 'bg-amber-100' },
+        'งานปฏิบัติการ': { icon: '⚙️', bar: 'bg-kcblue', chip: 'bg-blue-50 text-kcblue border-blue-100', iconBg: 'bg-blue-100' },
+        'งานทำความสะอาด': { icon: '🧹', bar: 'bg-emerald-500', chip: 'bg-emerald-50 text-emerald-700 border-emerald-100', iconBg: 'bg-emerald-100' }
+    };
+
+    return map[label] || { icon: '💼', bar: 'bg-slate-400', chip: 'bg-slate-100 text-slate-700 border-slate-200', iconBg: 'bg-slate-100' };
+}
+
+// A job counts as "ใหม่" for badge purposes if it was created within the last 7 days.
+function isJobNew(job) {
+    if (!job.created_at) return false;
+    const created = new Date(job.created_at).getTime();
+    if (Number.isNaN(created)) return false;
+    return (Date.now() - created) / (1000 * 60 * 60 * 24) <= 7;
 }
 
 function getAreaAlias(zoneName) {
