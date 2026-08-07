@@ -4,6 +4,7 @@ const ADMIN_NAV_LINKS = [
     { href: 'admin-jobs.html', match: 'admin-jobs.html', label: 'เว็บ/ประกาศงาน', icon: '📢', roles: ['admin', 'payroll'] },
     { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'เวลาทำงาน', icon: '⏱️', roles: ['admin', 'payroll'] },
     { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที/สวัสดิการ', icon: '🛡️', roles: ['admin', 'payroll'] },
+    { href: 'admin-payroll.html', match: 'admin-payroll.html', label: 'เงินเดือน (Payroll)', icon: '💰', roles: ['admin', 'payroll'] },
     { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ/วันหยุด', icon: '🗓️', roles: ['admin', 'payroll'] },
 ];
 
