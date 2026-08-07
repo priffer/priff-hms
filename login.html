@@ -5,40 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Login - PRIFF HMS</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
-
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config/supabase.js"></script>
-  <link rel="stylesheet" href="dist/output.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kcblue: '#165DFF',
+            kcdark: '#0F2B73',
+            kclight: '#EEF5FF',
+            kcyellow: '#FFC72C',
+            kcsoft: '#F7FAFF',
+            kcborder: '#E6EDF7'
+          },
+          fontFamily: { sans: ['Sarabun', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
 </head>
-<body class="bg-gray-50 font-sans min-h-screen flex items-center justify-center p-4">
+<body class="bg-[#f7faff] font-sans text-slate-800 antialiased min-h-screen flex items-center justify-center p-4">
 
-  <div class="w-full max-w-sm bg-white border border-gray-200 shadow-sm p-8">
+  <div class="w-full max-w-sm bg-white rounded-[2rem] border border-[#e6edf7] shadow-[0_16px_30px_rgba(15,43,115,0.06)] p-8">
     <div class="text-center mb-8">
-      <h2 class="text-2xl font-bold text-gray-900 tracking-wide">ADMIN LOGIN</h2>
-      <p class="text-gray-500 text-sm mt-1">ระบบจัดการทรัพยากรบุคคล PRIFF HMS</p>
+      <div class="w-14 h-14 rounded-2xl bg-kcblue text-white font-black flex items-center justify-center text-xl shadow-md mx-auto mb-4">KC</div>
+      <h2 class="text-2xl font-extrabold text-kcdark tracking-wide">ADMIN LOGIN</h2>
+      <p class="text-slate-500 text-sm mt-1 font-bold">ระบบจัดการทรัพยากรบุคคล PRIFF HMS</p>
     </div>
 
-    <div id="alertBox" class="hidden mb-6 p-4 border" role="alert"></div>
+    <div id="alertBox" class="hidden mb-6 p-4 rounded-2xl text-center font-bold text-sm" role="alert"></div>
 
     <form id="loginForm" class="space-y-5">
       <div>
-        <label class="block text-sm font-bold text-gray-700 mb-2">อีเมล</label>
-        <input type="email" id="email" placeholder="กรอกอีเมลแอดมิน" required class="w-full border border-gray-300 p-3 focus:outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+        <label class="block text-sm font-bold text-slate-700 mb-2">อีเมล</label>
+        <input type="email" id="email" placeholder="กรอกอีเมลแอดมิน" required class="w-full rounded-xl border border-[#e6edf7] bg-white p-3 text-sm focus:outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
       </div>
       <div>
-        <label class="block text-sm font-bold text-gray-700 mb-2">รหัสผ่าน</label>
-        <input type="password" id="password" placeholder="••••••••" required class="w-full border border-gray-300 p-3 focus:outline-none focus:border-kcblue focus:ring-1 focus:ring-kcblue">
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-bold text-slate-700">รหัสผ่าน</label>
+          <button type="button" id="forgotPasswordLink" class="text-xs font-bold text-kcblue hover:underline">ลืมรหัสผ่าน?</button>
+        </div>
+        <input type="password" id="password" placeholder="••••••••" required class="w-full rounded-xl border border-[#e6edf7] bg-white p-3 text-sm focus:outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
       </div>
-      
+
       <div class="pt-2">
-        <button type="submit" id="loginBtn" class="w-full bg-gray-900 text-white font-bold py-3 hover:bg-black transition-colors border border-gray-900">เข้าสู่ระบบ</button>
+        <button type="submit" id="loginBtn" class="w-full rounded-2xl bg-kcblue text-white font-bold py-3 shadow-sm hover:bg-kcdark transition-colors">เข้าสู่ระบบ</button>
       </div>
     </form>
-    
+
     <div class="text-center mt-6 space-y-2">
-      <p class="text-xs text-gray-400">สำหรับ Admin และ Payroll เท่านั้น</p>
+      <p class="text-xs text-slate-400">สำหรับ Admin และ Payroll เท่านั้น</p>
       <a href="employee-login.html" class="block text-sm text-kcblue font-bold hover:underline">พนักงาน / หัวหน้างาน เข้าสู่ระบบที่นี่ (ESS Portal) →</a>
-      <a href="index.html" class="block text-sm text-gray-500 hover:text-kcblue transition-colors">← กลับไปหน้าฟอร์มรับสมัครงาน</a>
+      <a href="index.html" class="block text-sm text-slate-500 hover:text-kcblue transition-colors font-bold">← กลับไปหน้าฟอร์มรับสมัครงาน</a>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div id="forgotPasswordModal" class="hidden fixed inset-0 bg-slate-900/40 flex items-center justify-center p-4 z-50">
+    <div class="w-full max-w-sm bg-white rounded-[2rem] border border-[#e6edf7] shadow-[0_16px_30px_rgba(15,43,115,0.12)] p-8">
+      <h3 class="text-xl font-extrabold text-kcdark mb-1">ลืมรหัสผ่าน</h3>
+      <p class="text-slate-500 text-sm mb-6 font-bold">กรอกอีเมลแอดมินของท่าน เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้</p>
+      <div id="forgotAlertBox" class="hidden mb-4 p-4 rounded-2xl text-center font-bold text-sm" role="alert"></div>
+      <form id="forgotPasswordForm" class="space-y-4">
+        <input type="email" id="forgotEmail" placeholder="กรอกอีเมลแอดมิน" required class="w-full rounded-xl border border-[#e6edf7] bg-white p-3 text-sm focus:outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
+        <div class="flex gap-3 pt-2">
+          <button type="button" id="closeForgotModal" class="flex-1 rounded-2xl bg-slate-100 text-slate-600 font-bold py-3 hover:bg-slate-200 transition-colors">ยกเลิก</button>
+          <button type="submit" id="forgotSubmitBtn" class="flex-1 rounded-2xl bg-kcblue text-white font-bold py-3 shadow-sm hover:bg-kcdark transition-colors">ส่งลิงก์รีเซ็ต</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -75,22 +111,56 @@
       }
       if (!['admin','payroll'].includes(profile.role)) {
         await supabaseClient.auth.signOut();
-        alertBox.className='alert alert-danger mt-3';
+        alertBox.className='mb-6 p-4 rounded-2xl text-center font-bold text-sm bg-red-50 text-red-600 border border-red-100';
         alertBox.innerHTML='❌ บัญชีนี้ไม่มีสิทธิ์เข้าใช้งาน Admin Portal กรุณาเข้าสู่ระบบผ่าน <a href="employee-login.html" class="underline font-bold">ESS Portal (พนักงาน/หัวหน้างาน)</a> แทน';
         alertBox.style.display='block';
         btn.innerHTML='เข้าสู่ระบบ'; btn.disabled=false;
         return;
       }
 
-      alertBox.className='alert alert-success mt-3';
+      alertBox.className='mb-6 p-4 rounded-2xl text-center font-bold text-sm bg-green-50 text-green-600 border border-green-100';
       alertBox.innerHTML='✅ เข้าสู่ระบบสำเร็จ! กำลังพาท่านไปหน้าจัดการ...';
       alertBox.style.display='block';
       setTimeout(()=> window.location.href='dashboard.html',1000);
     } catch (err) {
-      alertBox.className='alert alert-danger mt-3';
+      alertBox.className='mb-6 p-4 rounded-2xl text-center font-bold text-sm bg-red-50 text-red-600 border border-red-100';
       alertBox.innerHTML='❌ '+ (err?.message || 'เข้าสู่ระบบไม่สำเร็จ');
       alertBox.style.display='block';
       btn.innerHTML='เข้าสู่ระบบ'; btn.disabled=false;
+    }
+  });
+
+  // ===== Forgot Password Modal =====
+  const forgotModal = document.getElementById('forgotPasswordModal');
+  const forgotAlertBox = document.getElementById('forgotAlertBox');
+  document.getElementById('forgotPasswordLink').addEventListener('click', function(){
+    forgotAlertBox.style.display = 'none';
+    document.getElementById('forgotPasswordForm').reset();
+    forgotModal.classList.remove('hidden');
+  });
+  document.getElementById('closeForgotModal').addEventListener('click', function(){
+    forgotModal.classList.add('hidden');
+  });
+  document.getElementById('forgotPasswordForm').addEventListener('submit', async function(event){
+    event.preventDefault();
+    const btn = document.getElementById('forgotSubmitBtn');
+    const email = document.getElementById('forgotEmail').value.trim();
+    btn.innerHTML='กำลังส่ง...'; btn.disabled=true;
+    forgotAlertBox.style.display='none';
+    try {
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password.html'
+      });
+      if (error) throw error;
+      forgotAlertBox.className='mb-4 p-4 rounded-2xl text-center font-bold text-sm bg-green-50 text-green-600 border border-green-100';
+      forgotAlertBox.innerHTML='✅ ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลแล้ว กรุณาตรวจสอบกล่องจดหมาย';
+      forgotAlertBox.style.display='block';
+    } catch (err) {
+      forgotAlertBox.className='mb-4 p-4 rounded-2xl text-center font-bold text-sm bg-red-50 text-red-600 border border-red-100';
+      forgotAlertBox.innerHTML='❌ '+ (err?.message || 'ส่งลิงก์ไม่สำเร็จ กรุณาลองใหม่');
+      forgotAlertBox.style.display='block';
+    } finally {
+      btn.innerHTML='ส่งลิงก์รีเซ็ต'; btn.disabled=false;
     }
   });
   </script>
