@@ -1213,14 +1213,125 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
-// 📋 กล่องอนุมัติสำหรับหัวหน้างาน (เฉพาะ role supervisor เห็นปุ่มนี้)
+// ⏱️ ขอทำโอที (ot_requests) — ผู้อนุมัติ/เพดานชั่วโมงคำนวณฝั่ง DB ทั้งหมด (database/16_ot_requests.sql)
 // ============================================================
+const otStatusLabel = {
+    pending: '⏳ รอหัวหน้างานอนุมัติ',
+    pending_admin_review: '🔎 รอแอดมิน/payroll ตรวจสอบเพิ่ม (เกินเพดานชั่วโมง)',
+    approved: '✅ อนุมัติแล้ว',
+    rejected: '❌ ไม่อนุมัติ'
+};
+
+function openOtModal() {
+    const modal = document.getElementById('otModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    loadOtHistory();
+}
+function closeOtModal() {
+    const modal = document.getElementById('otModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadOtHistory() {
+    const listEl = document.getElementById('otHistoryList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp) return;
+    listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    try {
+        const list = await window.EmployeeSelfService.getMyOtRequests(emp.emp_id);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีคำขอโอที</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
+                <p class="text-sm font-bold text-kcdark">${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} — ${item.requested_hours} ชม.</p>
+                <p class="text-xs text-slate-500 mt-0.5">${item.requested_start || '--:--'} ถึง ${item.requested_end || '--:--'} · ${item.reason}</p>
+                <p class="text-xs font-bold mt-1">${otStatusLabel[item.status] || item.status}</p>
+                ${item.status === 'rejected' && item.rejection_reason ? `<p class="text-xs text-red-500 mt-1">เหตุผล: ${item.rejection_reason}</p>` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadOtHistory error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('otForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emp = window.currentUserProfile;
+            const workDate = document.getElementById('otWorkDate').value;
+            const start = document.getElementById('otStart').value || null;
+            const end = document.getElementById('otEnd').value || null;
+            const hours = parseFloat(document.getElementById('otHours').value);
+            const reason = document.getElementById('otReason').value.trim();
+            const attachmentInput = document.getElementById('otAttachmentFile');
+            const attachmentFile = attachmentInput ? attachmentInput.files[0] : null;
+            const btn = document.getElementById('otSubmitBtn');
+
+            if (!emp || !emp.emp_id || !emp.employee_id) { showToast('⚠️ ไม่พบข้อมูลพนักงานของคุณ'); return; }
+            if (!workDate) { showToast('⚠️ กรุณาเลือกวันที่ต้องการทำโอที'); return; }
+            if (!hours || hours <= 0) { showToast('⚠️ กรุณาระบุจำนวนชั่วโมงที่ขอ'); return; }
+            if (!reason) { showToast('⚠️ กรุณาระบุเหตุผล'); return; }
+
+            btn.disabled = true; btn.classList.add('opacity-50');
+            try {
+                let attachmentUrl = null;
+                if (attachmentFile) {
+                    const fileName = `${emp.emp_id}/${Date.now()}_${attachmentFile.name}`;
+                    attachmentUrl = await window.EmployeeSelfService.uploadOtAttachment(attachmentFile, fileName);
+                }
+                await window.EmployeeSelfService.createOtRequest({
+                    empId: emp.emp_id,
+                    employeeId: emp.employee_id,
+                    companyId: emp.company_id,
+                    workDate,
+                    requestedStart: start,
+                    requestedEnd: end,
+                    requestedHours: hours,
+                    reason,
+                    attachmentUrl
+                });
+                showToast('✅ ส่งคำขอโอทีสำเร็จ รอการอนุมัติ');
+                form.reset();
+                await loadOtHistory();
+            } catch (err) {
+                console.error('createOtRequest error', err);
+                showToast('❌ ส่งคำขอไม่สำเร็จ: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-50');
+            }
+        });
+    }
+});
+
+// ============================================================
+// 📋 กล่องอนุมัติสำหรับหัวหน้างาน (เฉพาะ role supervisor เห็นปุ่มนี้)
+// รวม 2 ประเภทคำขอ: แก้ไขเวลา (attendance_correction_requests) + ขอโอที (ot_requests)
+// แยกด้วย field "type" ในตัวแปร list ฝั่ง client เพื่อ route ไปเรียก approve/reject ให้ถูกฟังก์ชัน
+// ============================================================
+async function getMergedApprovalInbox(userProfileId) {
+    const [corrections, otItems] = await Promise.all([
+        window.EmployeeSelfService.getPendingApprovalsForSupervisor(userProfileId),
+        window.EmployeeSelfService.getPendingOtApprovalsForSupervisor(userProfileId)
+    ]);
+    const tagged = [
+        ...(corrections || []).map(item => ({ ...item, _type: 'correction' })),
+        ...(otItems || []).map(item => ({ ...item, _type: 'ot' }))
+    ];
+    tagged.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    return tagged;
+}
+
 async function refreshApprovalInboxTeaser() {
     const emp = window.currentUserProfile;
     const teaserEl = document.getElementById('approvalInboxTeaser');
     if (!emp || !teaserEl) return;
     try {
-        const list = await window.EmployeeSelfService.getPendingApprovalsForSupervisor(emp.id);
+        const list = await getMergedApprovalInbox(emp.id);
         teaserEl.textContent = (list && list.length > 0) ? `🔔 มี ${list.length} คำขอรออนุมัติ` : '';
     } catch (err) {
         console.error('refreshApprovalInboxTeaser error', err);
@@ -1243,33 +1354,52 @@ async function loadApprovalInbox() {
     if (!listEl || !emp) return;
     listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
     try {
-        const list = await window.EmployeeSelfService.getPendingApprovalsForSupervisor(emp.id);
+        const list = await getMergedApprovalInbox(emp.id);
         if (!list || list.length === 0) {
             listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ไม่มีคำขอรออนุมัติในขณะนี้</p>';
             return;
         }
-        listEl.innerHTML = list.map(item => `
+        listEl.innerHTML = list.map(item => {
+            if (item._type === 'ot') {
+                return `
+            <div class="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                <p class="text-sm font-bold text-kcdark">⏱️ ${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
+                <p class="text-xs text-slate-500 mt-0.5">วันที่ ${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} — ขอโอที ${item.requested_hours} ชม. (${item.requested_start || '--:--'} ถึง ${item.requested_end || '--:--'})</p>
+                <p class="text-xs text-slate-600 mt-1">เหตุผล: ${item.reason}</p>
+                ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูหลักฐาน</a>` : ''}
+                ${item.requires_admin_review ? `<p class="text-[11px] font-bold text-amber-600 mt-1">⚠️ ยอด OT สะสมจะเกินเพดาน - หลังคุณอนุมัติ ต้องรอแอดมิน/payroll ตรวจสอบเพิ่มอีกชั้น</p>` : ''}
+                <div class="flex gap-2 mt-3">
+                    <button onclick="approveInboxItem('${item.id}', 'ot')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
+                    <button onclick="rejectInboxItem('${item.id}', 'ot')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
+                </div>
+            </div>`;
+            }
+            return `
             <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p class="text-sm font-bold text-kcdark">${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
+                <p class="text-sm font-bold text-kcdark">✏️ ${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
                 <p class="text-xs text-slate-500 mt-0.5">วันที่ ${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} — ขอเป็น ${item.requested_check_in || '--:--'} ถึง ${item.requested_check_out || '--:--'}</p>
                 <p class="text-xs text-slate-600 mt-1">เหตุผล: ${item.reason}</p>
                 ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูหลักฐาน</a>` : ''}
                 <div class="flex gap-2 mt-3">
-                    <button onclick="approveInboxItem('${item.id}')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
-                    <button onclick="rejectInboxItem('${item.id}')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
+                    <button onclick="approveInboxItem('${item.id}', 'correction')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
+                    <button onclick="rejectInboxItem('${item.id}', 'correction')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     } catch (err) {
         console.error('loadApprovalInbox error', err);
         listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
     }
 }
 
-async function approveInboxItem(id) {
-    if (!confirm('ยืนยันอนุมัติคำขอแก้ไขเวลานี้?')) return;
+async function approveInboxItem(id, type) {
+    if (!confirm('ยืนยันอนุมัติคำขอนี้?')) return;
     try {
-        await window.EmployeeSelfService.approveCorrectionRequest(id);
+        if (type === 'ot') {
+            await window.EmployeeSelfService.approveOtRequest(id, window.currentUserProfile?.id);
+        } else {
+            await window.EmployeeSelfService.approveCorrectionRequest(id);
+        }
         showToast('✅ อนุมัติคำขอสำเร็จ');
         await loadApprovalInbox();
         await refreshApprovalInboxTeaser();
@@ -1279,10 +1409,14 @@ async function approveInboxItem(id) {
     }
 }
 
-async function rejectInboxItem(id) {
+async function rejectInboxItem(id, type) {
     const reason = prompt('ระบุเหตุผลที่ไม่อนุมัติ (ถ้ามี):') || '';
     try {
-        await window.EmployeeSelfService.rejectCorrectionRequest(id, reason);
+        if (type === 'ot') {
+            await window.EmployeeSelfService.rejectOtRequest(id, reason);
+        } else {
+            await window.EmployeeSelfService.rejectCorrectionRequest(id, reason);
+        }
         showToast('✅ บันทึกการไม่อนุมัติสำเร็จ');
         await loadApprovalInbox();
         await refreshApprovalInboxTeaser();

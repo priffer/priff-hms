@@ -368,6 +368,131 @@ const EmployeeSelfService = {
             .update({ status: 'rejected', rejection_reason: rejectionReason || null, approved_at: new Date().toISOString() })
             .eq('id', requestId);
         if (error) throw error;
+    },
+
+    // ---------- ขอโอที (ot_requests) ----------
+    // ผู้อนุมัติชั้นแรกและ safety net 36 ชม./สัปดาห์ ใช้ pattern เดียวกับ attendance_correction_requests
+    // (resolve_approver_for_employee + weekly_ot_flagged) - เพดานชั่วโมงคำนวณฝั่ง DB ทั้งหมด
+    // (trigger fn_ot_request_precheck ใน database/16_ot_requests.sql) ไม่เชื่อค่าที่ client ส่งมา
+    async getMyOtRequests(empId) {
+        const { data, error } = await supabaseClient
+            .from('ot_requests')
+            .select('*')
+            .eq('emp_id', empId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+    },
+
+    async createOtRequest({ empId, employeeId, companyId, workDate, requestedStart, requestedEnd, requestedHours, reason, attachmentUrl }) {
+        const approver = await this.resolveApproverForEmployee(employeeId);
+        const payload = {
+            emp_id: empId,
+            employee_id: employeeId,
+            company_id: companyId,
+            work_date: workDate,
+            requested_start: requestedStart || null,
+            requested_end: requestedEnd || null,
+            requested_hours: requestedHours,
+            reason,
+            attachment_url: attachmentUrl || null,
+            status: 'pending',
+            resolved_approver_role: approver.approver_role,
+            resolved_approver_user_profile_id: approver.approver_user_profile_id
+        };
+        const { error } = await supabaseClient.from('ot_requests').insert([payload]);
+        if (error) throw error;
+    },
+
+    // อัปโหลดไฟล์แนบประกอบคำขอโอที (bucket เดียวกัน แยก prefix "ot_requests/")
+    async uploadOtAttachment(file, fileName) {
+        const path = `ot_requests/${fileName}`;
+        const { error } = await supabaseClient.storage
+            .from('announcement_attachments')
+            .upload(path, file, { upsert: true });
+        if (error) throw error;
+        const { data } = supabaseClient.storage.from('announcement_attachments').getPublicUrl(path);
+        return data.publicUrl;
+    },
+
+    // คำขอโอทีที่รอหัวหน้างานคนนี้อนุมัติ (เฉพาะ status='pending' - ชั้น pending_admin_review
+    // เป็นหน้าที่ของ admin/payroll ต่อ ไม่ใช่ supervisor แล้ว)
+    async getPendingOtApprovalsForSupervisor(userProfileId) {
+        const { data, error } = await supabaseClient
+            .from('ot_requests')
+            .select('*, employees(full_name, emp_id)')
+            .eq('resolved_approver_user_profile_id', userProfileId)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        return data;
+    },
+
+    // หัวหน้างานอนุมัติ: ถ้า requires_admin_review = true ให้เปลี่ยนสถานะเป็น pending_admin_review
+    // (รอ admin/payroll ตรวจสอบเพิ่มอีกชั้น เพราะจะดันยอด OT เกิน 36 ชม./สัปดาห์ หรือเกินเพดานเดือน)
+    // ถ้าไม่เกินเพดานใดเลย อนุมัติจบได้เลยชั้นเดียว
+    async approveOtRequest(requestId, approverProfileId) {
+        const { data: req, error: fetchErr } = await supabaseClient
+            .from('ot_requests')
+            .select('requires_admin_review')
+            .eq('id', requestId)
+            .single();
+        if (fetchErr) throw fetchErr;
+        const nextStatus = req.requires_admin_review ? 'pending_admin_review' : 'approved';
+        const { error } = await supabaseClient
+            .from('ot_requests')
+            .update({ status: nextStatus, supervisor_approved_by: approverProfileId || null, supervisor_approved_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
+    },
+
+    async rejectOtRequest(requestId, rejectionReason) {
+        const { error } = await supabaseClient
+            .from('ot_requests')
+            .update({ status: 'rejected', rejection_reason: rejectionReason || null })
+            .eq('id', requestId);
+        if (error) throw error;
+    },
+
+    // คำขอโอทีที่รอ admin/payroll ตรวจสอบ (fallback ไม่มีหัวหน้างาน + คำขอที่เกินเพดาน 36hr/สัปดาห์
+    // หรือเพดานเดือนที่หัวหน้างานอนุมัติผ่านมาแล้ว) ใช้ในหน้า Admin Portal
+    async getPendingOtAdminReview(companyId) {
+        const { data, error } = await supabaseClient
+            .from('ot_requests')
+            .select('*, employees(full_name, emp_id)')
+            .eq('company_id', companyId)
+            .in('status', ['pending', 'pending_admin_review'])
+            .eq('resolved_approver_role', 'admin')
+            .order('created_at', { ascending: true });
+        // หมายเหตุ: query นี้ครอบเฉพาะกรณี resolved_approver_role='admin' (fallback ไม่มีหัวหน้างาน)
+        // ส่วนคำขอ status='pending_admin_review' (หัวหน้างานอนุมัติแล้วแต่เกินเพดาน) ต้อง query เพิ่มแยก
+        if (error) throw error;
+        const { data: escalated, error: err2 } = await supabaseClient
+            .from('ot_requests')
+            .select('*, employees(full_name, emp_id)')
+            .eq('company_id', companyId)
+            .eq('status', 'pending_admin_review')
+            .order('created_at', { ascending: true });
+        if (err2) throw err2;
+        const merged = [...(data || []), ...(escalated || [])];
+        const seen = new Set();
+        return merged.filter(r => (seen.has(r.id) ? false : (seen.add(r.id), true)));
+    },
+
+    async adminApproveOtRequest(requestId) {
+        const { error } = await supabaseClient
+            .from('ot_requests')
+            .update({ status: 'approved', admin_reviewed_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
+    },
+
+    async adminRejectOtRequest(requestId, rejectionReason) {
+        const { error } = await supabaseClient
+            .from('ot_requests')
+            .update({ status: 'rejected', rejection_reason: rejectionReason || null, admin_reviewed_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
     }
 };
 

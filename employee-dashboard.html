@@ -99,11 +99,15 @@
                     <span id="announcementTeaser" class="text-xs text-slate-400">แตะเพื่อดูประกาศล่าสุดและวันหยุดที่กำลังจะถึง</span>
                   </div>
                 </button>
+                <button onclick="openOtModal()" class="group rounded-[1.75rem] bg-[#fff7ed] border border-[#fde4c2] p-6 md:p-8 text-center hover:border-orange-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(249,115,22,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
+                  <div class="w-12 h-12 rounded-2xl bg-orange-500/10 text-2xl flex items-center justify-center">⏱️</div>
+                  <span class="text-sm md:text-base font-bold text-slate-700">ขอทำโอที</span>
+                </button>
                 <button id="supervisorApprovalBtn" onclick="openApprovalInboxModal()" class="hidden group col-span-2 rounded-[1.75rem] bg-[#fffbeb] border border-amber-200 p-5 md:p-6 text-left hover:border-amber-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(245,158,11,0.12)] transition-all cursor-pointer flex items-center gap-4">
                   <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-2xl flex items-center justify-center shrink-0">📋</div>
                   <div class="min-w-0">
                     <span class="text-sm md:text-base font-bold text-slate-700 block">คำขอรออนุมัติ (หัวหน้างาน)</span>
-                    <span id="approvalInboxTeaser" class="text-xs text-slate-400">คำขอแก้ไขเวลาจากพนักงานในไซต์ที่คุณดูแล</span>
+                    <span id="approvalInboxTeaser" class="text-xs text-slate-400">คำขอแก้ไขเวลา/โอที จากพนักงานในไซต์ที่คุณดูแล</span>
                   </div>
                 </button>
               </div>
@@ -312,6 +316,51 @@
         </form>
         <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">ประวัติคำขอของคุณ</h4>
         <div id="correctionHistoryList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⏱️ ขอทำโอที -->
+  <div id="otModal" class="hidden fixed inset-0 z-[52] bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">⏱️ ขอทำโอที</h3>
+        <button onclick="closeOtModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <form id="otForm" class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">วันที่ต้องการทำโอที <span class="text-red-500">*</span></label>
+            <input type="date" id="otWorkDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">เวลาเริ่มโอที</label>
+              <input type="time" id="otStart" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">เวลาสิ้นสุดโอที</label>
+              <input type="time" id="otEnd" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">จำนวนชั่วโมงที่ขอ <span class="text-red-500">*</span></label>
+            <input type="number" id="otHours" min="0.5" step="0.5" max="24" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all" placeholder="เช่น 2">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">เหตุผล <span class="text-red-500">*</span></label>
+            <textarea id="otReason" rows="2" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none bg-[#f7faff] transition-all" placeholder="เช่น งานเร่งด่วนที่ไซต์"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">หลักฐานประกอบ (ถ้ามี)</label>
+            <input type="file" id="otAttachmentFile" accept="image/*,.pdf" class="w-full rounded-xl border border-[#e6edf7] p-2 text-xs bg-white">
+          </div>
+          <button type="submit" id="otSubmitBtn" class="w-full rounded-2xl bg-orange-500 text-white font-bold py-3 shadow-sm hover:bg-orange-600 transition-colors">ส่งคำขอโอที</button>
+        </form>
+        <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">ประวัติคำขอของคุณ</h4>
+        <div id="otHistoryList" class="space-y-3">
           <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
