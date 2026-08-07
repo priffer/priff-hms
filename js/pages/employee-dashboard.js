@@ -1757,6 +1757,21 @@ async function markAllNotificationsReadUI() {
     }
 }
 
+async function deleteAllNotificationsUI() {
+    const emp = window.currentUserProfile;
+    if (!emp) return;
+    if (!confirm('ลบการแจ้งเตือนทั้งหมดของคุณ? (ไม่กระทบคำขอ/ข้อมูลต้นทาง แค่ซ่อนจากรายการแจ้งเตือน)')) return;
+    try {
+        await window.EmployeeSelfService.deleteAllNotifications(emp.id);
+        notificationsCache = {};
+        await loadNotificationsList();
+        await refreshNotificationBadge();
+    } catch (err) {
+        console.error('deleteAllNotificationsUI error', err);
+        showToast('❌ ลบไม่สำเร็จ: ' + err.message);
+    }
+}
+
 async function deleteNotificationUI(id) {
     if (!confirm('ลบการแจ้งเตือนนี้? (ไม่กระทบคำขอ/ข้อมูลต้นทาง แค่ซ่อนจากรายการแจ้งเตือน)')) return;
     try {

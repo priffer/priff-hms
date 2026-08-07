@@ -46,6 +46,11 @@ async function run() {
     path.resolve(__dirname, '..', 'database', '27_payroll_engine.sql'),
     path.resolve(__dirname, '..', 'database', '28_notifications_self_delete.sql'),
     path.resolve(__dirname, '..', 'database', '29_leave_correction_admin_approval_rls.sql'),
+    path.resolve(__dirname, '..', 'database', '30_payroll_schema_foreign_keys.sql'),
+    path.resolve(__dirname, '..', 'database', '31_employment_type_and_shift_differential.sql'),
+    path.resolve(__dirname, '..', 'database', '32_payroll_engine_freelance_and_shift.sql'),
+    path.resolve(__dirname, '..', 'database', '33_pay_frequency_and_period_autogen.sql'),
+    path.resolve(__dirname, '..', 'database', '34_payroll_engine_pay_frequency_filter.sql'),
   ];
 
   const results = [];

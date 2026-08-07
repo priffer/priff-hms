@@ -179,6 +179,7 @@ function ensureAdminNotificationsModal() {
                 <h3 class="text-lg font-extrabold text-kcdark tracking-wide">🔔 การแจ้งเตือน</h3>
                 <div class="flex items-center gap-3">
                     <button onclick="markAllAdminNotificationsReadUI()" class="text-xs font-bold text-kcblue hover:underline cursor-pointer">อ่านทั้งหมด</button>
+                    <button onclick="deleteAllAdminNotificationsUI()" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">ลบทั้งหมด</button>
                     <button onclick="closeAdminNotificationsModal()" class="text-slate-400 hover:text-red-600 font-bold text-2xl transition-colors cursor-pointer leading-none">✕</button>
                 </div>
             </div>
@@ -289,6 +290,25 @@ async function markAllAdminNotificationsReadUI() {
     } catch (err) {
         console.error('markAllAdminNotificationsReadUI error', err);
         alert('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
+    }
+}
+
+async function deleteAllAdminNotificationsUI() {
+    const profile = window.currentUserProfile;
+    if (!profile) return;
+    if (!confirm('ลบการแจ้งเตือนทั้งหมดของคุณ? (ไม่กระทบคำขอ/ข้อมูลต้นทาง แค่ซ่อนจากรายการแจ้งเตือน)')) return;
+    try {
+        const { error } = await window.supabaseClient
+            .from('notifications')
+            .delete()
+            .eq('recipient_user_profile_id', profile.id);
+        if (error) throw error;
+        adminNotificationsCache = {};
+        await loadAdminNotificationsList();
+        await refreshAdminNotifBadge();
+    } catch (err) {
+        console.error('deleteAllAdminNotificationsUI error', err);
+        alert('❌ ลบไม่สำเร็จ: ' + err.message);
     }
 }
 
