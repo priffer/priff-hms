@@ -1,22 +1,35 @@
 // js/pages/tv-dashboard.js
 // Live TV Dashboard - Real-time monitoring for command center
 const COMPANY_ID = 'comp_kc_clean';
+const POLL_FALLBACK_MS = 30000; // safety-net refresh in case the Realtime socket silently drops on a long-running TV kiosk
+const AUTO_RELOAD_MS = 6 * 60 * 60 * 1000; // hard page reload every 6h to avoid memory/WS drift on a screen left on 24/7
 let tvTrendChart = null;
 let tvSiteChart = null;
+let tvAttendanceGauge = null;
 
 // Clock
 setInterval(() => {
     const now = new Date();
     document.getElementById('clockTime').textContent = now.toLocaleTimeString('th-TH', { hour12: false });
-    document.getElementById('clockDate').textContent = now.toLocaleDateString('th-TH', { 
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+    document.getElementById('clockDate').textContent = now.toLocaleDateString('th-TH', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
 }, 1000);
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDashboardData();
     setupRealtimeSubscription();
+    setInterval(loadDashboardData, POLL_FALLBACK_MS);
+    setTimeout(() => window.location.reload(), AUTO_RELOAD_MS);
 });
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+        document.exitFullscreen();
+    }
+}
 
 const toISODate = (d) => {
     const tzOffset = d.getTimezoneOffset() * 60000;
@@ -25,55 +38,157 @@ const toISODate = (d) => {
 
 // Main Data Loader
 async function loadDashboardData() {
-    const today = toISODate(new Date());
+    const todayDate = new Date();
+    const yesterdayDate = new Date(todayDate);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const today = toISODate(todayDate);
+    const yesterday = toISODate(yesterdayDate);
+
     try {
-        // 1. Load today's summary (v_attendance_daily_summary)
-        const { data: todayData, error: todayErr } = await supabaseClient
-            .from('v_attendance_daily_summary')
-            .select('*')
-            .eq('company_id', COMPANY_ID)
-            .eq('work_date', today);
-            
-        if (todayErr) throw todayErr;
+        const [todayRes, yesterdayRes, staffRes, sitesRes, trendRes] = await Promise.all([
+            supabaseClient.from('v_attendance_daily_summary').select('*').eq('company_id', COMPANY_ID).eq('work_date', today),
+            supabaseClient.from('v_attendance_daily_summary').select('*').eq('company_id', COMPANY_ID).eq('work_date', yesterday),
+            supabaseClient.from('employees').select('id', { count: 'exact', head: true }).eq('company_id', COMPANY_ID).in('status', ['active', 'hired']),
+            supabaseClient.from('clients').select('id', { count: 'exact', head: true }),
+            (() => {
+                const start = new Date();
+                start.setDate(start.getDate() - 6);
+                return supabaseClient
+                    .from('v_attendance_daily_summary')
+                    .select('work_date, present_count, late_count')
+                    .eq('company_id', COMPANY_ID)
+                    .gte('work_date', toISODate(start))
+                    .lte('work_date', today);
+            })()
+        ]);
 
-        updateBigNumbers(todayData || []);
-        renderSiteChart(todayData || []);
+        if (todayRes.error) throw todayRes.error;
+        if (yesterdayRes.error) throw yesterdayRes.error;
+        if (staffRes.error) throw staffRes.error;
+        if (sitesRes.error) throw sitesRes.error;
+        if (trendRes.error) throw trendRes.error;
 
-        // 2. Load 7-day trend
-        const start = new Date();
-        start.setDate(start.getDate() - 6);
-        const { data: trendData, error: trendErr } = await supabaseClient
-            .from('v_attendance_daily_summary')
-            .select('work_date, present_count, late_count')
-            .eq('company_id', COMPANY_ID)
-            .gte('work_date', toISODate(start))
-            .lte('work_date', today);
-            
-        if (trendErr) throw trendErr;
-        renderTrendChart(trendData || [], start, new Date());
+        const todayRows = todayRes.data || [];
+        const yesterdayRows = yesterdayRes.data || [];
+        const totalActiveStaff = staffRes.count || 0;
+        const totalSites = sitesRes.count || 0;
 
-        // 3. Load recent 15 check-ins for the feed (only on first load, then realtime takes over)
+        updateBigNumbers(todayRows, yesterdayRows, totalActiveStaff, totalSites);
+        renderSiteChart(todayRows);
+        renderAttentionList(todayRows, totalSites);
+
+        const trendStart = new Date();
+        trendStart.setDate(trendStart.getDate() - 6);
+        renderTrendChart(trendRes.data || [], trendStart, todayDate);
+
+        // Load recent check-ins for the feed only on first load, then realtime takes over
         if (document.getElementById('tvFeedList').children.length <= 1) {
             loadRecentFeed();
         }
 
+        updateLastSyncLabel();
     } catch (e) {
         console.error('loadDashboardData error:', e);
     }
 }
 
-function updateBigNumbers(rows) {
+function updateLastSyncLabel() {
+    const el = document.getElementById('lastSyncLabel');
+    if (!el) return;
+    const now = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    el.textContent = `ซิงก์ล่าสุด ${now}`;
+}
+
+function updateBigNumbers(rows, yesterdayRows, totalActiveStaff, totalSites) {
     const totalPresent = rows.reduce((s, r) => s + Number(r.present_count || 0), 0);
     const totalLate = rows.reduce((s, r) => s + Number(r.late_count || 0), 0);
-    const totalOtEmp = rows.reduce((s, r) => s + Number(r.ot_employee_count || 0), 0);
-    
-    // Count active sites (where present > 0)
+    const totalOtHours = rows.reduce((s, r) => s + Number(r.total_ot_hours || 0), 0);
     const activeSites = rows.filter(r => Number(r.present_count || 0) > 0).length;
+
+    const yTotalLate = yesterdayRows.reduce((s, r) => s + Number(r.late_count || 0), 0);
+    const yTotalOtHours = yesterdayRows.reduce((s, r) => s + Number(r.total_ot_hours || 0), 0);
 
     animateValue('tvTotalPresent', totalPresent);
     animateValue('tvTotalLate', totalLate);
-    animateValue('tvTotalOtEmp', totalOtEmp);
     animateValue('tvActiveSites', activeSites);
+    document.getElementById('tvTotalActiveStaff').textContent = totalActiveStaff;
+    document.getElementById('tvTotalSites').textContent = totalSites;
+    document.getElementById('tvTotalOtHours').textContent = totalOtHours.toFixed(1);
+
+    renderTrendBadge('tvLateTrend', totalLate - yTotalLate, true);
+    renderTrendBadge('tvOtTrend', totalOtHours - yTotalOtHours, true);
+
+    const rate = totalActiveStaff > 0 ? Math.min(100, Math.round((totalPresent / totalActiveStaff) * 100)) : 0;
+    document.getElementById('tvAttendanceRatePct').textContent = totalActiveStaff > 0 ? `${rate}%` : '-';
+    renderAttendanceGauge(rate);
+}
+
+// higherIsBad: true when an increase vs yesterday should be shown in red (e.g. late count, OT hours)
+function renderTrendBadge(id, delta, higherIsBad) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!isFinite(delta) || delta === 0) {
+        el.textContent = '± เท่าเดิม';
+        el.className = 'text-xs font-bold mb-1 text-slate-500';
+        return;
+    }
+    const isBad = higherIsBad ? delta > 0 : delta < 0;
+    const arrow = delta > 0 ? '▲' : '▼';
+    const displayVal = Math.abs(delta) % 1 === 0 ? Math.abs(delta) : Math.abs(delta).toFixed(1);
+    el.textContent = `${arrow} ${displayVal} จากเมื่อวาน`;
+    el.className = `text-xs font-bold mb-1 ${isBad ? 'text-red-400' : 'text-emerald-400'}`;
+}
+
+function renderAttendanceGauge(ratePct) {
+    const color = ratePct >= 90 ? '#34d399' : ratePct >= 70 ? '#fbbf24' : '#f87171'; // emerald / amber / red
+    const ctx = document.getElementById('tvAttendanceGauge');
+    if (tvAttendanceGauge) tvAttendanceGauge.destroy();
+    tvAttendanceGauge = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [ratePct, 100 - ratePct],
+                backgroundColor: [color, 'rgba(148,163,184,0.15)'],
+                borderWidth: 0,
+                circumference: 360,
+                rotation: -90
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            animation: { animateRotate: true }
+        }
+    });
+}
+
+// Attention panel: ranks sites with visible attendance problems (late arrivals today) so a manager
+// glancing at the TV knows exactly where to intervene, instead of scanning the raw table.
+function renderAttentionList(rows, totalSites) {
+    const container = document.getElementById('tvAttentionList');
+    const flagged = rows
+        .filter(r => Number(r.late_count || 0) > 0)
+        .sort((a, b) => Number(b.late_count) - Number(a.late_count))
+        .slice(0, 4);
+
+    if (flagged.length === 0) {
+        container.innerHTML = `<div class="text-center text-emerald-400 text-sm py-4 font-semibold">✅ ทุกไซต์งานปกติดี ไม่มีการมาสาย</div>`;
+        return;
+    }
+
+    container.innerHTML = flagged.map(r => {
+        const rate = r.present_count > 0 ? Math.round((r.late_count / r.present_count) * 100) : 0;
+        return `
+            <div class="flex items-center justify-between bg-red-500/10 border border-red-500/25 rounded-xl px-3 py-2">
+                <div class="min-w-0">
+                    <p class="font-bold text-slate-200 truncate">${r.client_name || 'ไม่ระบุไซต์'}</p>
+                    <p class="text-xs text-red-300/80">มาสาย ${r.late_count} คน (${rate}% ของคนที่มา)</p>
+                </div>
+                <span class="text-2xl font-black text-red-400 tabular-nums shrink-0 ml-3">${r.late_count}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 // Simple counter animation
@@ -238,14 +353,11 @@ function addFeedItem(record, highlight = true) {
     const clientName = record.clients ? record.clients.client_name : 'ไม่ระบุไซต์';
     
     const isLate = record.is_late === true;
-    const statusColor = isLate ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'bg-blue-500/20 border-blue-500/50 text-blue-400';
-    const statusIcon = isLate ? '⚠️ สาย' : '✅ เข้างาน';
+    const statusColor = isLate ? 'bg-amber-500/10 border-amber-500/40 text-amber-400' : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400';
+    const statusIcon = isLate ? '⚠️ สาย' : '✅ ตรงเวลา';
 
     const div = document.createElement('div');
-    div.className = `p-3 rounded-xl border ${statusColor} flex justify-between items-center transition-all duration-500 transform translate-x-0 opacity-100`;
-    if (highlight) {
-        div.classList.add('-translate-x-full', 'opacity-0'); // start state for anim
-    }
+    div.className = `feed-item-enter p-3 rounded-xl border ${statusColor} flex justify-between items-center`;
     
     div.innerHTML = `
         <div class="flex items-center gap-3 overflow-hidden">
@@ -269,9 +381,6 @@ function addFeedItem(record, highlight = true) {
 
     // Trigger animation
     if (highlight) {
-        requestAnimationFrame(() => {
-            div.classList.remove('-translate-x-full', 'opacity-0');
-        });
         showToast(`พนักงานใหม่เช็คอิน: ${empName}`);
     }
 
