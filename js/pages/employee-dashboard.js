@@ -1697,12 +1697,15 @@ async function loadNotificationsList() {
     listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
     try {
         const list = await window.EmployeeSelfService.getMyNotifications(emp.id, { limit: 30 });
+        notificationsCache = {};
+        (list || []).forEach(item => { notificationsCache[item.id] = item; });
         if (!list || list.length === 0) {
             listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีการแจ้งเตือน</p>';
             return;
         }
         listEl.innerHTML = list.map(item => `
-            <div onclick="markNotificationReadUI('${item.id}')" class="rounded-2xl border ${item.is_read ? 'border-[#e6edf7] bg-white' : 'border-kcblue/30 bg-[#eef5ff]'} p-4 cursor-pointer transition-colors">
+            <div onclick="openNotificationTarget('${item.id}')" class="relative rounded-2xl border ${item.is_read ? 'border-[#e6edf7] bg-white' : 'border-kcblue/30 bg-[#eef5ff]'} p-4 pr-10 cursor-pointer transition-colors hover:shadow-sm">
+                <button onclick="event.stopPropagation(); deleteNotificationUI('${item.id}')" title="ลบการแจ้งเตือนนี้" class="absolute top-3 right-3 text-slate-300 hover:text-red-600 font-bold text-sm leading-none cursor-pointer transition-colors">✕</button>
                 <div class="flex items-start gap-3">
                     <span class="text-xl shrink-0">${notificationCategoryIcon[item.category] || '🔔'}</span>
                     <div class="min-w-0 flex-1">
@@ -1720,16 +1723,6 @@ async function loadNotificationsList() {
     }
 }
 
-async function markNotificationReadUI(id) {
-    try {
-        await window.EmployeeSelfService.markNotificationRead(id);
-        await loadNotificationsList();
-        await refreshNotificationBadge();
-    } catch (err) {
-        console.error('markNotificationReadUI error', err);
-    }
-}
-
 async function markAllNotificationsReadUI() {
     const emp = window.currentUserProfile;
     if (!emp) return;
@@ -1740,5 +1733,54 @@ async function markAllNotificationsReadUI() {
     } catch (err) {
         console.error('markAllNotificationsReadUI error', err);
         showToast('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
+    }
+}
+
+async function deleteNotificationUI(id) {
+    if (!confirm('ลบการแจ้งเตือนนี้? (ไม่กระทบคำขอ/ข้อมูลต้นทาง แค่ซ่อนจากรายการแจ้งเตือน)')) return;
+    try {
+        await window.EmployeeSelfService.deleteNotification(id);
+        delete notificationsCache[id];
+        await loadNotificationsList();
+        await refreshNotificationBadge();
+    } catch (err) {
+        console.error('deleteNotificationUI error', err);
+        showToast('❌ ลบไม่สำเร็จ: ' + err.message);
+    }
+}
+
+// เก็บ notification ที่โหลดมาล่าสุดไว้ในหน่วยความจำ (id -> row) เพื่อใช้ตัดสินใจปลายทางตอนคลิก
+let notificationsCache = {};
+
+// คลิกที่การแจ้งเตือน -> mark read แล้วเปิด modal ที่เกี่ยวข้องจริง (ไม่ใช่แค่ mark read เฉยๆ เหมือนเดิม)
+// - ot_request_pending/correction_request_pending (หัวหน้างานเป็นผู้รับ) -> เปิดกล่องอนุมัติ
+// - ot_request_approved/rejected (เจ้าของคำขอเป็นผู้รับ) -> เปิดประวัติโอที
+// - correction_request_approved/rejected -> เปิดประวัติลงเวลา
+// - leave_request_* -> เปิดหน้าลา (ยังไม่มีหน้าอนุมัติลาสำหรับหัวหน้างานในระบบตอนนี้ - gap ที่พบระหว่างทำ
+//   งานนี้ แจ้ง user แยกแล้ว - พาไปหน้าลาของตัวเองเป็นปลายทางที่ใกล้เคียงที่สุดไปก่อน)
+async function openNotificationTarget(id) {
+    const item = notificationsCache[id];
+    try {
+        await window.EmployeeSelfService.markNotificationRead(id);
+    } catch (err) {
+        console.error('mark read on click error', err);
+    }
+    closeNotificationsModal();
+    await refreshNotificationBadge();
+
+    if (!item) return;
+    const role = window.currentUserProfile?.role;
+
+    if (item.category === 'ot_request_pending' || item.category === 'ot_request_escalated' || item.category === 'correction_request_pending') {
+        if (role === 'supervisor') { openApprovalInboxModal(); return; }
+    }
+    if (item.category === 'ot_request_approved' || item.category === 'ot_request_rejected') {
+        openOtModal(); return;
+    }
+    if (item.category === 'correction_request_approved' || item.category === 'correction_request_rejected') {
+        openAttendanceHistoryModal(); return;
+    }
+    if (item.category && item.category.startsWith('leave_request')) {
+        openLeaveModal(); return;
     }
 }

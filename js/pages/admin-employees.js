@@ -7,7 +7,7 @@ const employeeScripts = [
 function loadEmployeeScripts(index) {
     if (index >= employeeScripts.length) {
         if (typeof loadEmployees === 'function') {
-            loadEmployees();
+            loadEmployees().then(() => openEmployeeFromNotificationLink());
         }
         return;
     }
@@ -21,6 +21,35 @@ function loadEmployeeScripts(index) {
 document.addEventListener('DOMContentLoaded', () => {
     loadEmployeeScripts(0);
 });
+
+// เปิดแฟ้มประวัติพนักงานอัตโนมัติ + สลับไปแท็บที่ระบุ เมื่อมาจากลิงก์การแจ้งเตือน
+// (เช่น admin-employees.html?openEmpId=DEMO001&tab=advance จาก navbar.js เมื่อคลิกแจ้งเตือน
+// "คำขอเบิกเงินล่วงหน้าเกินยอดประมาณการ") - ไม่กระทบการใช้งานหน้าปกติถ้าไม่มี query param เหล่านี้
+async function openEmployeeFromNotificationLink() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const empId = params.get('openEmpId');
+        if (!empId) return;
+        const tab = params.get('tab') || 'info';
+
+        const { data, error } = await supabaseClient
+            .from('employees')
+            .select('id')
+            .eq('emp_id', empId)
+            .eq('company_id', CandidateService.getCompanyId())
+            .maybeSingle();
+        if (error) throw error;
+        if (!data) return;
+
+        await viewEmployeeDetails(data.id);
+        if (typeof switchEmpTab === 'function') switchEmpTab(tab);
+
+        // ล้าง query string ออกจาก URL หลังเปิดสำเร็จ กันเปิดซ้ำถ้า refresh หน้า
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (err) {
+        console.error('openEmployeeFromNotificationLink error', err);
+    }
+}
 
 // ---------------------------------------------------------
 // 🌟 โค้ดส่วนจัดการแผนก

@@ -550,6 +550,16 @@ const EmployeeSelfService = {
         if (error) throw error;
     },
 
+    // ลบการแจ้งเตือนของตัวเอง (database/28_notifications_self_delete.sql - RLS อนุญาตให้ผู้รับ
+    // ลบของตัวเองได้ทุก role) - แค่ซ่อนการแจ้งเตือน ไม่กระทบข้อมูลต้นทาง (ot_requests/leave_requests/ฯลฯ)
+    async deleteNotification(id) {
+        const { error } = await supabaseClient
+            .from('notifications')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+    },
+
     // ---------- สิทธิสวัสดิการของฉัน (database/18_employee_benefits_profile.sql) ----------
     // ดึงข้อมูลค่าจ้าง/ประกันสังคม/ภาษี (จาก employees ที่ employee เห็นได้อยู่แล้วผ่าน RLS เดิม)
     // รวมกับรายการสวัสดิการที่ผูกไว้ (employee_benefit_assignments) ในเรียกเดียว

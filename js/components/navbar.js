@@ -50,8 +50,11 @@ function renderGlobalNavbar() {
                     <button onclick="handleGlobalLogout()" class="rounded-xl bg-white/10 border border-white/20 px-4 py-2 text-sm font-bold hover:bg-white hover:text-kcdark transition-colors cursor-pointer shrink-0">ออกจากระบบ</button>
                 </div>
 
-                <div class="lg:hidden flex items-center gap-2 shrink-0">
-                    <button id="adminNotifBellBtnMobile" onclick="openAdminNotificationsModal()" class="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center cursor-pointer" aria-label="การแจ้งเตือน">
+                <div class="lg:hidden flex items-center gap-2 shrink-0 min-w-0">
+                    <div id="navProfileAreaMobileCompact" class="text-right leading-tight min-w-0 mr-1">
+                        <p id="navProfileNameMobileCompact" class="font-bold text-xs truncate max-w-[90px] sm:max-w-[160px]">กำลังโหลด...</p>
+                    </div>
+                    <button id="adminNotifBellBtnMobile" onclick="openAdminNotificationsModal()" class="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center cursor-pointer shrink-0" aria-label="การแจ้งเตือน">
                         <span class="text-base">🔔</span>
                         <span id="adminNotifUnreadBadgeMobile" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 border-2 border-kcdark">0</span>
                     </button>
@@ -111,10 +114,12 @@ async function loadNavbarProfile() {
         const metaEl = document.getElementById('navProfileMeta');
         const nameMobileEl = document.getElementById('navProfileNameMobile');
         const metaMobileEl = document.getElementById('navProfileMetaMobile');
+        const nameMobileCompactEl = document.getElementById('navProfileNameMobileCompact');
         if (nameEl) nameEl.textContent = name;
         if (metaEl) metaEl.textContent = meta;
         if (nameMobileEl) nameMobileEl.textContent = name;
         if (metaMobileEl) metaMobileEl.textContent = meta;
+        if (nameMobileCompactEl) { nameMobileCompactEl.textContent = name; nameMobileCompactEl.title = name; }
 
         // ซ่อนเมนูที่ role ปัจจุบันไม่มีสิทธิ์เข้าถึง (Role-aware menu)
         document.querySelectorAll('[data-roles]').forEach(el => {
@@ -154,8 +159,13 @@ async function handleGlobalLogout() {
 const adminNotificationCategoryIcon = {
     ot_request_pending: '⏱️', ot_request_escalated: '⚠️', ot_request_approved: '✅', ot_request_rejected: '❌',
     correction_request_pending: '✏️', correction_request_approved: '✅', correction_request_rejected: '❌',
-    leave_request_pending: '🏖️', leave_request_approved: '✅', leave_request_rejected: '❌'
+    leave_request_pending: '🏖️', leave_request_approved: '✅', leave_request_rejected: '❌',
+    advance_payment_exceeds_cap: '💸'
 };
+
+// เก็บ notification ที่โหลดมาล่าสุดไว้ในหน่วยความจำ (id -> row) เพื่อใช้ตัดสินใจปลายทางตอนคลิก
+// โดยไม่ต้อง query ซ้ำ
+let adminNotificationsCache = {};
 
 function ensureAdminNotificationsModal() {
     if (document.getElementById('adminNotificationsModal')) return;
@@ -237,12 +247,15 @@ async function loadAdminNotificationsList() {
             .order('created_at', { ascending: false })
             .limit(30);
         if (error) throw error;
+        adminNotificationsCache = {};
+        (data || []).forEach(item => { adminNotificationsCache[item.id] = item; });
         if (!data || data.length === 0) {
             listEl.innerHTML = '<p class="text-center text-gray-400 text-sm py-6">ยังไม่มีการแจ้งเตือน</p>';
             return;
         }
         listEl.innerHTML = data.map(item => `
-            <div onclick="markAdminNotificationReadUI('${item.id}')" class="rounded-2xl border ${item.is_read ? 'border-[#e6edf7] bg-white' : 'border-kcblue bg-kclight'} p-4 cursor-pointer transition-colors">
+            <div onclick="openAdminNotificationTarget('${item.id}')" class="relative rounded-2xl border ${item.is_read ? 'border-[#e6edf7] bg-white' : 'border-kcblue bg-kclight'} p-4 pr-10 cursor-pointer transition-colors hover:shadow-sm">
+                <button onclick="event.stopPropagation(); deleteAdminNotificationUI('${item.id}')" title="ลบการแจ้งเตือนนี้" class="absolute top-3 right-3 text-slate-300 hover:text-red-600 font-bold text-sm leading-none cursor-pointer transition-colors">✕</button>
                 <div class="flex items-start gap-3">
                     <span class="text-xl shrink-0">${adminNotificationCategoryIcon[item.category] || '🔔'}</span>
                     <div class="min-w-0 flex-1">
@@ -257,20 +270,6 @@ async function loadAdminNotificationsList() {
     } catch (err) {
         console.error('loadAdminNotificationsList error', err);
         listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ: ${err.message}</p>`;
-    }
-}
-
-async function markAdminNotificationReadUI(id) {
-    try {
-        const { error } = await window.supabaseClient
-            .from('notifications')
-            .update({ is_read: true, read_at: new Date().toISOString() })
-            .eq('id', id);
-        if (error) throw error;
-        await loadAdminNotificationsList();
-        await refreshAdminNotifBadge();
-    } catch (err) {
-        console.error('markAdminNotificationReadUI error', err);
     }
 }
 
@@ -290,4 +289,64 @@ async function markAllAdminNotificationsReadUI() {
         console.error('markAllAdminNotificationsReadUI error', err);
         alert('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
     }
+}
+
+async function deleteAdminNotificationUI(id) {
+    if (!confirm('ลบการแจ้งเตือนนี้? (ไม่กระทบคำขอ/ข้อมูลต้นทาง แค่ซ่อนจากรายการแจ้งเตือน)')) return;
+    try {
+        const { error } = await window.supabaseClient.from('notifications').delete().eq('id', id);
+        if (error) throw error;
+        delete adminNotificationsCache[id];
+        await loadAdminNotificationsList();
+        await refreshAdminNotifBadge();
+    } catch (err) {
+        console.error('deleteAdminNotificationUI error', err);
+        alert('❌ ลบไม่สำเร็จ: ' + err.message);
+    }
+}
+
+// คลิกที่การแจ้งเตือน -> mark read แล้วพาไปหน้าที่เกี่ยวข้องจริง (ไม่ใช่แค่ mark read เฉยๆ เหมือนเดิม)
+// หมายเหตุ: correction_request_* / leave_request_* (กรณี fallback ไม่มีหัวหน้างาน) ยังไม่มีหน้า
+// admin สำหรับตรวจสอบ/อนุมัติโดยเฉพาะในระบบตอนนี้ (เป็น gap ที่พบระหว่างทำ - แจ้ง user แยกแล้ว)
+// จึงพาไปหน้าเวลาทำงาน (admin-attendance.html) เป็นปลายทางที่ใกล้เคียงที่สุดไปก่อน
+async function openAdminNotificationTarget(id) {
+    const item = adminNotificationsCache[id];
+    try {
+        await window.supabaseClient
+            .from('notifications')
+            .update({ is_read: true, read_at: new Date().toISOString() })
+            .eq('id', id);
+    } catch (err) {
+        console.error('mark read on click error', err);
+    }
+    if (!item) { await loadAdminNotificationsList(); await refreshAdminNotifBadge(); return; }
+
+    if (item.category && item.category.startsWith('ot_request')) {
+        window.location.href = 'admin-ot-benefits.html';
+        return;
+    }
+    if (item.category === 'advance_payment_exceeds_cap') {
+        try {
+            const { data: adv } = await window.supabaseClient
+                .from('advance_payments')
+                .select('emp_id')
+                .eq('id', item.source_id)
+                .single();
+            if (adv && adv.emp_id) {
+                window.location.href = `admin-employees.html?openEmpId=${encodeURIComponent(adv.emp_id)}&tab=advance`;
+                return;
+            }
+        } catch (err) {
+            console.error('resolve advance_payment target error', err);
+        }
+        window.location.href = 'admin-employees.html';
+        return;
+    }
+    if (item.category && (item.category.startsWith('correction_request') || item.category.startsWith('leave_request'))) {
+        // ยังไม่มีหน้า admin เฉพาะสำหรับตรวจสอบคำขอลา/แก้ไขเวลา (gap ที่พบระหว่างทำงานนี้)
+        window.location.href = 'admin-attendance.html';
+        return;
+    }
+    await loadAdminNotificationsList();
+    await refreshAdminNotifBadge();
 }
