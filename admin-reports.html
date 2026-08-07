@@ -74,7 +74,10 @@
                     </div>
                     <button onclick="exportOtCsv()" class="border border-[#e6edf7] bg-white text-slate-700 px-4 py-2 text-sm font-bold hover:bg-kclight transition-colors cursor-pointer rounded-xl">⬇️ Export CSV</button>
                 </div>
-                <p class="text-xs text-slate-400 mb-3">จัดอันดับคนทำ OT มากสุด-น้อยสุดในช่วงที่เลือก (คลิกหัวตารางเพื่อเรียงลำดับ)</p>
+                <p class="text-xs text-slate-400 mb-3">
+                    จัดอันดับคนทำ OT มากสุด-น้อยสุดในช่วงที่เลือก (คลิกหัวตารางเพื่อเรียงลำดับ)<br>
+                    "มูลค่า OT" จะเป็น 0 บาทจนกว่าจะมีการรันคำนวณเงินเดือน (Payroll Run) ของงวดนั้นจริง เนื่องจากระบบคำนวณมูลค่าเป็นเงินตอนรันเงินเดือนเท่านั้น (ชั่วโมง OT ถูกต้องแล้วตั้งแต่วันที่บันทึกเวลา)
+                </p>
                 <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
                     <table class="w-full text-left border-collapse">
                         <thead>
