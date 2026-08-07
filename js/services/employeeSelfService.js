@@ -25,6 +25,15 @@ const EmployeeSelfService = {
         return data;
     },
 
+    // ยอดสะสมประมาณการของงวดนี้ (วันทำงาน, OT แยกประเภท, ลา, สาย, ยอดเบิกได้) - ใช้ก่อนขอเบิก
+    // เป็นตัวเลข "ประมาณการ" จาก attendance สดๆ เท่านั้น ไม่ใช่ยอดจริงจาก Payroll Engine
+    // (database/22_advance_payment_estimate_summary.sql)
+    async getAdvancePaymentEstimateSummary() {
+        const { data, error } = await supabaseClient.rpc('fn_get_advance_payment_estimate_summary');
+        if (error) throw error;
+        return data;
+    },
+
     async createAdvancePaymentRequest({ empId, companyId, amount, remark }) {
         const payload = {
             emp_id: empId,
