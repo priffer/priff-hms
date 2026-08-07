@@ -83,6 +83,7 @@ async function run() {
     '35_reporting_views_powerbi.sql',
     '36_payroll_period_approval_workflow.sql',
     '37_fix_attendance_daily_summary_fanout.sql',
+    '38_daily_roster_status_view.sql',
     // เพิ่มไฟล์ migration ใหม่ต่อท้ายลิสต์นี้เสมอ (ห้าม auto-discover ทั้งโฟลเดอร์ database/
     // เพราะไฟล์ 01-05 และ schema.sql เป็นของ scripts/run-sql.js คนละ workflow กัน)
   ].map(f => path.resolve(__dirname, '..', 'database', f));
