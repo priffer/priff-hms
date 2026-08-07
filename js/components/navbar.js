@@ -6,6 +6,7 @@ const ADMIN_NAV_LINKS = [
     { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที/สวัสดิการ', icon: '🛡️', roles: ['admin', 'payroll'] },
     { href: 'admin-approvals.html', match: 'admin-approvals.html', label: 'อนุมัติคำขอ', icon: '🗂️', roles: ['admin', 'payroll'] },
     { href: 'admin-payroll.html', match: 'admin-payroll.html', label: 'เงินเดือน (Payroll)', icon: '💰', roles: ['admin', 'payroll'] },
+    { href: 'admin-reports.html', match: 'admin-reports.html', label: 'รายงาน/Dashboard', icon: '📊', roles: ['admin', 'payroll'] },
     { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ/วันหยุด', icon: '🗓️', roles: ['admin', 'payroll'] },
 ];
 

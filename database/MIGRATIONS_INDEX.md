@@ -42,5 +42,6 @@ Staging/Production (see `.agent-rules.md`).
 | `32_payroll_engine_freelance_and_shift.sql` | Milestone 5 Phase 1 (ต่อ): อัปเดต fn_run_payroll_period() ให้รองรับ |
 | `33_pay_frequency_and_period_autogen.sql` | Milestone 5 Phase 2: สร้างงวดเงินเดือนอัตโนมัติตามกฎการจ่ายจริงของ KC Clean Trade |
 | `34_payroll_engine_pay_frequency_filter.sql` | Milestone 5 Phase 2 (ต่อ): อัปเดต fn_run_payroll_period() ให้กรองพนักงานตาม pay_frequency |
+| `35_reporting_views_powerbi.sql` | Phase 4: หน้ารายงาน/Dashboard (OT/เวลาทำงาน) + เชื่อมต่อ Power BI |
 
-_Generated: 2026-08-07T11:13:22.316Z_
+_Generated: 2026-08-07T12:06:07.512Z_
