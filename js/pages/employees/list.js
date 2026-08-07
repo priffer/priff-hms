@@ -16,7 +16,7 @@ async function loadEmployees(searchQuery = '') {
         const data = await CandidateService.getActiveEmployees(searchQuery);
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-gray-500">ไม่พบข้อมูลพนักงาน</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-slate-500">ไม่พบข้อมูลพนักงาน</td></tr>';
             return;
         }
 
@@ -36,16 +36,16 @@ async function loadEmployees(searchQuery = '') {
             }
 
             tbody.innerHTML += `
-                <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                <tr class="border-b border-[#e6edf7] hover:bg-kcsoft transition-colors">
                     <td class="p-3 font-bold text-kcblue">${emp.emp_id || '-'}</td>
-                    <td class="p-3 font-bold text-gray-900">${emp.full_name}</td>
+                    <td class="p-3 font-bold text-kcdark">${emp.full_name}</td>
                     <td class="p-3 text-sm leading-tight">
                         ${displayDept}<br>
-                        <span class="text-xs text-gray-500">ตำแหน่ง: ${emp.interested_position || '-'}</span>
+                        <span class="text-xs text-slate-500">ตำแหน่ง: ${emp.interested_position || '-'}</span>
                     </td>
                     <td class="p-3 text-sm">${startDate}</td>
                     <td class="p-3 text-center">
-                        <button onclick="viewEmployeeDetails('${emp.id}')" class="bg-kcblue text-white px-4 py-1.5 text-xs font-bold border-0 hover:bg-kcyellow hover:text-kcblue cursor-pointer shadow-sm">เปิดแฟ้มประวัติ</button>
+                        <button onclick="viewEmployeeDetails('${emp.id}')" class="rounded-xl bg-kcblue text-white px-4 py-1.5 text-xs font-bold border-0 hover:bg-kcdark cursor-pointer shadow-sm transition-colors">เปิดแฟ้มประวัติ</button>
                     </td>
                 </tr>
             `;
