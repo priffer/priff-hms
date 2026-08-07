@@ -44,5 +44,6 @@ Staging/Production (see `.agent-rules.md`).
 | `34_payroll_engine_pay_frequency_filter.sql` | Milestone 5 Phase 2 (ต่อ): อัปเดต fn_run_payroll_period() ให้กรองพนักงานตาม pay_frequency |
 | `35_reporting_views_powerbi.sql` | Phase 4: หน้ารายงาน/Dashboard (OT/เวลาทำงาน) + เชื่อมต่อ Power BI |
 | `36_payroll_period_approval_workflow.sql` | Payroll Engine Milestone 4 (ต่อ): Approval Workflow สำหรับ payroll_periods |
+| `37_fix_attendance_daily_summary_fanout.sql` | Phase 4 follow-up bugfix: v_attendance_daily_summary double-counts |
 
-_Generated: 2026-08-07T13:13:45.780Z_
+_Generated: 2026-08-07T13:37:57.753Z_
