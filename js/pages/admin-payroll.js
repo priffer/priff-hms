@@ -4,7 +4,15 @@
 
 const COMPANY_ID = 'comp_kc_clean'; // ระบบ single-tenant ในตอนนี้ (เหมือน pattern เดิมทั่วทั้งระบบ)
 
-document.addEventListener('DOMContentLoaded', () => {
+let currentUserRole = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const profile = await window.PriffAuthGuard.getCurrentUserProfile();
+        currentUserRole = profile ? profile.role : null;
+    } catch (e) {
+        console.error('โหลด role ผู้ใช้ไม่สำเร็จ', e);
+    }
     loadPayrollPeriods();
 
     const runSelect = document.getElementById('linesRunSelect');
@@ -47,6 +55,9 @@ function fmtDate(d) {
 const periodStatusLabel = {
     draft: '<span class="bg-slate-100 text-slate-600 px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg">แบบร่าง</span>',
     open: '<span class="bg-blue-100 text-blue-700 px-2 py-1 text-xs font-bold border border-blue-300 rounded-lg">เปิดรอบ</span>',
+    submitted: '<span class="bg-amber-100 text-amber-700 px-2 py-1 text-xs font-bold border border-amber-300 rounded-lg">ส่งตรวจแล้ว</span>',
+    approved: '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 text-xs font-bold border border-emerald-300 rounded-lg">อนุมัติแล้ว</span>',
+    locked: '<span class="bg-slate-700 text-white px-2 py-1 text-xs font-bold border border-slate-700 rounded-lg">🔒 ล็อกแล้ว</span>',
     closed: '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 text-xs font-bold border border-emerald-300 rounded-lg">ปิดรอบแล้ว</span>',
 };
 
@@ -84,6 +95,32 @@ async function loadPayrollPeriods() {
                 ? `${run.run_name || run.id.slice(0, 8)} <span class="text-xs text-slate-400">(${run.status})</span>`
                 : '<span class="text-slate-400">ยังไม่รัน</span>';
             const netTotal = run ? fmtMoney(run.total_net_amount) + ' บาท' : '-';
+
+            // สิทธิ์ตามขั้นตอน (บังคับจริงในฟังก์ชัน SQL ด้วย - นี่แค่ซ่อนปุ่มที่กดแล้วจะ error อยู่ดี)
+            const canRun = p.status === 'open' || p.status === 'draft';
+            const canSubmit = p.status === 'open' && currentUserRole === 'payroll' && run;
+            const canApprove = p.status === 'submitted' && currentUserRole === 'admin';
+            const canReject = p.status === 'submitted' && currentUserRole === 'admin';
+            const canLock = p.status === 'approved' && currentUserRole === 'admin';
+
+            let actionBtns = '';
+            if (canRun) {
+                actionBtns += `<button onclick="runPayrollForPeriod('${p.id}')" class="bg-kcblue text-white px-3 py-1.5 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg mr-1 mb-1">▶️ รันคำนวณ</button>`;
+            }
+            actionBtns += `<button onclick="viewPeriodInLinesTab('${run ? run.id : ''}')" ${run ? '' : 'disabled'} class="border border-[#e6edf7] bg-white text-slate-700 px-3 py-1.5 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg disabled:opacity-40 disabled:cursor-not-allowed mr-1 mb-1">🧾 ดูรายละเอียด</button>`;
+            if (canSubmit) {
+                actionBtns += `<button onclick="submitPeriod('${p.id}')" class="bg-amber-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-amber-600 transition-colors cursor-pointer rounded-lg mr-1 mb-1">📤 ส่งตรวจ</button>`;
+            }
+            if (canApprove) {
+                actionBtns += `<button onclick="approvePeriod('${p.id}')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg mr-1 mb-1">✅ อนุมัติงวด</button>`;
+            }
+            if (canReject) {
+                actionBtns += `<button onclick="rejectPeriod('${p.id}')" class="bg-red-100 text-red-700 border border-red-300 px-3 py-1.5 text-xs font-bold hover:bg-red-200 transition-colors cursor-pointer rounded-lg mr-1 mb-1">↩️ ส่งกลับแก้ไข</button>`;
+            }
+            if (canLock) {
+                actionBtns += `<button onclick="lockPeriod('${p.id}')" class="bg-slate-700 text-white px-3 py-1.5 text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer rounded-lg mr-1 mb-1">🔒 ล็อกงวด (จ่ายแล้ว)</button>`;
+            }
+
             return `
             <tr class="border-t border-[#e6edf7]">
                 <td class="p-3 font-bold">${fmtDate(p.period_start)} - ${fmtDate(p.period_end)}</td>
@@ -92,10 +129,7 @@ async function loadPayrollPeriods() {
                 <td class="p-3 text-center">${periodStatusLabel[p.status] || p.status}</td>
                 <td class="p-3">${runInfo}</td>
                 <td class="p-3 text-right">${netTotal}</td>
-                <td class="p-3 text-center whitespace-nowrap">
-                    <button onclick="runPayrollForPeriod('${p.id}')" class="bg-kcblue text-white px-3 py-1.5 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg mr-1">▶️ รันคำนวณ</button>
-                    <button onclick="viewPeriodInLinesTab('${run ? run.id : ''}')" ${run ? '' : 'disabled'} class="border border-[#e6edf7] bg-white text-slate-700 px-3 py-1.5 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg disabled:opacity-40 disabled:cursor-not-allowed">🧾 ดูรายละเอียด</button>
-                </td>
+                <td class="p-3 text-center whitespace-nowrap">${actionBtns}</td>
             </tr>`;
         }).join('');
     } catch (err) {
@@ -150,6 +184,60 @@ function viewPeriodInLinesTab(runId) {
         sel.value = runId;
         loadPayrollLines(runId);
     }, 50);
+}
+
+// ============================================================
+// Payroll period approval workflow: open -> submitted -> approved -> locked
+//   (+ "ส่งกลับแก้ไข": submitted -> open) - บังคับสิทธิ์จริงในฟังก์ชัน SQL (SECURITY DEFINER)
+// ============================================================
+async function submitPeriod(periodId) {
+    if (!confirm('ยืนยันส่งงวดนี้ให้ admin ตรวจสอบ? ต้องอนุมัติรายการพนักงานให้ครบทุกคนก่อนถึงจะส่งได้')) return;
+    try {
+        const { error } = await supabaseClient.rpc('fn_payroll_period_submit', { p_period_id: periodId });
+        if (error) throw error;
+        alert('ส่งงวดเงินเดือนเรียบร้อย รอ admin ตรวจสอบ');
+        loadPayrollPeriods();
+    } catch (err) {
+        alert('เกิดข้อผิดพลาด: ' + err.message);
+    }
+}
+
+async function approvePeriod(periodId) {
+    if (!confirm('ยืนยันอนุมัติงวดเงินเดือนนี้?')) return;
+    try {
+        const { error } = await supabaseClient.rpc('fn_payroll_period_approve', { p_period_id: periodId });
+        if (error) throw error;
+        alert('อนุมัติงวดเงินเดือนเรียบร้อย');
+        loadPayrollPeriods();
+    } catch (err) {
+        alert('เกิดข้อผิดพลาด: ' + err.message);
+    }
+}
+
+async function rejectPeriod(periodId) {
+    const reason = prompt('เหตุผลที่ส่งกลับแก้ไข (ถ้ามี):', '');
+    if (reason === null) return; // กด cancel
+    if (!confirm('ยืนยันส่งงวดนี้กลับให้เจ้าหน้าที่ payroll แก้ไข? รายการที่อนุมัติแล้วทั้งหมดจะกลับเป็น "รอตรวจสอบ"')) return;
+    try {
+        const { error } = await supabaseClient.rpc('fn_payroll_period_reject', { p_period_id: periodId, p_reason: reason || null });
+        if (error) throw error;
+        alert('ส่งงวดกลับแก้ไขเรียบร้อย');
+        loadPayrollPeriods();
+    } catch (err) {
+        alert('เกิดข้อผิดพลาด: ' + err.message);
+    }
+}
+
+async function lockPeriod(periodId) {
+    if (!confirm('ยืนยันล็อกงวดนี้? หลังล็อกแล้วจะแก้ไข attendance/เงินเดือนของงวดนี้ไม่ได้อีก (ใช้เมื่อจ่ายเงินจริงแล้วเท่านั้น)')) return;
+    try {
+        const { error } = await supabaseClient.rpc('fn_payroll_period_lock', { p_period_id: periodId });
+        if (error) throw error;
+        alert('ล็อกงวดเงินเดือนเรียบร้อย');
+        loadPayrollPeriods();
+    } catch (err) {
+        alert('เกิดข้อผิดพลาด: ' + err.message);
+    }
 }
 
 // ============================================================
