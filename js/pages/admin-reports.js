@@ -9,6 +9,13 @@ let otSummaryRows = [];
 let otSortState = { key: 'total_ot_hours', dir: 'desc' };
 let attendanceSummaryRows = [];
 
+// เก็บ instance ของ Chart.js แต่ละแท็บไว้ทำลายทิ้งก่อนวาดใหม่ (กัน canvas ซ้อนกัน)
+let overviewTrendChart = null;
+let otTrendChart = null;
+let turnoverTrendChart = null;
+
+function toISODate(d) { return d.toISOString().slice(0, 10); }
+
 document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().slice(0, 10);
     document.getElementById('overviewDate').value = today;
@@ -123,9 +130,70 @@ async function loadOverview() {
                 <td class="p-3 text-right">${fmtNum(r.total_ot_hours)}</td>
             </tr>
         `).join('');
+
+        loadOverviewTrend(date);
     } catch (e) {
         console.error('loadOverview error', e);
         tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${e.message}</td></tr>`;
+    }
+}
+
+// เทรนด์ 7 วันล่าสุด (นับรวมทุกไซต์งาน) สิ้นสุดที่วันที่เลือกไว้ในแท็บนี้
+async function loadOverviewTrend(endDateStr) {
+    const end = new Date(endDateStr);
+    const start = new Date(end);
+    start.setDate(start.getDate() - 6);
+    try {
+        const { data, error } = await supabaseClient
+            .from('v_attendance_daily_summary')
+            .select('work_date, present_count, late_count, total_ot_hours')
+            .eq('company_id', COMPANY_ID)
+            .gte('work_date', toISODate(start))
+            .lte('work_date', toISODate(end));
+        if (error) throw error;
+
+        const byDate = {};
+        (data || []).forEach(r => {
+            const d = r.work_date;
+            if (!byDate[d]) byDate[d] = { present: 0, late: 0, ot: 0 };
+            byDate[d].present += Number(r.present_count || 0);
+            byDate[d].late += Number(r.late_count || 0);
+            byDate[d].ot += Number(r.total_ot_hours || 0);
+        });
+
+        const labels = [];
+        const presentData = [], lateData = [], otData = [];
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const key = toISODate(d);
+            labels.push(new Date(key).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }));
+            const v = byDate[key] || { present: 0, late: 0, ot: 0 };
+            presentData.push(v.present);
+            lateData.push(v.late);
+            otData.push(Number(v.ot.toFixed(1)));
+        }
+
+        const ctx = document.getElementById('overviewTrendChart');
+        if (overviewTrendChart) overviewTrendChart.destroy();
+        overviewTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'มาทำงาน (คน)', data: presentData, borderColor: '#165DFF', backgroundColor: '#165DFF22', tension: 0.3, yAxisID: 'y' },
+                    { label: 'มาสาย (คน)', data: lateData, borderColor: '#F59E0B', backgroundColor: '#F59E0B22', tension: 0.3, yAxisID: 'y' },
+                    { label: 'ชม. OT รวม', data: otData, borderColor: '#0F2B73', backgroundColor: '#0F2B7322', tension: 0.3, yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    y: { position: 'left', beginAtZero: true, title: { display: true, text: 'จำนวนคน' } },
+                    y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'ชั่วโมง OT' } }
+                }
+            }
+        });
+    } catch (e) {
+        console.error('loadOverviewTrend error', e);
     }
 }
 
@@ -167,10 +235,40 @@ async function loadOtSummary() {
         });
         otSummaryRows = Object.values(grouped);
         renderOtTable();
+        renderOtTrendChart(data || [], from, to);
     } catch (e) {
         console.error('loadOtSummary error', e);
         tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${e.message}</td></tr>`;
     }
+}
+
+// กราฟแนวโน้มชั่วโมง OT รายวันรวมทุกคน (ตามไซต์งานที่กรอง) ในช่วงวันที่เลือก
+function renderOtTrendChart(rows, fromStr, toStr) {
+    const byDate = {};
+    rows.forEach(r => {
+        const d = r.work_date;
+        byDate[d] = (byDate[d] || 0) + Number(r.total_ot_hours || 0);
+    });
+
+    const labels = [];
+    const otData = [];
+    for (let d = new Date(fromStr); d <= new Date(toStr); d.setDate(d.getDate() + 1)) {
+        const key = toISODate(d);
+        labels.push(new Date(key).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }));
+        otData.push(Number((byDate[key] || 0).toFixed(1)));
+    }
+
+    const ctx = document.getElementById('otTrendChart');
+    if (otTrendChart) otTrendChart.destroy();
+    otTrendChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'ชม. OT รวม/วัน', data: otData, backgroundColor: '#165DFF99', borderRadius: 4 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'ชั่วโมง' } } },
+            plugins: { legend: { display: false } }
+        }
+    });
 }
 
 function sortOtTable(key) {
@@ -277,6 +375,7 @@ async function loadTurnoverSummary() {
 
         if (!data || data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="2" class="p-8 text-center text-slate-500">ยังไม่มีข้อมูลการลาออกที่บันทึกไว้ (employee_movements)</td></tr>';
+            renderTurnoverTrendChart([]);
             return;
         }
         tbody.innerHTML = data.map(r => `
@@ -285,10 +384,30 @@ async function loadTurnoverSummary() {
                 <td class="p-3 text-right font-bold">${r.resignation_count}</td>
             </tr>
         `).join('');
+        renderTurnoverTrendChart(data);
     } catch (e) {
         console.error('loadTurnoverSummary error', e);
         tbody.innerHTML = `<tr><td colspan="2" class="p-8 text-center text-red-500">เกิดข้อผิดพลาด: ${e.message}</td></tr>`;
     }
+}
+
+// กราฟแนวโน้มลาออกรายเดือน (เรียงเก่า -> ใหม่ ให้อ่านเทรนด์ง่าย)
+function renderTurnoverTrendChart(rows) {
+    const sorted = [...rows].sort((a, b) => new Date(a.month_start) - new Date(b.month_start));
+    const labels = sorted.map(r => new Date(r.month_start).toLocaleDateString('th-TH', { year: '2-digit', month: 'short' }));
+    const data = sorted.map(r => Number(r.resignation_count || 0));
+
+    const ctx = document.getElementById('turnoverTrendChart');
+    if (turnoverTrendChart) turnoverTrendChart.destroy();
+    turnoverTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'จำนวนคนลาออก', data, borderColor: '#DC2626', backgroundColor: '#DC262622', tension: 0.3, fill: true }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+            plugins: { legend: { display: false } }
+        }
+    });
 }
 
 // ============================================================
