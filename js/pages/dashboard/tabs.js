@@ -10,7 +10,7 @@ async function switchTab(tabName) {
         const el = document.getElementById(t);
         if (!el) return;
         
-        let baseClass = "px-4 py-2 font-bold rounded-none border-0 cursor-pointer ";
+        let baseClass = "px-4 py-2 font-bold rounded-xl border-0 cursor-pointer transition-colors ";
         if (t === 'tab-settings') {
             baseClass += "ml-auto ";
         }
@@ -18,7 +18,7 @@ async function switchTab(tabName) {
         if (t === `tab-${tabName}`) {
             el.className = baseClass + "bg-kcblue text-white";
         } else {
-            el.className = baseClass + "bg-gray-200 text-gray-700 hover:bg-gray-300";
+            el.className = baseClass + "bg-kclight text-kcdark hover:bg-[#e6edf7]";
         }
     });
 
@@ -73,18 +73,18 @@ async function fetchEmployees() {
             const displayDept = UIHelper.getDepartmentDisplayHtml(emp.department_id, emp.job_group);
 
             tableBody.innerHTML += `
-                <tr class="border-b border-gray-200 hover:bg-gray-50 text-sm">
+                <tr class="border-b border-[#e6edf7] hover:bg-kcsoft text-sm">
                     <td class="p-3">${date}</td>
                     <td class="p-3">
-                        <span class="font-bold text-gray-900 text-base">${emp.full_name}</span>${reconsideredBadge}<br>
+                        <span class="font-bold text-kcdark text-base">${emp.full_name}</span>${reconsideredBadge}<br>
                         ${badgeHtml}
                     </td>
                     <td class="p-3 leading-tight">
                         ${displayDept}<br>
-                        <span class="text-xs text-gray-500">ตำแหน่ง: ${emp.interested_position || '-'}</span>
+                        <span class="text-xs text-slate-500">ตำแหน่ง: ${emp.interested_position || '-'}</span>
                     </td>
                     <td class="p-3 text-center">
-                        <button onclick="viewDetails('${emp.id}')" class="bg-kcblue text-white px-4 py-1 font-bold rounded-none border-0 hover:bg-kcyellow hover:text-kcblue cursor-pointer shadow-sm">จัดการ</button>
+                        <button onclick="viewDetails('${emp.id}')" class="bg-kcblue text-white px-4 py-1.5 font-bold rounded-xl border-0 hover:bg-kcdark cursor-pointer shadow-sm transition-colors">จัดการ</button>
                     </td>
                 </tr>
             `;

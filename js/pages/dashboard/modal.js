@@ -92,11 +92,11 @@ async function viewDetails(id) {
         }
 
         const modalHtml = `
-            <div id="detailModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                <div class="bg-white w-full max-w-2xl rounded-none border-4 border-kcblue p-6 overflow-y-auto max-h-[90vh]">
-                    <div class="flex justify-between items-center mb-4 border-b-2 border-kcblue pb-2">
-                        <h2 class="text-xl font-bold text-kcblue uppercase">จัดการข้อมูลผู้สมัคร</h2>
-                        <button onclick="closeModal()" class="text-2xl font-bold border-0 bg-transparent cursor-pointer">&times;</button>
+            <div id="detailModal" class="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
+                <div class="bg-white w-full max-w-2xl rounded-[2rem] border border-[#e6edf7] shadow-[0_16px_40px_rgba(15,43,115,0.15)] p-6 overflow-y-auto max-h-[90vh]">
+                    <div class="flex justify-between items-center mb-4 border-b border-[#e6edf7] pb-4">
+                        <h2 class="text-xl font-extrabold text-kcdark">จัดการข้อมูลผู้สมัคร</h2>
+                        <button onclick="closeModal()" class="text-2xl font-bold border-0 bg-transparent cursor-pointer text-slate-400 hover:text-red-600">&times;</button>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 mb-4 text-sm">
@@ -106,75 +106,75 @@ async function viewDetails(id) {
                         <p><strong>ตำแหน่งที่สมัคร:</strong> ${emp.interested_position}</p>
                         <p><strong>เงินเดือนที่ต้องการ:</strong> ${emp.expected_salary} บาท</p>
                         <p class="col-span-2"><strong>ไฟล์แนบ:</strong> 
-                            ${emp.resume_url ? `<a href="${emp.resume_url}" target="_blank" class="text-blue-600 underline ml-2">Resume</a>` : ''}
-                            ${emp.profile_photo_url ? `<a href="${emp.profile_photo_url}" target="_blank" class="text-blue-600 underline ml-2">รูปถ่าย</a>` : ''}
-                            ${emp.id_card_url ? `<a href="${emp.id_card_url}" target="_blank" class="text-blue-600 underline ml-2">บัตร ปชช.</a>` : ''}
+                            ${emp.resume_url ? `<a href="${emp.resume_url}" target="_blank" class="text-kcblue underline ml-2">Resume</a>` : ''}
+                            ${emp.profile_photo_url ? `<a href="${emp.profile_photo_url}" target="_blank" class="text-kcblue underline ml-2">รูปถ่าย</a>` : ''}
+                            ${emp.id_card_url ? `<a href="${emp.id_card_url}" target="_blank" class="text-kcblue underline ml-2">บัตร ปชช.</a>` : ''}
                         </p>
                         ${reconsiderationNoticeHtml}
                         ${emp.status !== 'hired' && emp.status !== 'rejected' ? interviewInfoHtml : ''}
                         ${hiredInfoHtml}
                     </div>
 
-                    <div id="interviewFormSection" class="hidden border-2 border-orange-400 bg-orange-50 p-4 mb-4">
+                    <div id="interviewFormSection" class="hidden rounded-2xl border border-orange-200 bg-orange-50 p-4 mb-4">
                         <h4 class="font-bold text-orange-800 text-sm mb-3">🗓️ กำหนดการและรูปแบบการนัดสัมภาษณ์</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mb-3">
                             <div>
-                                <label class="block font-bold text-gray-700 mb-1">วันที่นัดหมาย <span class="text-red-500">*</span></label>
-                                <input type="date" id="intDate" value="${emp.interview_date || ''}" class="w-full border border-gray-300 p-2 bg-white outline-none">
+                                <label class="block font-bold text-slate-700 mb-1">วันที่นัดหมาย <span class="text-red-500">*</span></label>
+                                <input type="date" id="intDate" value="${emp.interview_date || ''}" class="w-full rounded-xl border border-[#e6edf7] p-2 bg-white outline-none focus:border-kcblue">
                             </div>
                             <div>
-                                <label class="block font-bold text-gray-700 mb-1">เวลานัดหมาย <span class="text-red-500">*</span></label>
-                                <input type="time" id="intTime" value="${emp.interview_time || ''}" class="w-full border border-gray-300 p-2 bg-white outline-none">
+                                <label class="block font-bold text-slate-700 mb-1">เวลานัดหมาย <span class="text-red-500">*</span></label>
+                                <input type="time" id="intTime" value="${emp.interview_time || ''}" class="w-full rounded-xl border border-[#e6edf7] p-2 bg-white outline-none focus:border-kcblue">
                             </div>
                             <div>
-                                <label class="block font-bold text-gray-700 mb-1">รูปแบบการพบปะ <span class="text-red-500">*</span></label>
-                                <select id="intType" class="w-full border border-gray-300 p-2 bg-white outline-none">
+                                <label class="block font-bold text-slate-700 mb-1">รูปแบบการพบปะ <span class="text-red-500">*</span></label>
+                                <select id="intType" class="w-full rounded-xl border border-[#e6edf7] p-2 bg-white outline-none focus:border-kcblue">
                                     <option value="online" ${emp.interview_type === 'online' ? 'selected' : ''}>💻 สัมภาษณ์ออนไลน์</option>
                                     <option value="onsite" ${emp.interview_type === 'onsite' ? 'selected' : ''}>🏢 สัมภาษณ์ที่ออฟฟิศ</option>
                                 </select>
                             </div>
                         </div>
                         <div class="flex justify-end gap-2">
-                            <button onclick="document.getElementById('interviewFormSection').classList.add('hidden')" class="bg-gray-500 text-white px-3 py-1 text-xs font-bold border-0 cursor-pointer">ปิดหน้าต่างนี้</button>
-                            <button onclick="submitInterviewSchedule('${emp.id}')" class="bg-orange-600 text-white px-4 py-1 text-xs font-bold border-0 cursor-pointer">ยืนยันบันทึกนัดหมาย</button>
+                            <button onclick="document.getElementById('interviewFormSection').classList.add('hidden')" class="bg-slate-400 text-white px-3 py-1.5 text-xs font-bold rounded-xl border-0 cursor-pointer hover:bg-slate-500 transition-colors">ปิดหน้าต่างนี้</button>
+                            <button onclick="submitInterviewSchedule('${emp.id}')" class="bg-orange-600 text-white px-4 py-1.5 text-xs font-bold rounded-xl border-0 cursor-pointer hover:bg-orange-700 transition-colors">ยืนยันบันทึกนัดหมาย</button>
                         </div>
                     </div>
 
                     <!-- ฟอร์มสำหรับ "รับเข้าทำงาน" (จะโชว์ก็ต่อเมื่อยังไม่ Hired) -->
-                    <div id="hireFormSection" class="hidden border-2 border-green-500 bg-green-50 p-4 mb-4">
+                    <div id="hireFormSection" class="hidden rounded-2xl border border-green-200 bg-green-50 p-4 mb-4">
                         <h4 class="font-bold text-green-800 text-sm mb-3">✅ ยืนยันการรับเข้าทำงาน</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label class="block font-bold text-gray-700 mb-1 text-xs">วันที่เริ่มทำงาน <span class="text-red-500">*</span></label>
-                                <input type="date" id="startDateInput" class="w-full border border-gray-300 p-2 bg-white outline-none text-sm">
+                                <label class="block font-bold text-slate-700 mb-1 text-xs">วันที่เริ่มทำงาน <span class="text-red-500">*</span></label>
+                                <input type="date" id="startDateInput" class="w-full rounded-xl border border-[#e6edf7] p-2 bg-white outline-none text-sm focus:border-green-500">
                             </div>
                             <div>
-                                <label class="block font-bold text-gray-700 mb-1 text-xs">แผนก / ฝ่ายที่สังกัด <span class="text-red-500">*</span></label>
-                                <select id="assignDepartmentInput" class="w-full border border-gray-300 p-2 bg-white outline-none text-sm focus:border-green-500">
+                                <label class="block font-bold text-slate-700 mb-1 text-xs">แผนก / ฝ่ายที่สังกัด <span class="text-red-500">*</span></label>
+                                <select id="assignDepartmentInput" class="w-full rounded-xl border border-[#e6edf7] p-2 bg-white outline-none text-sm focus:border-green-500">
                                     ${deptOptionsHtml}
                                 </select>
                             </div>
                         </div>
                         <div class="flex justify-end gap-2">
-                            <button onclick="document.getElementById('hireFormSection').classList.add('hidden')" class="bg-gray-500 text-white px-3 py-1 text-xs font-bold border-0 cursor-pointer">ยกเลิก</button>
-                            <button onclick="processHiring('${emp.id}')" class="bg-green-600 text-white px-4 py-2 text-sm font-bold border-0 cursor-pointer">ยืนยันและออกรหัสพนักงาน</button>
+                            <button onclick="document.getElementById('hireFormSection').classList.add('hidden')" class="bg-slate-400 text-white px-3 py-1.5 text-xs font-bold rounded-xl border-0 cursor-pointer hover:bg-slate-500 transition-colors">ยกเลิก</button>
+                            <button onclick="processHiring('${emp.id}')" class="bg-green-600 text-white px-4 py-2 text-sm font-bold rounded-xl border-0 cursor-pointer hover:bg-green-700 transition-colors">ยืนยันและออกรหัสพนักงาน</button>
                         </div>
                     </div>
 
                     <div class="mb-6">
-                        <label class="block font-bold text-kcblue mb-1 text-sm">บันทึกช่วยจำจากแอดมิน (Admin Remarks):</label>
-                        <textarea id="remarksInput" class="w-full border-2 border-gray-300 p-2 text-sm rounded-none outline-none focus:border-kcblue" rows="3">${emp.admin_remarks || ''}</textarea>
-                        <button onclick="updateRemarks('${emp.id}')" class="mt-2 text-xs bg-gray-800 text-white px-3 py-1 font-bold rounded-none border-0 cursor-pointer">บันทึกโน้ต</button>
+                        <label class="block font-bold text-kcdark mb-1 text-sm">บันทึกช่วยจำจากแอดมิน (Admin Remarks):</label>
+                        <textarea id="remarksInput" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm outline-none focus:border-kcblue" rows="3">${emp.admin_remarks || ''}</textarea>
+                        <button onclick="updateRemarks('${emp.id}')" class="mt-2 text-xs bg-kcdark text-white px-3 py-1.5 font-bold rounded-xl border-0 cursor-pointer hover:bg-kcblue transition-colors">บันทึกโน้ต</button>
                     </div>
 
-                    <div class="flex flex-wrap gap-2 justify-end border-t-2 border-gray-100 pt-4">
-                        ${emp.status === 'rejected' ? `<button onclick="restoreCandidate('${emp.id}')" class="bg-gray-600 text-white px-4 py-2 font-bold rounded-none border-0 cursor-pointer">🔄 ดึงกลับมาพิจารณาใหม่</button>` : ''}
+                    <div class="flex flex-wrap gap-2 justify-end border-t border-[#e6edf7] pt-4">
+                        ${emp.status === 'rejected' ? `<button onclick="restoreCandidate('${emp.id}')" class="bg-slate-500 text-white px-4 py-2 font-bold rounded-xl border-0 cursor-pointer hover:bg-slate-600 transition-colors">🔄 ดึงกลับมาพิจารณาใหม่</button>` : ''}
                         
-                        ${(!emp.interview_date && emp.status !== 'hired' && emp.status !== 'rejected') ? `<button onclick="document.getElementById('interviewFormSection').classList.remove('hidden')" class="bg-orange-500 text-white px-4 py-2 font-bold rounded-none border-0 cursor-pointer">กำหนดวันนัดสัมภาษณ์</button>` : ''}
+                        ${(!emp.interview_date && emp.status !== 'hired' && emp.status !== 'rejected') ? `<button onclick="document.getElementById('interviewFormSection').classList.remove('hidden')" class="bg-orange-500 text-white px-4 py-2 font-bold rounded-xl border-0 cursor-pointer hover:bg-orange-600 transition-colors">กำหนดวันนัดสัมภาษณ์</button>` : ''}
                         
-                        ${emp.status === 'interview' || emp.status === 'applied' ? `<button onclick="document.getElementById('hireFormSection').classList.remove('hidden')" class="bg-green-600 text-white px-4 py-2 font-bold rounded-none border-0 cursor-pointer">รับเข้าทำงาน</button>` : ''}
+                        ${emp.status === 'interview' || emp.status === 'applied' ? `<button onclick="document.getElementById('hireFormSection').classList.remove('hidden')" class="bg-green-600 text-white px-4 py-2 font-bold rounded-xl border-0 cursor-pointer hover:bg-green-700 transition-colors">รับเข้าทำงาน</button>` : ''}
                         
-                        ${emp.status !== 'rejected' ? `<button onclick="updateStatus('${emp.id}', 'rejected')" class="bg-red-600 text-white px-4 py-2 font-bold rounded-none border-0 cursor-pointer">ไม่ผ่านเกณฑ์</button>` : ''}
+                        ${emp.status !== 'rejected' ? `<button onclick="updateStatus('${emp.id}', 'rejected')" class="bg-red-600 text-white px-4 py-2 font-bold rounded-xl border-0 cursor-pointer hover:bg-red-700 transition-colors">ไม่ผ่านเกณฑ์</button>` : ''}
                     </div>
                 </div>
             </div>

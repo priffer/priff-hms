@@ -10,33 +10,30 @@
     <script src="js/auth/auth-guard.js"></script>
     <style>body{visibility:hidden}</style>
     <link rel="stylesheet" href="dist/output.css">
-    <style>
-        * { border-radius: 0 !important; }
-    </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col overflow-x-hidden">
+<body class="bg-kcsoft font-sans min-h-screen flex flex-col overflow-x-hidden">
     
     <div id="global-navbar"></div>
 
     <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1 min-w-0">
-        <div class="bg-white border border-gray-300 p-4 md:p-6 shadow-none">
+        <div class="bg-white rounded-[2rem] border border-[#e6edf7] p-4 md:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.06)]">
             
-            <div class="flex flex-wrap gap-1 mb-6 border-b-2 border-gray-200 pb-2">
-                <button onclick="switchTab('applied')" id="tab-applied" class="px-4 py-2 bg-kcblue text-white font-bold border-0 cursor-pointer">ผู้สมัครใหม่</button>
-                <button onclick="switchTab('interview')" id="tab-interview" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold border-0 cursor-pointer hover:bg-gray-300">นัดสัมภาษณ์</button>
-                <button onclick="switchTab('hired')" id="tab-hired" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold border-0 cursor-pointer hover:bg-gray-300">รับเข้าทำงาน</button>
-                <button onclick="switchTab('rejected')" id="tab-rejected" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold border-0 cursor-pointer hover:bg-gray-300">ไม่ผ่านเกณฑ์</button>
-                <button onclick="switchTab('settings')" id="tab-settings" class="px-4 py-2 bg-gray-200 text-gray-700 font-bold border-0 cursor-pointer hover:bg-gray-300 ml-auto">⚙️ ตั้งค่าระบบ</button>
+            <div class="flex flex-wrap gap-2 mb-6 border-b border-[#e6edf7] pb-4">
+                <button onclick="switchTab('applied')" id="tab-applied" class="px-4 py-2 rounded-xl bg-kcblue text-white font-bold border-0 cursor-pointer transition-colors">ผู้สมัครใหม่</button>
+                <button onclick="switchTab('interview')" id="tab-interview" class="px-4 py-2 rounded-xl bg-kclight text-kcdark font-bold border-0 cursor-pointer hover:bg-[#e6edf7] transition-colors">นัดสัมภาษณ์</button>
+                <button onclick="switchTab('hired')" id="tab-hired" class="px-4 py-2 rounded-xl bg-kclight text-kcdark font-bold border-0 cursor-pointer hover:bg-[#e6edf7] transition-colors">รับเข้าทำงาน</button>
+                <button onclick="switchTab('rejected')" id="tab-rejected" class="px-4 py-2 rounded-xl bg-kclight text-kcdark font-bold border-0 cursor-pointer hover:bg-[#e6edf7] transition-colors">ไม่ผ่านเกณฑ์</button>
+                <button onclick="switchTab('settings')" id="tab-settings" class="px-4 py-2 rounded-xl bg-kclight text-kcdark font-bold border-0 cursor-pointer hover:bg-[#e6edf7] transition-colors ml-auto">⚙️ ตั้งค่าระบบ</button>
             </div>
 
             <div id="tableView" class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-gray-900 text-white text-sm">
-                            <th class="p-3 border border-gray-700 font-bold">วันที่สมัคร</th>
-                            <th class="p-3 border border-gray-700 font-bold">ชื่อ-นามสกุล</th>
-                            <th class="p-3 border border-gray-700 font-bold">กลุ่มงาน/ตำแหน่ง</th>
-                            <th class="p-3 border border-gray-700 font-bold text-center">จัดการ</th>
+                        <tr class="bg-kclight text-kcdark text-sm">
+                            <th class="p-3 font-bold rounded-l-xl">วันที่สมัคร</th>
+                            <th class="p-3 font-bold">ชื่อ-นามสกุล</th>
+                            <th class="p-3 font-bold">กลุ่มงาน/ตำแหน่ง</th>
+                            <th class="p-3 font-bold text-center rounded-r-xl">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody id="employeeTableBody"></tbody>
@@ -44,26 +41,26 @@
             </div>
 
             <div id="settingsView" class="hidden space-y-6">
-                <h2 class="text-2xl font-bold text-kcblue border-b-2 border-kcyellow pb-2">ตั้งค่าระบบ (System Settings)</h2>
+                <h2 class="text-2xl font-extrabold text-kcdark border-b border-[#e6edf7] pb-3">ตั้งค่าระบบ (System Settings)</h2>
                 <div>
-                    <label class="block font-bold text-kcblue mb-2">ข้อความยินยอม PDPA (หน้าฟอร์มสมัครงาน)</label>
-                    <textarea id="pdpaInput" rows="5" class="w-full border-2 border-gray-300 p-3 outline-none focus:border-kcblue"></textarea>
+                    <label class="block font-bold text-kcdark mb-2">ข้อความยินยอม PDPA (หน้าฟอร์มสมัครงาน)</label>
+                    <textarea id="pdpaInput" rows="5" class="w-full rounded-xl border border-[#e6edf7] p-3 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all"></textarea>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-600 mb-1">รหัสพนักงานล่าสุด (Running No.)</label>
-                        <input type="text" id="lastEmpNo" class="w-full border-2 border-gray-300 p-2 outline-none focus:border-kcblue">
+                        <label class="block text-sm font-bold text-slate-600 mb-1">รหัสพนักงานล่าสุด (Running No.)</label>
+                        <input type="text" id="lastEmpNo" class="w-full rounded-xl border border-[#e6edf7] p-2.5 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-600 mb-1">ภาษีหัก ณ ที่จ่าย (%)</label>
-                        <input type="number" id="taxRate" class="w-full border-2 border-gray-300 p-2 outline-none focus:border-kcblue">
+                        <label class="block text-sm font-bold text-slate-600 mb-1">ภาษีหัก ณ ที่จ่าย (%)</label>
+                        <input type="number" id="taxRate" class="w-full rounded-xl border border-[#e6edf7] p-2.5 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-600 mb-1">ประกันสังคม (%)</label>
-                        <input type="number" id="ssoRate" class="w-full border-2 border-gray-300 p-2 outline-none focus:border-kcblue">
+                        <label class="block text-sm font-bold text-slate-600 mb-1">ประกันสังคม (%)</label>
+                        <input type="number" id="ssoRate" class="w-full rounded-xl border border-[#e6edf7] p-2.5 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] transition-all">
                     </div>
                 </div>
-                <button onclick="saveSettings()" class="bg-kcblue text-white font-bold px-8 py-3 hover:bg-kcyellow hover:text-kcblue transition-colors border border-kcblue cursor-pointer mt-4">บันทึกการตั้งค่าทั้งหมด</button>
+                <button onclick="saveSettings()" class="rounded-2xl bg-kcblue text-white font-bold px-8 py-3 hover:bg-kcdark transition-colors shadow-sm cursor-pointer mt-4">บันทึกการตั้งค่าทั้งหมด</button>
             </div>
 
         </div>
