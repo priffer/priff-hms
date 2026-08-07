@@ -10,10 +10,6 @@
     <script src="js/auth/auth-guard.js"></script>
     <style>body{visibility:hidden}</style>
     <link rel="stylesheet" href="dist/output.css">
-    <style>
-        .tab-active { background-color: #165DFF; color: white; border-color: #165DFF; border-radius: 0.75rem; }
-        .tab-inactive { background-color: #EEF5FF; color: #0F2B73; border-color: #E6EDF7; border-radius: 0.75rem; }
-    </style>
 </head>
 <body class="bg-kcsoft font-sans min-h-screen flex flex-col overflow-x-hidden">
 
@@ -23,45 +19,58 @@
         <div class="bg-white rounded-[2rem] border border-[#e6edf7] p-4 md:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.06)]">
             
             <div class="flex flex-wrap gap-2 mb-6 border-b border-[#e6edf7] pb-4">
-                <button onclick="switchAdminTab('cms')" id="tab-cms" class="px-6 py-2 font-bold border tab-active cursor-pointer transition-colors">🌐 จัดการหน้าเว็บ (CMS)</button>
-                <button onclick="switchAdminTab('jobs')" id="tab-jobs" class="px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-kclight">📢 จัดการประกาศงาน</button>
+                <button onclick="switchAdminTab('cms')" id="tab-cms" class="px-5 py-2 rounded-full font-bold text-sm bg-kcblue text-white cursor-pointer transition-colors">🌐 จัดการหน้าเว็บ (CMS)</button>
+                <button onclick="switchAdminTab('jobs')" id="tab-jobs" class="px-5 py-2 rounded-full font-bold text-sm bg-kcsoft border border-[#e6edf7] text-slate-600 cursor-pointer transition-colors hover:bg-kclight">📢 จัดการประกาศงาน</button>
             </div>
 
             <div id="view-cms" class="space-y-6">
-                <h2 class="text-2xl font-extrabold text-kcdark">ตั้งค่าหน้าเว็บหลัก (Homepage)</h2>
+                <div>
+                    <h2 class="text-2xl font-extrabold text-kcdark">ตั้งค่าหน้าเว็บหลัก (Homepage)</h2>
+                    <p class="text-sm text-slate-500 mt-1">ปรับแต่งข้อมูลบริษัทและสวัสดิการที่แสดงบนหน้าเว็บรับสมัครงาน</p>
+                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4 rounded-2xl bg-kcsoft p-4 border border-[#e6edf7]">
-                        <h3 class="font-bold text-kcdark border-b border-[#e6edf7] pb-2">ข้อมูลบริษัท</h3>
-                        
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div class="lg:col-span-2 space-y-5 rounded-2xl bg-kcsoft p-5 border border-[#e6edf7]">
+                        <h3 class="font-extrabold text-kcdark flex items-center gap-2">🏢 ข้อมูลบริษัท</h3>
+
                         <div>
-                            <label class="block text-sm font-bold text-slate-600 mb-1">โลโก้บริษัท (แสดงบน Navbar หน้าเว็บหลัก)</label>
-                            <div class="flex items-center gap-3">
-                                <div id="logoPreview" class="w-12 h-12 bg-white rounded-xl border border-[#e6edf7] flex items-center justify-center overflow-hidden shrink-0">
-                                    <span class="text-[10px] text-slate-400 font-bold">No Logo</span>
+                            <label class="block text-sm font-bold text-slate-600 mb-2">โลโก้บริษัท (แสดงบน Navbar หน้าเว็บหลัก)</label>
+                            <div class="flex items-center gap-4">
+                                <label for="cmsLogo" id="logoDropzone" class="group relative w-24 h-24 rounded-2xl bg-white border-2 border-dashed border-[#e6edf7] flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:border-kcblue transition-colors">
+                                    <div id="logoPreview" class="w-full h-full flex items-center justify-center">
+                                        <span class="text-[10px] text-slate-400 font-bold px-1 text-center">ยังไม่มีโลโก้</span>
+                                    </div>
+                                    <div class="absolute inset-0 bg-kcdark/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <span class="text-white text-[11px] font-bold text-center px-1">📷 เปลี่ยนโลโก้</span>
+                                    </div>
+                                </label>
+                                <div class="min-w-0">
+                                    <input type="file" id="cmsLogo" accept="image/*" class="hidden">
+                                    <button type="button" onclick="document.getElementById('cmsLogo').click()" class="rounded-xl bg-kcdark text-white text-xs px-3 py-2 font-bold hover:bg-kcblue transition-colors cursor-pointer">เลือกไฟล์โลโก้</button>
+                                    <p id="cmsLogoFileName" class="text-xs text-slate-500 mt-2 font-bold truncate max-w-[10rem]">ไม่ได้เลือกไฟล์ใหม่ (ใช้โลโก้เดิม)</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">แนะนำไฟล์ PNG พื้นหลังโปร่งใส</p>
                                 </div>
-                                <input type="file" id="cmsLogo" accept="image/*" class="block w-full rounded-xl border border-[#e6edf7] bg-white text-sm cursor-pointer file:border-0 file:bg-kcdark file:text-white file:px-4 file:py-2 file:font-bold file:mr-3 hover:file:bg-kcblue transition-colors">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-slate-600 mb-1">ชื่อบริษัท (แสดงบน Navbar ข้างโลโก้)</label>
-                            <input type="text" id="cmsCompanyName" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue">
+                            <input type="text" id="cmsCompanyName" class="w-full rounded-xl border border-[#e6edf7] p-2.5 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] bg-white transition-all">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-600 mb-1">หัวข้อหลัก (Headline)</label>
-                            <input type="text" id="cmsHeadline" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue">
+                            <input type="text" id="cmsHeadline" class="w-full rounded-xl border border-[#e6edf7] p-2.5 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] bg-white transition-all">
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-slate-600 mb-1">คำบรรยาย (Sub-headline)</label>
-                            <textarea id="cmsSubhead" rows="3" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue"></textarea>
+                            <textarea id="cmsSubhead" rows="3" class="w-full rounded-xl border border-[#e6edf7] p-2.5 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] bg-white transition-all"></textarea>
                         </div>
                     </div>
 
-                    <div class="space-y-4 rounded-2xl bg-kcsoft p-4 border border-[#e6edf7]">
-                        <div class="flex justify-between items-center border-b border-[#e6edf7] pb-2">
-                            <h3 class="font-bold text-kcdark">สวัสดิการพื้นฐาน</h3>
-                            <button onclick="addWelfareInput()" class="rounded-xl bg-kcdark text-white text-xs px-2 py-1.5 font-bold hover:bg-kcblue cursor-pointer transition-colors">+ เพิ่มสวัสดิการ</button>
+                    <div class="lg:col-span-3 space-y-4 rounded-2xl bg-kcsoft p-5 border border-[#e6edf7]">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-extrabold text-kcdark flex items-center gap-2">🎁 สวัสดิการพื้นฐาน</h3>
+                            <button onclick="addWelfareInput()" class="rounded-xl bg-kcblue text-white text-xs px-3 py-2 font-bold hover:bg-kcdark cursor-pointer transition-colors shadow-sm">+ เพิ่มสวัสดิการ</button>
                         </div>
                         <div id="welfareContainer" class="space-y-2"></div>
                     </div>
@@ -74,7 +83,10 @@
 
             <div id="view-jobs" class="hidden space-y-6">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-2xl font-extrabold text-kcdark">รายการประกาศงาน</h2>
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-kcdark">รายการประกาศงาน</h2>
+                        <p class="text-sm text-slate-500 mt-1">สร้างและจัดการประกาศรับสมัครงานที่แสดงบนหน้าเว็บ</p>
+                    </div>
                     <button onclick="openJobModal()" class="rounded-xl bg-kcblue text-white font-bold px-4 py-2 hover:bg-kcdark transition-colors cursor-pointer shadow-sm">+ สร้างประกาศงานใหม่</button>
                 </div>
 
@@ -193,13 +205,13 @@
             if (tabName === 'cms') {
                 viewCms.classList.remove('hidden');
                 viewJobs.classList.add('hidden');
-                btnCms.className = 'px-6 py-2 font-bold border tab-active cursor-pointer transition-colors';
-                btnJobs.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-kclight';
+                btnCms.className = 'px-5 py-2 rounded-full font-bold text-sm bg-kcblue text-white cursor-pointer transition-colors';
+                btnJobs.className = 'px-5 py-2 rounded-full font-bold text-sm bg-kcsoft border border-[#e6edf7] text-slate-600 cursor-pointer transition-colors hover:bg-kclight';
             } else {
                 viewCms.classList.add('hidden');
                 viewJobs.classList.remove('hidden');
-                btnCms.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-kclight';
-                btnJobs.className = 'px-6 py-2 font-bold border tab-active cursor-pointer transition-colors';
+                btnCms.className = 'px-5 py-2 rounded-full font-bold text-sm bg-kcsoft border border-[#e6edf7] text-slate-600 cursor-pointer transition-colors hover:bg-kclight';
+                btnJobs.className = 'px-5 py-2 rounded-full font-bold text-sm bg-kcblue text-white cursor-pointer transition-colors';
                 
                 if (typeof fetchJobs === 'function') {
                     fetchJobs();

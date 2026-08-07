@@ -1,10 +1,10 @@
 const ADMIN_NAV_LINKS = [
-    { href: 'dashboard.html', match: 'dashboard.html', label: 'จัดการผู้สมัครงาน', roles: ['admin', 'payroll'] },
-    { href: 'admin-employees.html', match: 'admin-employees.html', label: 'จัดการพนักงาน', roles: ['admin', 'payroll'] },
-    { href: 'admin-jobs.html', match: 'admin-jobs.html', label: 'จัดการเว็บและประกาศงาน', roles: ['admin', 'payroll'] },
-    { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'จัดการเวลาทำงาน (ESS)', roles: ['admin', 'payroll'] },
-    { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที & สวัสดิการ', roles: ['admin', 'payroll'] },
-    { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ & วันหยุด', roles: ['admin', 'payroll'] },
+    { href: 'dashboard.html', match: 'dashboard.html', label: 'ผู้สมัครงาน', icon: '📋', roles: ['admin', 'payroll'] },
+    { href: 'admin-employees.html', match: 'admin-employees.html', label: 'พนักงาน', icon: '👥', roles: ['admin', 'payroll'] },
+    { href: 'admin-jobs.html', match: 'admin-jobs.html', label: 'เว็บ/ประกาศงาน', icon: '📢', roles: ['admin', 'payroll'] },
+    { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'เวลาทำงาน', icon: '⏱️', roles: ['admin', 'payroll'] },
+    { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที/สวัสดิการ', icon: '🛡️', roles: ['admin', 'payroll'] },
+    { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ/วันหยุด', icon: '🗓️', roles: ['admin', 'payroll'] },
 ];
 
 const ROLE_LABELS = {
@@ -22,24 +22,19 @@ function renderGlobalNavbar() {
     const isActive = (match) => currentPath.includes(match) || (match === 'dashboard.html' && currentPath.endsWith('/'));
 
     const desktopLinks = ADMIN_NAV_LINKS.map(link => `
-        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'bg-white/15 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'} font-bold text-sm tracking-wide transition-colors whitespace-nowrap px-3 py-2 rounded-xl">${link.label}</a>
+        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'bg-white/15 text-white' : 'text-white/65 hover:text-white hover:bg-white/10'} flex items-center gap-1.5 font-bold text-sm tracking-wide transition-colors whitespace-nowrap px-3 py-2 rounded-xl"><span>${link.icon}</span><span>${link.label}</span></a>
     `).join('');
 
     const mobileLinks = ADMIN_NAV_LINKS.map(link => `
-        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10'} block font-bold text-base px-4 py-3 rounded-xl transition-colors">${link.label}</a>
+        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10'} flex items-center gap-2 font-bold text-base px-4 py-3 rounded-xl transition-colors"><span>${link.icon}</span><span>${link.label}</span></a>
     `).join('');
 
     const navbarHtml = `
         <nav class="bg-kcdark text-white shadow-[0_4px_20px_rgba(15,43,115,0.15)] shrink-0 relative z-30">
-            <div class="max-w-7xl mx-auto flex justify-between items-center p-4 gap-4">
-                <div class="flex items-center gap-4 min-w-0">
-                    <div class="flex items-center gap-2 shrink-0">
-                        <div class="w-9 h-9 rounded-xl bg-kcblue text-white font-black flex items-center justify-center text-sm shadow-md">KC</div>
-                        <h1 class="text-base sm:text-lg font-extrabold tracking-tight shrink-0 hidden sm:block">PRIFF HMS <span class="text-white/50 font-bold">| Admin</span></h1>
-                    </div>
-                    <div class="hidden lg:flex gap-1 ml-2 pl-4 border-l border-white/15 overflow-x-auto">
-                        ${desktopLinks}
-                    </div>
+            <div class="max-w-7xl mx-auto flex justify-between items-center px-4 pt-3 pb-2 gap-4">
+                <div class="flex items-center gap-2 shrink-0">
+                    <div class="w-9 h-9 rounded-xl bg-kcblue text-white font-black flex items-center justify-center text-sm shadow-md">KC</div>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight shrink-0 hidden sm:block">PRIFF HMS <span class="text-white/50 font-bold">| Admin</span></h1>
                 </div>
 
                 <div class="hidden lg:flex items-center gap-3 shrink-0">
@@ -62,6 +57,12 @@ function renderGlobalNavbar() {
                     <button id="navHamburgerBtn" onclick="toggleMobileNav()" aria-label="เปิดเมนู" class="shrink-0 rounded-xl bg-white/10 w-10 h-10 flex items-center justify-center text-2xl leading-none cursor-pointer">
                         <span id="navHamburgerIcon">☰</span>
                     </button>
+                </div>
+            </div>
+
+            <div class="hidden lg:block border-t border-white/10">
+                <div class="max-w-7xl mx-auto px-4 py-1.5 flex flex-wrap items-center gap-1">
+                    ${desktopLinks}
                 </div>
             </div>
 
