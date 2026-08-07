@@ -184,7 +184,7 @@ const EmployeeSelfService = {
         return data;
     },
 
-    async createLeaveRequest({ empId, employeeId, companyId, leaveTypeId, startDate, endDate, totalDays, reason, attachmentUrl }) {
+    async createLeaveRequest({ empId, employeeId, companyId, leaveTypeId, startDate, endDate, totalDays, reason, attachmentUrl, leaveUnit, startTime, endTime, totalHours }) {
         const payload = {
             emp_id: empId,
             employee_id: employeeId,
@@ -195,7 +195,11 @@ const EmployeeSelfService = {
             total_days: totalDays,
             reason: reason || null,
             attachment_url: attachmentUrl || null,
-            status: 'pending'
+            status: 'pending',
+            leave_unit: leaveUnit || 'day', // 'day' | 'hour' - ถ้า 'hour' DB จะคำนวณ total_days ให้เอง (trigger fn_leave_request_hourly_precheck)
+            start_time: startTime || null,
+            end_time: endTime || null,
+            total_hours: totalHours || null
         };
         const { error } = await supabaseClient.from('leave_requests').insert([payload]);
         if (error) throw error;
@@ -493,6 +497,33 @@ const EmployeeSelfService = {
             .update({ status: 'rejected', rejection_reason: rejectionReason || null, admin_reviewed_at: new Date().toISOString() })
             .eq('id', requestId);
         if (error) throw error;
+    },
+
+    // ---------- สิทธิสวัสดิการของฉัน (database/18_employee_benefits_profile.sql) ----------
+    // ดึงข้อมูลค่าจ้าง/ประกันสังคม/ภาษี (จาก employees ที่ employee เห็นได้อยู่แล้วผ่าน RLS เดิม)
+    // รวมกับรายการสวัสดิการที่ผูกไว้ (employee_benefit_assignments) ในเรียกเดียว
+    // หมายเหตุ: หลาย field ยังเป็น null ได้ (รอฝ่ายบุคคลกรอกข้อมูลจริง) - ฝั่ง UI ต้องแสดง
+    // "รอข้อมูลจากฝ่ายบุคคล" แทนค่าว่าง ไม่ใช่ error
+    async getMyBenefitsSummary(employeeId) {
+        const [empRes, assignmentsRes] = await Promise.all([
+            supabaseClient
+                .from('employees')
+                .select('job_group, salary_type, monthly_salary, daily_rate, hourly_rate, social_security_base, social_security_employee_rate, social_security_employer_rate, tax_allowance_child, tax_allowance_other, sso_hospital_name, sso_hospital_code, sso_registered_at')
+                .eq('id', employeeId)
+                .single(),
+            supabaseClient
+                .from('employee_benefit_assignments')
+                .select('*, benefit_types(code, name_th, description)')
+                .eq('employee_id', employeeId)
+                .is('effective_to', null)
+                .order('created_at', { ascending: true })
+        ]);
+        if (empRes.error) throw empRes.error;
+        if (assignmentsRes.error) throw assignmentsRes.error;
+        return {
+            wage: empRes.data,
+            benefits: assignmentsRes.data || []
+        };
     }
 };
 

@@ -73,37 +73,48 @@
               </button>
           </div>
           <div class="md:col-span-7">
-              <h3 class="text-sm md:text-lg font-bold text-slate-800 mb-4 border-l-4 border-kcyellow pl-3">บริการอื่นๆ (Self-Service)</h3>
-              <div class="grid grid-cols-2 gap-3 md:gap-4">
-                <button id="advanceCardBtn" onclick="openAdvanceModal()" class="group rounded-[1.75rem] bg-[#fff9ec] border border-[#f5e6bf] p-6 md:p-8 text-center hover:border-kcyellow hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(255,199,44,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
-                  <div class="w-12 h-12 rounded-2xl bg-kcyellow/20 text-2xl flex items-center justify-center">💸</div>
-                  <span class="text-sm md:text-base font-bold text-slate-700">ขอเบิกเงินล่วงหน้า</span>
+              <h3 class="text-sm md:text-lg font-bold text-slate-800 mb-3 border-l-4 border-emerald-400 pl-3">เวลาทำงาน</h3>
+              <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6">
+                <button onclick="openLeaveModal()" class="group rounded-[1.75rem] bg-[#f0fbf5] border border-[#cdeedd] p-4 md:p-6 text-center hover:border-emerald-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(16,185,129,0.15)] transition-all cursor-pointer flex flex-col items-center gap-2">
+                  <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-emerald-500/10 text-xl md:text-2xl flex items-center justify-center">🏖️</div>
+                  <span class="text-xs md:text-base font-bold text-slate-700">ขออนุมัติลางาน</span>
+                </button>
+                <button onclick="openOtModal()" class="group rounded-[1.75rem] bg-[#fff7ed] border border-[#fde4c2] p-4 md:p-6 text-center hover:border-orange-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(249,115,22,0.15)] transition-all cursor-pointer flex flex-col items-center gap-2">
+                  <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-orange-500/10 text-xl md:text-2xl flex items-center justify-center">⏱️</div>
+                  <span class="text-xs md:text-base font-bold text-slate-700">ขอทำโอที</span>
+                </button>
+                <button onclick="openAttendanceHistoryModal()" class="group rounded-[1.75rem] bg-[#eef5ff] border border-[#e6edf7] p-4 md:p-6 text-center hover:border-kcblue hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(15,43,115,0.08)] transition-all cursor-pointer flex flex-col items-center gap-2">
+                  <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-kcblue/10 text-xl md:text-2xl flex items-center justify-center">🕒</div>
+                  <span class="text-xs md:text-base font-bold text-slate-700">ประวัติลงเวลา</span>
+                </button>
+              </div>
+
+              <h3 class="text-sm md:text-lg font-bold text-slate-800 mb-3 border-l-4 border-kcyellow pl-3">การเงินและสวัสดิการ</h3>
+              <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6">
+                <button id="advanceCardBtn" onclick="openAdvanceModal()" class="group rounded-[1.75rem] bg-[#fff9ec] border border-[#f5e6bf] p-4 md:p-6 text-center hover:border-kcyellow hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(255,199,44,0.15)] transition-all cursor-pointer flex flex-col items-center gap-2">
+                  <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-kcyellow/20 text-xl md:text-2xl flex items-center justify-center">💸</div>
+                  <span class="text-xs md:text-base font-bold text-slate-700">ขอเบิกเงินล่วงหน้า</span>
                   <span id="advanceEligibilityBadge" class="hidden text-[10px] font-bold text-slate-400">เฉพาะพนักงานปฏิบัติการ</span>
                 </button>
-                <button onclick="openLeaveModal()" class="group rounded-[1.75rem] bg-[#f0fbf5] border border-[#cdeedd] p-6 md:p-8 text-center hover:border-emerald-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(16,185,129,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
-                  <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-2xl flex items-center justify-center">🏖️</div>
-                  <span class="text-sm md:text-base font-bold text-slate-700">ขออนุมัติลางาน</span>
+                <button onclick="openPayslipModal()" class="group rounded-[1.75rem] bg-[#f5f3ff] border border-[#e3ddfa] p-4 md:p-6 text-center hover:border-violet-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(139,92,246,0.15)] transition-all cursor-pointer flex flex-col items-center gap-2">
+                  <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-violet-500/10 text-xl md:text-2xl flex items-center justify-center">📄</div>
+                  <span class="text-xs md:text-base font-bold text-slate-700">สลิปเงินเดือน</span>
                 </button>
-                <button onclick="openPayslipModal()" class="group rounded-[1.75rem] bg-[#f5f3ff] border border-[#e3ddfa] p-6 md:p-8 text-center hover:border-violet-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(139,92,246,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
-                  <div class="w-12 h-12 rounded-2xl bg-violet-500/10 text-2xl flex items-center justify-center">📄</div>
-                  <span class="text-sm md:text-base font-bold text-slate-700">สลิปเงินเดือน</span>
+                <button onclick="openBenefitsModal()" class="group rounded-[1.75rem] bg-[#ecfeff] border border-[#bef0f5] p-4 md:p-6 text-center hover:border-cyan-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(6,182,212,0.15)] transition-all cursor-pointer flex flex-col items-center gap-2">
+                  <div class="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-cyan-500/10 text-xl md:text-2xl flex items-center justify-center">🛡️</div>
+                  <span class="text-xs md:text-base font-bold text-slate-700">สิทธิสวัสดิการ</span>
                 </button>
-                <button onclick="openAttendanceHistoryModal()" class="group rounded-[1.75rem] bg-[#eef5ff] border border-[#e6edf7] p-6 md:p-8 text-center hover:border-kcblue hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(15,43,115,0.08)] transition-all cursor-pointer flex flex-col items-center gap-3">
-                  <div class="w-12 h-12 rounded-2xl bg-kcblue/10 text-2xl flex items-center justify-center">🕒</div>
-                  <span class="text-sm md:text-base font-bold text-slate-700">ประวัติลงเวลา</span>
-                </button>
-                <button onclick="openAnnouncementsModal()" class="group col-span-2 rounded-[1.75rem] bg-[#fef2f2] border border-[#fbdcdc] p-5 md:p-6 text-left hover:border-rose-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(244,63,94,0.12)] transition-all cursor-pointer flex items-center gap-4">
+              </div>
+
+              <div class="grid grid-cols-1 gap-3 md:gap-4">
+                <button onclick="openAnnouncementsModal()" class="group rounded-[1.75rem] bg-[#fef2f2] border border-[#fbdcdc] p-5 md:p-6 text-left hover:border-rose-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(244,63,94,0.12)] transition-all cursor-pointer flex items-center gap-4">
                   <div class="w-12 h-12 rounded-2xl bg-rose-500/10 text-2xl flex items-center justify-center shrink-0">📢</div>
                   <div class="min-w-0">
                     <span class="text-sm md:text-base font-bold text-slate-700 block">ประกาศบริษัท & ปฏิทินวันหยุด</span>
                     <span id="announcementTeaser" class="text-xs text-slate-400">แตะเพื่อดูประกาศล่าสุดและวันหยุดที่กำลังจะถึง</span>
                   </div>
                 </button>
-                <button onclick="openOtModal()" class="group rounded-[1.75rem] bg-[#fff7ed] border border-[#fde4c2] p-6 md:p-8 text-center hover:border-orange-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(249,115,22,0.15)] transition-all cursor-pointer flex flex-col items-center gap-3">
-                  <div class="w-12 h-12 rounded-2xl bg-orange-500/10 text-2xl flex items-center justify-center">⏱️</div>
-                  <span class="text-sm md:text-base font-bold text-slate-700">ขอทำโอที</span>
-                </button>
-                <button id="supervisorApprovalBtn" onclick="openApprovalInboxModal()" class="hidden group col-span-2 rounded-[1.75rem] bg-[#fffbeb] border border-amber-200 p-5 md:p-6 text-left hover:border-amber-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(245,158,11,0.12)] transition-all cursor-pointer flex items-center gap-4">
+                <button id="supervisorApprovalBtn" onclick="openApprovalInboxModal()" class="hidden group rounded-[1.75rem] bg-[#fffbeb] border border-amber-200 p-5 md:p-6 text-left hover:border-amber-400 hover:-translate-y-1 hover:shadow-[0_16px_32px_rgba(245,158,11,0.12)] transition-all cursor-pointer flex items-center gap-4">
                   <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-2xl flex items-center justify-center shrink-0">📋</div>
                   <div class="min-w-0">
                     <span class="text-sm md:text-base font-bold text-slate-700 block">คำขอรออนุมัติ (หัวหน้างาน)</span>
@@ -215,14 +226,39 @@
               <option value="">-- กำลังโหลดประเภทการลา --</option>
             </select>
           </div>
+          <div class="grid grid-cols-2 gap-2 mb-1">
+            <label class="flex items-center gap-2 rounded-xl border border-[#e6edf7] p-2.5 text-sm cursor-pointer has-[:checked]:border-kcblue has-[:checked]:bg-[#eef5ff] transition-all">
+              <input type="radio" name="leaveUnit" value="day" checked class="accent-kcblue">
+              <span class="font-bold text-slate-700">ลาเต็มวัน</span>
+            </label>
+            <label class="flex items-center gap-2 rounded-xl border border-[#e6edf7] p-2.5 text-sm cursor-pointer has-[:checked]:border-kcblue has-[:checked]:bg-[#eef5ff] transition-all">
+              <input type="radio" name="leaveUnit" value="hour" class="accent-kcblue">
+              <span class="font-bold text-slate-700">ลาราย ชม.</span>
+            </label>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1">วันที่เริ่มลา <span class="text-red-500">*</span></label>
               <input type="date" id="leaveStartDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
             </div>
-            <div>
+            <div id="leaveEndDateWrap">
               <label class="block text-xs font-bold text-slate-600 mb-1">วันที่สิ้นสุด <span class="text-red-500">*</span></label>
               <input type="date" id="leaveEndDate" required class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+          </div>
+          <div id="leaveHourlyFields" class="hidden grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">เวลาเริ่มลา</label>
+              <input type="time" id="leaveStartTime" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">เวลาสิ้นสุด</label>
+              <input type="time" id="leaveEndTime" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all">
+            </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-bold text-slate-600 mb-1">จำนวนชั่วโมงที่ลา <span class="text-red-500">*</span></label>
+              <input type="number" id="leaveTotalHours" min="0.5" step="0.5" max="24" class="w-full rounded-xl border border-[#e6edf7] p-2.5 text-sm focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] outline-none transition-all" placeholder="เช่น 3">
+              <p class="text-[11px] text-slate-400 mt-1">ระบบจะแปลงเป็นเศษส่วนของวันให้อัตโนมัติ เทียบกับชั่วโมงมาตรฐานของกะคุณ</p>
             </div>
           </div>
           <div>
@@ -252,6 +288,21 @@
       </div>
       <div class="p-6 overflow-y-auto no-scrollbar">
         <div id="payslipList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🛡️ สิทธิสวัสดิการของฉัน -->
+  <div id="benefitsModal" class="hidden fixed inset-0 z-50 bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">🛡️ สิทธิสวัสดิการของฉัน</h3>
+        <button onclick="closeBenefitsModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <div id="benefitsContent">
           <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
