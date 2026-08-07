@@ -17,7 +17,7 @@ async function loadCmsSettings() {
             if (currentLogoUrl) {
                 document.getElementById('logoPreview').innerHTML = `<img src="${currentLogoUrl}?v=${Date.now()}" class="w-full h-full object-contain">`;
             } else {
-                document.getElementById('logoPreview').innerHTML = `<span class="text-[10px] text-gray-400 font-bold">No Logo</span>`;
+                document.getElementById('logoPreview').innerHTML = `<span class="text-[10px] text-slate-400 font-bold">No Logo</span>`;
             }
             
             const welfares = data.welfares || [];
@@ -37,7 +37,7 @@ function addWelfareInput(value = '') {
     const div = document.createElement('div');
     div.className = 'flex gap-2';
     div.innerHTML = `
-        <input type="text" value="${value}" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue welfare-item text-sm">
+        <input type="text" value="${value}" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue welfare-item text-sm">
         <button onclick="this.parentElement.remove()" class="bg-red-100 text-red-600 border border-red-300 px-3 font-bold hover:bg-red-600 hover:text-white transition-colors cursor-pointer">X</button>
     `;
     container.appendChild(div);

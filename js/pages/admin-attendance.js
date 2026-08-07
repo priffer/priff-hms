@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 🌐 ดึงประวัติการลงเวลาทั้งหมด
 async function loadAttendanceLogs() {
     const tbody = document.getElementById('logsTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
 
     try {
         // ดึงข้อมูลเรียงจากวันล่าสุด
@@ -21,29 +21,29 @@ async function loadAttendanceLogs() {
         tbody.innerHTML = '';
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">ไม่มีประวัติการลงเวลา</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">ไม่มีประวัติการลงเวลา</td></tr>';
             return;
         }
 
         data.forEach(log => {
             const tr = document.createElement('tr');
-            tr.className = 'border-b border-gray-100 hover:bg-gray-50 transition-colors';
+            tr.className = 'border-b border-[#e6edf7] hover:bg-kcsoft transition-colors';
 
             // ตรวจสอบสถานะว่าติดธงแดงหรือไม่
             const isFlagged = log.status === 'flagged';
             const statusBadge = isFlagged 
-                ? '<span class="bg-red-100 text-red-700 px-2 py-1 text-xs font-bold border border-red-200">🔴 รอตรวจสอบ</span>'
-                : '<span class="bg-green-100 text-green-700 px-2 py-1 text-xs font-bold border border-green-200">✅ ปกติ</span>';
+                ? '<span class="bg-red-100 text-red-700 px-2 py-1 text-xs font-bold rounded-full border border-red-200">🔴 รอตรวจสอบ</span>'
+                : '<span class="bg-green-100 text-green-700 px-2 py-1 text-xs font-bold rounded-full border border-green-200">✅ ปกติ</span>';
 
             // ปุ่มจัดการ
             const actionBtn = isFlagged
-                ? `<button onclick="openReviewModal('${log.id}', '${log.client_id}', '${log.photo_url || ''}', '${log.manual_override_reason || ''}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs font-bold shadow-sm">ตรวจสอบ</button>`
-                : `<button class="bg-gray-100 text-gray-400 px-3 py-1 text-xs font-bold cursor-not-allowed">สมบูรณ์</button>`;
+                ? `<button onclick="openReviewModal('${log.id}', '${log.client_id}', '${log.photo_url || ''}', '${log.manual_override_reason || ''}')" class="rounded-xl bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 text-xs font-bold shadow-sm transition-colors cursor-pointer">ตรวจสอบ</button>`
+                : `<button class="rounded-xl bg-kclight text-slate-400 px-3 py-1.5 text-xs font-bold cursor-not-allowed">สมบูรณ์</button>`;
 
             tr.innerHTML = `
                 <td class="p-4">${log.work_date}</td>
                 <td class="p-4 font-mono font-bold text-kcblue">${log.emp_id}</td>
-                <td class="p-4 text-gray-600">${log.client_id}</td>
+                <td class="p-4 text-slate-600">${log.client_id}</td>
                 <td class="p-4 font-mono">${log.check_in || '-'} / ${log.check_out || '-'}</td>
                 <td class="p-4 text-center">${statusBadge}</td>
                 <td class="p-4 text-center">${actionBtn}</td>

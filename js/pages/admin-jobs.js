@@ -7,40 +7,40 @@ let currentPdfUrl = null;
 
 async function fetchJobs() {
     const tbody = document.getElementById('jobTableBody');
-    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 font-bold">กำลังโหลดข้อมูลประกาศงาน...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 font-bold">กำลังโหลดข้อมูลประกาศงาน...</td></tr>';
     
     try {
         const data = await JobService.getJobsByCompany(CURRENT_JOB_COMPANY_ID);
         tbody.innerHTML = '';
         
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-500 font-bold">ยังไม่มีประกาศงานในบริษัทของคุณ</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 font-bold">ยังไม่มีประกาศงานในบริษัทของคุณ</td></tr>';
             return;
         }
 
         data.forEach(job => {
             const tr = document.createElement('tr');
-            tr.className = 'border-b border-gray-200 hover:bg-gray-50 transition-colors';
+            tr.className = 'border-b border-[#e6edf7] hover:bg-kcsoft transition-colors';
             tr.innerHTML = `
                 <td class="p-3">
-                    <p class="font-bold text-gray-900 text-base">${job.title}</p>
-                    <p class="text-xs text-gray-500">${job.salary_text}</p>
+                    <p class="font-bold text-kcdark text-base">${job.title}</p>
+                    <p class="text-xs text-slate-500">${job.salary_text}</p>
                 </td>
                 <td class="p-3">
-                    <span class="inline-block bg-blue-50 text-kcblue border border-kcblue px-2 py-0.5 text-xs font-bold">${job.zone_name}</span>
+                    <span class="inline-block bg-kclight text-kcblue rounded-full px-2.5 py-1 text-xs font-bold">${job.zone_name}</span>
                 </td>
                 <td class="p-3 text-center">
                     <label class="inline-flex items-center cursor-pointer select-none">
                         <input type="checkbox" ${job.is_active ? 'checked' : ''} onchange="toggleJobStatus(${job.id}, this.checked)" class="sr-only peer">
-                        <div class="w-12 h-6 bg-gray-300 border-2 border-gray-400 peer-checked:bg-green-600 peer-checked:border-green-700 relative transition-colors">
-                            <div class="absolute top-0.5 left-0.5 bg-white w-4 h-4 border border-gray-400 transition-transform peer-checked:translate-x-6"></div>
+                        <div class="w-12 h-6 rounded-full bg-slate-300 peer-checked:bg-green-600 relative transition-colors">
+                            <div class="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-6"></div>
                         </div>
                     </label>
                 </td>
                 <td class="p-3 text-center">
                     <div class="flex justify-center gap-2">
-                        <button onclick="openJobModal(${job.id})" class="border border-gray-400 bg-gray-100 text-gray-700 px-3 py-1.5 text-xs font-bold hover:bg-kcblue hover:text-white hover:border-kcblue transition-colors cursor-pointer">แก้ไข</button>
-                        <button onclick="confirmDeleteJob(${job.id}, '${job.title}')" class="border border-red-600 bg-red-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-700 hover:border-red-700 transition-colors cursor-pointer">ลบ</button>
+                        <button onclick="openJobModal(${job.id})" class="rounded-xl bg-kclight text-kcdark px-3 py-1.5 text-xs font-bold hover:bg-kcblue hover:text-white transition-colors cursor-pointer">แก้ไข</button>
+                        <button onclick="confirmDeleteJob(${job.id}, '${job.title}')" class="rounded-xl bg-red-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer">ลบ</button>
                     </div>
                 </td>
             `;
