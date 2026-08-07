@@ -40,6 +40,10 @@ async function run() {
     path.resolve(__dirname, '..', 'database', '21_notifications.sql'),
     path.resolve(__dirname, '..', 'database', '22_advance_payment_estimate_summary.sql'),
     path.resolve(__dirname, '..', 'database', '23_advance_payment_admin_tools.sql'),
+    path.resolve(__dirname, '..', 'database', '24_weekly_rest_day.sql'),
+    path.resolve(__dirname, '..', 'database', '25_attendance_ot_materialize.sql'),
+    path.resolve(__dirname, '..', 'database', '26_payroll_rates_seed.sql'),
+    path.resolve(__dirname, '..', 'database', '27_payroll_engine.sql'),
   ];
 
   const results = [];
