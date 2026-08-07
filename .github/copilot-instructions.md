@@ -15,7 +15,10 @@ Highlights most relevant to Copilot's agent mode specifically:
   visual UI or click-through flow.
 - **Migrations run via `node scripts/run-ess-migrations.js`** — it now tracks applied
   files and skips them automatically, so just run it normally rather than assuming a
-  full re-run every time.
+  full re-run every time. `database/NN_*.sql` files are append-only history and should
+  never be consolidated or edited once applied - growing to 100+ files is normal. Run
+  `node scripts/generate-migrations-index.js` after adding a new one to refresh
+  `database/MIGRATIONS_INDEX.md`.
 - **This repo squash-merges PRs.** After a PR merges, run
   `git fetch origin main && git reset --hard origin/main` before your next commit.
 - **Suggest a new chat after each merged PR**, or once a single chat has produced 3+

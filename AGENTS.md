@@ -27,7 +27,12 @@ it in full before making any change. It covers:
    prove a backend/schema fact — this was a real, measured source of wasted spend.
 2. **Migrations:** `node scripts/run-ess-migrations.js` tracks what's already applied
    and skips it automatically. Just run it normally; use `--only <file>` while
-   iterating on one migration.
+   iterating on one migration. `database/NN_*.sql` files are an append-only history —
+   never consolidate/edit old ones (this directory growing to 100+ files over the
+   project's life is normal, same as Rails/Django/Prisma). Run
+   `node scripts/generate-migrations-index.js` after adding a new migration file to
+   keep `database/MIGRATIONS_INDEX.md` (a one-line-per-file summary) up to date -
+   check that index first instead of opening individual files to see what exists.
 3. **Git/PR workflow:** this repo squash-merges every PR. Immediately after a PR
    merges, run `git fetch origin main && git reset --hard origin/main` on the branch
    *before* writing the next commit — do not layer new work on a branch whose earlier
