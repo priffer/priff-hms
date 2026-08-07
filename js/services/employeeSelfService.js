@@ -499,6 +499,48 @@ const EmployeeSelfService = {
         if (error) throw error;
     },
 
+    // ---------- ระบบแจ้งเตือน (notifications) ----------
+    // ใช้ได้ทั้ง ESS และ Admin Portal (RLS จำกัดให้เห็นเฉพาะของ user_profile ตัวเอง)
+    // email_dispatch_status/line_dispatch_status ยังเป็น 'not_configured' เสมอตอนนี้ - รอเชื่อมต่อ
+    // Resend/LINE จริงในอนาคต (database/21_notifications.sql)
+    async getMyNotifications(profileId, { limit = 20 } = {}) {
+        const { data, error } = await supabaseClient
+            .from('notifications')
+            .select('*')
+            .eq('recipient_user_profile_id', profileId)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+        if (error) throw error;
+        return data;
+    },
+
+    async getUnreadNotificationCount(profileId) {
+        const { count, error } = await supabaseClient
+            .from('notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('recipient_user_profile_id', profileId)
+            .eq('is_read', false);
+        if (error) throw error;
+        return count || 0;
+    },
+
+    async markNotificationRead(id) {
+        const { error } = await supabaseClient
+            .from('notifications')
+            .update({ is_read: true, read_at: new Date().toISOString() })
+            .eq('id', id);
+        if (error) throw error;
+    },
+
+    async markAllNotificationsRead(profileId) {
+        const { error } = await supabaseClient
+            .from('notifications')
+            .update({ is_read: true, read_at: new Date().toISOString() })
+            .eq('recipient_user_profile_id', profileId)
+            .eq('is_read', false);
+        if (error) throw error;
+    },
+
     // ---------- สิทธิสวัสดิการของฉัน (database/18_employee_benefits_profile.sql) ----------
     // ดึงข้อมูลค่าจ้าง/ประกันสังคม/ภาษี (จาก employees ที่ employee เห็นได้อยู่แล้วผ่าน RLS เดิม)
     // รวมกับรายการสวัสดิการที่ผูกไว้ (employee_benefit_assignments) ในเรียกเดียว

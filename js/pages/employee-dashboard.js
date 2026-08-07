@@ -46,6 +46,8 @@ async function checkEmployeeSession() {
             if (btn) btn.classList.remove('hidden');
             refreshApprovalInboxTeaser();
         }
+        refreshNotificationBadge();
+        setInterval(refreshNotificationBadge, 60000); // เช็คแจ้งเตือนใหม่ทุก 1 นาที (polling - ยังไม่มี realtime push)
     } catch (err) {
         console.error("Session/profile error", err);
         // Fallback: redirect to login
@@ -1570,6 +1572,107 @@ async function rejectInboxItem(id, type) {
         await refreshApprovalInboxTeaser();
     } catch (err) {
         console.error('rejectInboxItem error', err);
+        showToast('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
+    }
+}
+
+// ============================================================
+// 🔔 การแจ้งเตือน (notifications) - อ่านผ่าน database/21_notifications.sql
+// สร้างอัตโนมัติด้วย trigger ฝั่ง DB ทุกครั้งที่มีคำขอ OT/ลา/แก้ไขเวลาใหม่ หรือเปลี่ยนสถานะ
+// (email/line dispatch ยังไม่ได้เชื่อมต่อจริง - เป็น in-app เท่านั้นตอนนี้)
+// ============================================================
+const notificationCategoryIcon = {
+    ot_request_pending: '⏱️', ot_request_escalated: '⚠️', ot_request_approved: '✅', ot_request_rejected: '❌',
+    correction_request_pending: '✏️', correction_request_approved: '✅', correction_request_rejected: '❌',
+    leave_request_pending: '🏖️', leave_request_approved: '✅', leave_request_rejected: '❌'
+};
+
+async function refreshNotificationBadge() {
+    const emp = window.currentUserProfile;
+    const badgeEl = document.getElementById('notifUnreadBadge');
+    if (!emp || !badgeEl) return;
+    try {
+        const count = await window.EmployeeSelfService.getUnreadNotificationCount(emp.id);
+        if (count > 0) {
+            badgeEl.textContent = count > 99 ? '99+' : String(count);
+            badgeEl.classList.remove('hidden');
+        } else {
+            badgeEl.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error('refreshNotificationBadge error', err);
+    }
+}
+
+function openNotificationsModal() {
+    const modal = document.getElementById('notificationsModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    loadNotificationsList();
+}
+function closeNotificationsModal() {
+    const modal = document.getElementById('notificationsModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+function timeAgoTh(dateStr) {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'เมื่อสักครู่';
+    if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} ชม.ที่แล้ว`;
+    return `${Math.floor(diffHr / 24)} วันที่แล้ว`;
+}
+
+async function loadNotificationsList() {
+    const listEl = document.getElementById('notificationsList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp) return;
+    listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    try {
+        const list = await window.EmployeeSelfService.getMyNotifications(emp.id, { limit: 30 });
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีการแจ้งเตือน</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div onclick="markNotificationReadUI('${item.id}')" class="rounded-2xl border ${item.is_read ? 'border-[#e6edf7] bg-white' : 'border-kcblue/30 bg-[#eef5ff]'} p-4 cursor-pointer transition-colors">
+                <div class="flex items-start gap-3">
+                    <span class="text-xl shrink-0">${notificationCategoryIcon[item.category] || '🔔'}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-bold ${item.is_read ? 'text-slate-600' : 'text-kcdark'}">${item.title}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${item.body || ''}</p>
+                        <p class="text-[11px] text-slate-400 mt-1">${timeAgoTh(item.created_at)}</p>
+                    </div>
+                    ${!item.is_read ? '<span class="w-2.5 h-2.5 rounded-full bg-kcblue shrink-0 mt-1"></span>' : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadNotificationsList error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+async function markNotificationReadUI(id) {
+    try {
+        await window.EmployeeSelfService.markNotificationRead(id);
+        await loadNotificationsList();
+        await refreshNotificationBadge();
+    } catch (err) {
+        console.error('markNotificationReadUI error', err);
+    }
+}
+
+async function markAllNotificationsReadUI() {
+    const emp = window.currentUserProfile;
+    if (!emp) return;
+    try {
+        await window.EmployeeSelfService.markAllNotificationsRead(emp.id);
+        await loadNotificationsList();
+        await refreshNotificationBadge();
+    } catch (err) {
+        console.error('markAllNotificationsReadUI error', err);
         showToast('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
     }
 }

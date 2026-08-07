@@ -48,6 +48,10 @@
         <button onclick="logoutEmployee()" class="md:hidden text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-full font-bold transition-colors cursor-pointer">ออกจากระบบ</button>
       </div>
       <div class="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto">
+        <button id="notifBellBtn" onclick="openNotificationsModal()" class="relative w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors cursor-pointer shrink-0" aria-label="การแจ้งเตือน">
+          <span class="text-lg">🔔</span>
+          <span id="notifUnreadBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-kcblue">0</span>
+        </button>
         <div class="flex items-center text-left md:text-right">
             <div>
                 <p id="empNameDisplay" class="font-bold text-lg md:text-xl leading-tight">กำลังโหลดข้อมูล...</p>
@@ -469,6 +473,24 @@
       </div>
       <div class="p-6 overflow-y-auto no-scrollbar">
         <div id="approvalInboxList" class="space-y-3">
+          <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔔 การแจ้งเตือน -->
+  <div id="notificationsModal" class="hidden fixed inset-0 z-[56] bg-[#0f2b73]/70 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl border border-[#e6edf7] flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-[#e6edf7] shrink-0">
+        <h3 class="text-lg font-bold text-kcdark">🔔 การแจ้งเตือน</h3>
+        <div class="flex items-center gap-3">
+          <button onclick="markAllNotificationsReadUI()" class="text-xs font-bold text-kcblue hover:underline cursor-pointer">อ่านทั้งหมด</button>
+          <button onclick="closeNotificationsModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl cursor-pointer transition-colors">✕</button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto no-scrollbar">
+        <div id="notificationsList" class="space-y-3">
           <p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
