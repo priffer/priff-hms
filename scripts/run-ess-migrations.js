@@ -33,6 +33,7 @@ async function run() {
     path.resolve(__dirname, '..', 'database', '14_employee_shift_assignments.sql'),
     path.resolve(__dirname, '..', 'database', '15_attendance_correction_requests.sql'),
     path.resolve(__dirname, '..', 'database', '16_ot_requests.sql'),
+    path.resolve(__dirname, '..', 'database', '17_leave_hourly_and_late_tracking.sql'),
   ];
 
   const results = [];
