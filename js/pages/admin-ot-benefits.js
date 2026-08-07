@@ -50,7 +50,7 @@ const otAdminStatusLabel = {
 
 async function loadOtAdminReview() {
     const tbody = document.getElementById('otReviewTableBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
     try {
         const { data, error } = await supabaseClient
             .from('ot_requests')
@@ -71,20 +71,20 @@ async function loadOtAdminReview() {
 
         const merged = [...(data || []), ...(fallbackData || [])];
         if (merged.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-500">ไม่มีคำขอโอทีที่ต้องตรวจสอบในขณะนี้</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500">ไม่มีคำขอโอทีที่ต้องตรวจสอบในขณะนี้</td></tr>';
             return;
         }
         tbody.innerHTML = merged.map(item => `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td class="p-4">${item.employees?.full_name || item.emp_id} <span class="text-gray-400 font-mono text-xs">(${item.employees?.emp_id || item.emp_id})</span></td>
-                <td class="p-4">${item.work_date}<br><span class="text-gray-500 text-xs">${item.requested_hours} ชม. (${item.requested_start || '--:--'}-${item.requested_end || '--:--'})</span></td>
-                <td class="p-4 text-gray-600">${item.reason || '-'}</td>
-                <td class="p-4 text-xs text-gray-600">สัปดาห์: ${item.projected_weekly_ot_hours ?? '-'} ชม.<br>เดือน: ${item.projected_monthly_ot_hours ?? '-'} ชม.</td>
+            <tr class="border-b border-[#e6edf7] hover:bg-kcsoft transition-colors">
+                <td class="p-4">${item.employees?.full_name || item.emp_id} <span class="text-slate-400 font-mono text-xs">(${item.employees?.emp_id || item.emp_id})</span></td>
+                <td class="p-4">${item.work_date}<br><span class="text-slate-500 text-xs">${item.requested_hours} ชม. (${item.requested_start || '--:--'}-${item.requested_end || '--:--'})</span></td>
+                <td class="p-4 text-slate-600">${item.reason || '-'}</td>
+                <td class="p-4 text-xs text-slate-600">สัปดาห์: ${item.projected_weekly_ot_hours ?? '-'} ชม.<br>เดือน: ${item.projected_monthly_ot_hours ?? '-'} ชม.</td>
                 <td class="p-4 text-center">${otAdminStatusLabel[item.status] || item.status}</td>
                 <td class="p-4 text-center">
                     <div class="flex gap-2 justify-center">
-                        <button onclick="approveOtAdmin('${item.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold shadow-sm">✅ อนุมัติ</button>
-                        <button onclick="openOtRejectModal('${item.id}')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs font-bold shadow-sm">❌ ปฏิเสธ</button>
+                        <button onclick="approveOtAdmin('${item.id}')" class="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold shadow-sm transition-colors cursor-pointer">✅ อนุมัติ</button>
+                        <button onclick="openOtRejectModal('${item.id}')" class="rounded-xl bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 text-xs font-bold shadow-sm transition-colors cursor-pointer">❌ ปฏิเสธ</button>
                     </div>
                 </td>
             </tr>
@@ -261,7 +261,7 @@ async function saveSsoHospitalInfo() {
 
 async function loadBenefitsAssignmentList(employeeId) {
     const listEl = document.getElementById('benefitsAssignmentList');
-    listEl.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">กำลังโหลดข้อมูล...</p>';
+    listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">กำลังโหลดข้อมูล...</p>';
     try {
         const { data: assignments, error } = await supabaseClient
             .from('employee_benefit_assignments')
@@ -276,17 +276,17 @@ async function loadBenefitsAssignmentList(employeeId) {
             const isActive = activeTypeIds.has(type.id);
             const assignment = (assignments || []).find(a => a.benefit_type_id === type.id);
             return `
-                <div class="flex items-center justify-between border border-gray-300 p-3 bg-white">
+                <div class="flex items-center justify-between rounded-xl border border-[#e6edf7] p-3 bg-white">
                     <div>
-                        <p class="text-sm font-bold text-gray-800">${type.name_th}</p>
-                        <p class="text-xs text-gray-500">${type.description || ''}</p>
+                        <p class="text-sm font-bold text-kcdark">${type.name_th}</p>
+                        <p class="text-xs text-slate-500">${type.description || ''}</p>
                     </div>
                     ${isActive
-                        ? `<button onclick="removeBenefitAssignment('${assignment.id}', '${employeeId}')" class="bg-red-100 text-red-700 border border-red-300 px-3 py-1 text-xs font-bold hover:bg-red-200 cursor-pointer">✅ ได้รับอยู่ - เอาออก</button>`
-                        : `<button onclick="addBenefitAssignment('${type.id}', '${employeeId}')" class="bg-gray-100 text-gray-600 border border-gray-300 px-3 py-1 text-xs font-bold hover:bg-gray-200 cursor-pointer">+ เพิ่มให้พนักงานนี้</button>`}
+                        ? `<button onclick="removeBenefitAssignment('${assignment.id}', '${employeeId}')" class="rounded-xl bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 text-xs font-bold hover:bg-red-200 transition-colors cursor-pointer">✅ ได้รับอยู่ - เอาออก</button>`
+                        : `<button onclick="addBenefitAssignment('${type.id}', '${employeeId}')" class="rounded-xl bg-kclight text-kcdark px-3 py-1.5 text-xs font-bold hover:bg-[#e6edf7] transition-colors cursor-pointer">+ เพิ่มให้พนักงานนี้</button>`}
                 </div>
             `;
-        }).join('') || '<p class="text-center text-gray-400 text-sm py-4">ยังไม่มีประเภทสวัสดิการในระบบ</p>';
+        }).join('') || '<p class="text-center text-slate-400 text-sm py-4">ยังไม่มีประเภทสวัสดิการในระบบ</p>';
     } catch (err) {
         console.error('loadBenefitsAssignmentList error', err);
         listEl.innerHTML = `<p class="text-center text-red-500 text-sm py-4">โหลดข้อมูลไม่สำเร็จ: ${err.message}</p>`;
