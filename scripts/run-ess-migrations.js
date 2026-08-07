@@ -45,6 +45,7 @@ async function run() {
     path.resolve(__dirname, '..', 'database', '26_payroll_rates_seed.sql'),
     path.resolve(__dirname, '..', 'database', '27_payroll_engine.sql'),
     path.resolve(__dirname, '..', 'database', '28_notifications_self_delete.sql'),
+    path.resolve(__dirname, '..', 'database', '29_leave_correction_admin_approval_rls.sql'),
   ];
 
   const results = [];

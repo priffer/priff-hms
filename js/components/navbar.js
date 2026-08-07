@@ -4,6 +4,7 @@ const ADMIN_NAV_LINKS = [
     { href: 'admin-jobs.html', match: 'admin-jobs.html', label: 'เว็บ/ประกาศงาน', icon: '📢', roles: ['admin', 'payroll'] },
     { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'เวลาทำงาน', icon: '⏱️', roles: ['admin', 'payroll'] },
     { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที/สวัสดิการ', icon: '🛡️', roles: ['admin', 'payroll'] },
+    { href: 'admin-approvals.html', match: 'admin-approvals.html', label: 'อนุมัติคำขอ', icon: '🗂️', roles: ['admin', 'payroll'] },
     { href: 'admin-payroll.html', match: 'admin-payroll.html', label: 'เงินเดือน (Payroll)', icon: '💰', roles: ['admin', 'payroll'] },
     { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ/วันหยุด', icon: '🗓️', roles: ['admin', 'payroll'] },
 ];
@@ -306,9 +307,6 @@ async function deleteAdminNotificationUI(id) {
 }
 
 // คลิกที่การแจ้งเตือน -> mark read แล้วพาไปหน้าที่เกี่ยวข้องจริง (ไม่ใช่แค่ mark read เฉยๆ เหมือนเดิม)
-// หมายเหตุ: correction_request_* / leave_request_* (กรณี fallback ไม่มีหัวหน้างาน) ยังไม่มีหน้า
-// admin สำหรับตรวจสอบ/อนุมัติโดยเฉพาะในระบบตอนนี้ (เป็น gap ที่พบระหว่างทำ - แจ้ง user แยกแล้ว)
-// จึงพาไปหน้าเวลาทำงาน (admin-attendance.html) เป็นปลายทางที่ใกล้เคียงที่สุดไปก่อน
 async function openAdminNotificationTarget(id) {
     const item = adminNotificationsCache[id];
     try {
@@ -342,9 +340,12 @@ async function openAdminNotificationTarget(id) {
         window.location.href = 'admin-employees.html';
         return;
     }
-    if (item.category && (item.category.startsWith('correction_request') || item.category.startsWith('leave_request'))) {
-        // ยังไม่มีหน้า admin เฉพาะสำหรับตรวจสอบคำขอลา/แก้ไขเวลา (gap ที่พบระหว่างทำงานนี้)
-        window.location.href = 'admin-attendance.html';
+    if (item.category && item.category.startsWith('leave_request')) {
+        window.location.href = 'admin-approvals.html';
+        return;
+    }
+    if (item.category && item.category.startsWith('correction_request')) {
+        window.location.href = 'admin-approvals.html';
         return;
     }
     await loadAdminNotificationsList();

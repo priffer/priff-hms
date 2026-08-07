@@ -235,6 +235,36 @@ const EmployeeSelfService = {
         if (error) throw error;
     },
 
+    // ---------- อนุมัติ/ปฏิเสธคำขอลา (database/29_leave_correction_admin_approval_rls.sql) ----------
+    // ใช้ได้ทั้งหัวหน้างาน (ESS - ขอบเขตตามแผนก department_id ผ่าน RLS อัตโนมัติ) และ admin/payroll
+    // (Admin Portal - เห็นทั้งบริษัท) โดยไม่ต้อง filter ฝั่ง client เอง เพราะ RLS ของ leave_requests_select
+    // จำกัดสโคปให้ถูกต้องตาม role อยู่แล้ว (ดู database/06_leave_management.sql)
+    async getPendingLeaveApprovals() {
+        const { data, error } = await supabaseClient
+            .from('leave_requests')
+            .select('*, employees(full_name, emp_id), leave_types(name_th, code)')
+            .eq('status', 'pending')
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        return data;
+    },
+
+    async approveLeaveRequest(requestId, approverProfileId) {
+        const { error } = await supabaseClient
+            .from('leave_requests')
+            .update({ status: 'approved', approved_by: approverProfileId || null, approved_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
+    },
+
+    async rejectLeaveRequest(requestId, rejectionReason) {
+        const { error } = await supabaseClient
+            .from('leave_requests')
+            .update({ status: 'rejected', rejection_reason: rejectionReason || null, approved_at: new Date().toISOString() })
+            .eq('id', requestId);
+        if (error) throw error;
+    },
+
     // ---------- สลิปเงินเดือน ----------
     async getMyPayslips(employeeId) {
         const { data, error } = await supabaseClient
@@ -330,6 +360,19 @@ const EmployeeSelfService = {
             .select('*, employees(full_name, emp_id), clients:requested_client_id(client_name)')
             .eq('resolved_approver_user_profile_id', userProfileId)
             .eq('status', 'pending')
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        return data;
+    },
+
+    // คำขอแก้ไขเวลาที่ fallback มาถึง admin/payroll โดยตรง (พนักงานไม่มีหัวหน้างานประจำไซต์)
+    // ใช้ในหน้า Admin Portal (admin-approvals.html)
+    async getPendingCorrectionApprovalsAdminFallback() {
+        const { data, error } = await supabaseClient
+            .from('attendance_correction_requests')
+            .select('*, employees(full_name, emp_id), clients:requested_client_id(client_name)')
+            .eq('status', 'pending')
+            .eq('resolved_approver_role', 'admin')
             .order('created_at', { ascending: true });
         if (error) throw error;
         return data;

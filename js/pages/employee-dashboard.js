@@ -1526,17 +1526,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ============================================================
 // 📋 กล่องอนุมัติสำหรับหัวหน้างาน (เฉพาะ role supervisor เห็นปุ่มนี้)
-// รวม 2 ประเภทคำขอ: แก้ไขเวลา (attendance_correction_requests) + ขอโอที (ot_requests)
+// รวม 3 ประเภทคำขอ: แก้ไขเวลา (attendance_correction_requests) + ขอโอที (ot_requests) +
+// ขอลา (leave_requests - RLS จำกัดสโคปตามแผนก department_id ให้อัตโนมัติอยู่แล้ว ไม่ต้องส่ง
+// userProfileId เข้าไปกรองเอง ต่างจาก correction/ot ที่ผูกกับ resolved_approver_user_profile_id)
 // แยกด้วย field "type" ในตัวแปร list ฝั่ง client เพื่อ route ไปเรียก approve/reject ให้ถูกฟังก์ชัน
 // ============================================================
 async function getMergedApprovalInbox(userProfileId) {
-    const [corrections, otItems] = await Promise.all([
+    const [corrections, otItems, leaveItems] = await Promise.all([
         window.EmployeeSelfService.getPendingApprovalsForSupervisor(userProfileId),
-        window.EmployeeSelfService.getPendingOtApprovalsForSupervisor(userProfileId)
+        window.EmployeeSelfService.getPendingOtApprovalsForSupervisor(userProfileId),
+        window.EmployeeSelfService.getPendingLeaveApprovals()
     ]);
     const tagged = [
         ...(corrections || []).map(item => ({ ...item, _type: 'correction' })),
-        ...(otItems || []).map(item => ({ ...item, _type: 'ot' }))
+        ...(otItems || []).map(item => ({ ...item, _type: 'ot' })),
+        ...(leaveItems || []).map(item => ({ ...item, _type: 'leave' }))
     ];
     tagged.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     return tagged;
@@ -1590,6 +1594,19 @@ async function loadApprovalInbox() {
                 </div>
             </div>`;
             }
+            if (item._type === 'leave') {
+                return `
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                <p class="text-sm font-bold text-kcdark">🏖️ ${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
+                <p class="text-xs text-slate-500 mt-0.5">${item.leave_types?.name_th || 'ลา'} — ${new Date(item.start_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} ถึง ${new Date(item.end_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} (${item.total_days} วัน)</p>
+                <p class="text-xs text-slate-600 mt-1">เหตุผล: ${item.reason || '-'}</p>
+                ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูหลักฐาน</a>` : ''}
+                <div class="flex gap-2 mt-3">
+                    <button onclick="approveInboxItem('${item.id}', 'leave')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
+                    <button onclick="rejectInboxItem('${item.id}', 'leave')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
+                </div>
+            </div>`;
+            }
             return `
             <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
                 <p class="text-sm font-bold text-kcdark">✏️ ${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
@@ -1613,6 +1630,8 @@ async function approveInboxItem(id, type) {
     try {
         if (type === 'ot') {
             await window.EmployeeSelfService.approveOtRequest(id, window.currentUserProfile?.id);
+        } else if (type === 'leave') {
+            await window.EmployeeSelfService.approveLeaveRequest(id, window.currentUserProfile?.id);
         } else {
             await window.EmployeeSelfService.approveCorrectionRequest(id);
         }
@@ -1630,6 +1649,8 @@ async function rejectInboxItem(id, type) {
     try {
         if (type === 'ot') {
             await window.EmployeeSelfService.rejectOtRequest(id, reason);
+        } else if (type === 'leave') {
+            await window.EmployeeSelfService.rejectLeaveRequest(id, reason);
         } else {
             await window.EmployeeSelfService.rejectCorrectionRequest(id, reason);
         }
@@ -1753,11 +1774,10 @@ async function deleteNotificationUI(id) {
 let notificationsCache = {};
 
 // คลิกที่การแจ้งเตือน -> mark read แล้วเปิด modal ที่เกี่ยวข้องจริง (ไม่ใช่แค่ mark read เฉยๆ เหมือนเดิม)
-// - ot_request_pending/correction_request_pending (หัวหน้างานเป็นผู้รับ) -> เปิดกล่องอนุมัติ
+// - ot_request_pending/correction_request_pending/leave_request_pending (หัวหน้างานเป็นผู้รับ) -> เปิดกล่องอนุมัติ
 // - ot_request_approved/rejected (เจ้าของคำขอเป็นผู้รับ) -> เปิดประวัติโอที
 // - correction_request_approved/rejected -> เปิดประวัติลงเวลา
-// - leave_request_* -> เปิดหน้าลา (ยังไม่มีหน้าอนุมัติลาสำหรับหัวหน้างานในระบบตอนนี้ - gap ที่พบระหว่างทำ
-//   งานนี้ แจ้ง user แยกแล้ว - พาไปหน้าลาของตัวเองเป็นปลายทางที่ใกล้เคียงที่สุดไปก่อน)
+// - leave_request_approved/rejected (เจ้าของคำขอเป็นผู้รับ) -> เปิดหน้าลาของตัวเอง
 async function openNotificationTarget(id) {
     const item = notificationsCache[id];
     try {
@@ -1771,7 +1791,7 @@ async function openNotificationTarget(id) {
     if (!item) return;
     const role = window.currentUserProfile?.role;
 
-    if (item.category === 'ot_request_pending' || item.category === 'ot_request_escalated' || item.category === 'correction_request_pending') {
+    if (item.category === 'ot_request_pending' || item.category === 'ot_request_escalated' || item.category === 'correction_request_pending' || item.category === 'leave_request_pending') {
         if (role === 'supervisor') { openApprovalInboxModal(); return; }
     }
     if (item.category === 'ot_request_approved' || item.category === 'ot_request_rejected') {
