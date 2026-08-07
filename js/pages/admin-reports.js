@@ -43,7 +43,7 @@ function loadAllReports() {
 // Tab switching
 // ============================================================
 function switchReportTab(tab) {
-    ['overview', 'ot', 'attendance', 'turnover', 'powerbi'].forEach(t => {
+    ['overview', 'ot', 'attendance', 'turnover', 'tv'].forEach(t => {
         const btn = document.getElementById(`tabBtn-${t}`);
         const view = document.getElementById(`tabView-${t}`);
         if (t === tab) {

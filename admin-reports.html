@@ -36,7 +36,7 @@
                 <button id="tabBtn-ot" onclick="switchReportTab('ot')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">⏱️ สรุป OT</button>
                 <button id="tabBtn-attendance" onclick="switchReportTab('attendance')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">📌 มาสาย/ขาดงาน</button>
                 <button id="tabBtn-turnover" onclick="switchReportTab('turnover')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">🚪 อัตราลาออก</button>
-                <button id="tabBtn-powerbi" onclick="switchReportTab('powerbi')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">🔗 เชื่อมต่อ Power BI</button>
+                <button id="tabBtn-tv" onclick="switchReportTab('tv')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">📺 TV Dashboard</button>
             </div>
 
             <!-- TAB 1: ภาพรวมวันนี้ -->
@@ -160,19 +160,18 @@
                 </div>
             </div>
 
-            <!-- TAB 5: เชื่อมต่อ Power BI -->
-            <div id="tabView-powerbi" class="hidden">
-                <div class="rounded-2xl border border-[#e6edf7] bg-kcsoft p-5 space-y-4 text-sm text-slate-700">
-                    <h3 class="text-lg font-extrabold text-kcdark">🔗 เชื่อมต่อ Power BI Desktop เข้าฐานข้อมูลโดยตรง</h3>
-                    <p>ระบบเตรียม SQL Views สรุปข้อมูลไว้ให้แล้ว 5 views พร้อม Postgres role อ่านอย่างเดียว (<code class="bg-white px-1 rounded border border-[#e6edf7]">powerbi_readonly</code>) แยกจาก service_role key เพื่อความปลอดภัย</p>
-                    <ol class="list-decimal list-inside space-y-2">
-                        <li>เปิด Power BI Desktop → <b>Get Data</b> → เลือก <b>PostgreSQL database</b></li>
-                        <li>กรอก Server: <code class="bg-white px-1 rounded border border-[#e6edf7]">db.hcyibcqojsyldiyzperr.supabase.co</code>, Database: <code class="bg-white px-1 rounded border border-[#e6edf7]">postgres</code> (Port 5432)</li>
-                        <li>Username: <code class="bg-white px-1 rounded border border-[#e6edf7]">powerbi_readonly</code> — รหัสผ่านขอจากผู้ดูแลระบบฐานข้อมูล (ตั้งแยกไว้นอกไฟล์โค้ด ไม่ hardcode)</li>
-                        <li>เลือกตารางที่เป็น views: <code class="bg-white px-1 rounded border border-[#e6edf7]">v_attendance_daily_summary</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_ot_summary_daily</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_attendance_absence_summary</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_site_headcount_daily</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_turnover_summary</code></li>
-                        <li>ตั้งค่า Scheduled Refresh บน Power BI Service เพื่อให้จอใหญ่อัปเดตอัตโนมัติ</li>
-                    </ol>
-                    <p class="text-xs text-slate-500">Role นี้เห็นเฉพาะ 5 views ด้านบน ไม่สามารถเข้าถึงตารางดิบ (เช่น employees, payroll_lines) หรือแก้ไขข้อมูลใดๆ ได้</p>
+            <!-- TAB 5: TV Dashboard -->
+            <div id="tabView-tv" class="hidden">
+                <div class="rounded-2xl border border-[#e6edf7] bg-slate-900 p-6 text-center shadow-lg">
+                    <h3 class="text-2xl font-extrabold text-white mb-2">📺 Live TV Dashboard</h3>
+                    <p class="text-slate-300 mb-6">หน้าจอแสดงผลภาพรวมแบบ Real-time สำหรับเปิดทิ้งไว้บนจอทีวี (Command Center)</p>
+                    <a href="tv-dashboard.html" target="_blank" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors shadow-blue-500/30 shadow-lg text-lg">
+                        🚀 เปิดหน้าจอ TV Dashboard (หน้าต่างใหม่)
+                    </a>
+                    <p class="text-xs text-slate-500 mt-6">
+                        แนะนำ: กด F11 หรือตั้งค่าเบราว์เซอร์เป็น Full Screen เมื่อเปิดบนจอทีวี<br>
+                        ข้อมูลจะถูกรีเฟรชอัตโนมัติทันทีที่มีพนักงานเช็คอิน (Real-time)
+                    </p>
                 </div>
             </div>
 
