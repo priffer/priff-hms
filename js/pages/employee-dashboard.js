@@ -46,6 +46,8 @@ async function checkEmployeeSession() {
             if (btn) btn.classList.remove('hidden');
             refreshApprovalInboxTeaser();
         }
+        refreshNotificationBadge();
+        setInterval(refreshNotificationBadge, 60000); // เช็คแจ้งเตือนใหม่ทุก 1 นาที (polling - ยังไม่มี realtime push)
     } catch (err) {
         console.error("Session/profile error", err);
         // Fallback: redirect to login
@@ -594,19 +596,23 @@ async function loadLeaveHistory() {
             listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีประวัติการลางาน</p>';
             return;
         }
-        listEl.innerHTML = list.map(item => `
+        listEl.innerHTML = list.map(item => {
+            const dateLine = item.leave_unit === 'hour'
+                ? `${item.start_date} (${item.start_time || '--:--'} ถึง ${item.end_time || '--:--'}) — ${item.total_hours} ชม. (≈${item.total_days} วัน)`
+                : `${item.start_date} ถึง ${item.end_date} (${item.total_days} วัน)`;
+            return `
             <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
                 <div class="flex justify-between items-start mb-1">
                     <div>
                         <p class="text-sm font-bold text-kcdark">${item.leave_types?.name_th || 'การลา'}</p>
-                        <p class="text-xs text-slate-500 mt-0.5">${item.start_date} ถึง ${item.end_date} (${item.total_days} วัน)</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${dateLine}</p>
                     </div>
                     ${statusBadgeHtml(item.status)}
                 </div>
                 ${item.reason ? `<p class="text-xs text-slate-600 mt-2">เหตุผล: ${item.reason}</p>` : ''}
                 ${item.status === 'pending' ? `<button onclick="cancelMyLeaveRequest('${item.id}')" class="mt-2 text-xs font-bold text-red-500 hover:underline cursor-pointer">ยกเลิกคำขอนี้</button>` : ''}
             </div>
-        `).join('');
+        `; }).join('');
     } catch (err) {
         console.error('loadLeaveHistory error', err);
         listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
@@ -632,14 +638,40 @@ document.addEventListener('DOMContentLoaded', () => {
         leaveTypeSelectEl.addEventListener('change', toggleLeaveAttachmentField);
     }
 
+    // สลับ UI ระหว่าง "ลาเต็มวัน" กับ "ลาราย ชม." - ลาราย ชม. บังคับวันเดียวกัน (end_date = start_date)
+    // และซ่อนช่องวันที่สิ้นสุดไปเลยเพื่อไม่ให้สับสน (DB บังคับอีกชั้นผ่าน leave_requests_hourly_check)
+    const leaveUnitRadios = document.querySelectorAll('input[name="leaveUnit"]');
+    const hourlyFieldsEl = document.getElementById('leaveHourlyFields');
+    const endDateWrapEl = document.getElementById('leaveEndDateWrap');
+    const endDateInputEl = document.getElementById('leaveEndDate');
+    const totalHoursInput = document.getElementById('leaveTotalHours');
+    leaveUnitRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            const isHourly = document.querySelector('input[name="leaveUnit"]:checked').value === 'hour';
+            if (hourlyFieldsEl) hourlyFieldsEl.classList.toggle('hidden', !isHourly);
+            if (endDateWrapEl) endDateWrapEl.classList.toggle('hidden', isHourly);
+            if (endDateInputEl) endDateInputEl.required = !isHourly; // ซ่อนแล้วต้องปลด required ด้วย ไม่งั้น submit ไม่ผ่าน validation แบบเงียบๆ
+            if (totalHoursInput) totalHoursInput.required = isHourly;
+            if (isHourly) {
+                const startDateEl = document.getElementById('leaveStartDate');
+                const endDateEl = document.getElementById('leaveEndDate');
+                if (startDateEl.value) endDateEl.value = startDateEl.value;
+            }
+        });
+    });
+
     const form = document.getElementById('leaveForm');
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const emp = window.currentUserProfile;
             const leaveTypeId = document.getElementById('leaveTypeSelect').value;
+            const leaveUnit = document.querySelector('input[name="leaveUnit"]:checked')?.value || 'day';
             const startDate = document.getElementById('leaveStartDate').value;
-            const endDate = document.getElementById('leaveEndDate').value;
+            let endDate = document.getElementById('leaveEndDate').value;
+            const startTime = document.getElementById('leaveStartTime').value || null;
+            const endTime = document.getElementById('leaveEndTime').value || null;
+            const totalHours = leaveUnit === 'hour' ? parseFloat(document.getElementById('leaveTotalHours').value) : null;
             const reason = document.getElementById('leaveReason').value.trim();
             const attachmentInput = document.getElementById('leaveAttachmentFile');
             const attachmentFile = attachmentInput ? attachmentInput.files[0] : null;
@@ -647,9 +679,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!emp || !emp.emp_id || !emp.employee_id) { showToast('⚠️ ไม่พบข้อมูลพนักงานของคุณ'); return; }
             if (!leaveTypeId) { showToast('⚠️ กรุณาเลือกประเภทการลา'); return; }
-            if (!startDate || !endDate) { showToast('⚠️ กรุณาเลือกวันที่ลา'); return; }
-            const totalDays = countLeaveDays(startDate, endDate);
-            if (totalDays <= 0) { showToast('⚠️ ช่วงวันที่ลาไม่ถูกต้อง'); return; }
+            if (!startDate) { showToast('⚠️ กรุณาเลือกวันที่ลา'); return; }
+
+            let totalDays;
+            if (leaveUnit === 'hour') {
+                endDate = startDate; // ลาราย ชม. ต้องเป็นวันเดียวกันเสมอ (บังคับอีกชั้นที่ DB)
+                if (!totalHours || totalHours <= 0) { showToast('⚠️ กรุณาระบุจำนวนชั่วโมงที่ลา'); return; }
+                totalDays = 0; // DB จะคำนวณค่าจริงให้เองผ่าน trigger fn_leave_request_hourly_precheck
+            } else {
+                if (!endDate) { showToast('⚠️ กรุณาเลือกวันที่สิ้นสุด'); return; }
+                totalDays = countLeaveDays(startDate, endDate);
+                if (totalDays <= 0) { showToast('⚠️ ช่วงวันที่ลาไม่ถูกต้อง'); return; }
+            }
 
             const selectedType = leaveBalanceCache.find(t => t.leaveTypeId === leaveTypeId);
             if (selectedType && selectedType.requiresAttachment && !attachmentFile) {
@@ -673,10 +714,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     endDate,
                     totalDays,
                     reason,
-                    attachmentUrl
+                    attachmentUrl,
+                    leaveUnit,
+                    startTime,
+                    endTime,
+                    totalHours
                 });
                 showToast('✅ ส่งคำขอลางานสำเร็จ รอการอนุมัติ');
                 form.reset();
+                if (hourlyFieldsEl) hourlyFieldsEl.classList.add('hidden');
+                if (endDateWrapEl) endDateWrapEl.classList.remove('hidden');
+                if (endDateInputEl) endDateInputEl.required = true;
+                if (totalHoursInput) totalHoursInput.required = false;
                 await loadLeaveBalanceSummary();
                 await loadLeaveHistory();
             } catch (err) {
@@ -744,6 +793,99 @@ async function loadPayslips() {
 }
 
 // ============================================================
+// 🛡️ สิทธิสวัสดิการของฉัน (employees payroll-ready fields + benefit_types/employee_benefit_assignments)
+// หมายเหตุ: หลาย field ยังเป็น null ได้จริง (รอฝ่ายบุคคล/Payroll Engine กรอกข้อมูลจริง)
+// ============================================================
+const salaryTypeLabel = { monthly: 'รายเดือน', daily: 'รายวัน', hourly: 'รายชั่วโมง' };
+
+function formatBenefitValue(value, suffix = '') {
+    if (value === null || value === undefined || value === '') return '<span class="text-slate-400">รอข้อมูลจากฝ่ายบุคคล</span>';
+    return `${Number(value).toLocaleString()}${suffix}`;
+}
+
+async function openBenefitsModal() {
+    const modal = document.getElementById('benefitsModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    await loadBenefitsSummary();
+}
+function closeBenefitsModal() {
+    const modal = document.getElementById('benefitsModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadBenefitsSummary() {
+    const contentEl = document.getElementById('benefitsContent');
+    const emp = window.currentUserProfile;
+    if (!contentEl || !emp || !emp.employee_id) {
+        if (contentEl) contentEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">ไม่พบข้อมูลพนักงานของคุณ</p>';
+        return;
+    }
+    contentEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    try {
+        const { wage, benefits } = await window.EmployeeSelfService.getMyBenefitsSummary(emp.employee_id);
+        const wageRateLine = wage.salary_type === 'daily' ? formatBenefitValue(wage.daily_rate, ' บาท/วัน')
+            : wage.salary_type === 'hourly' ? formatBenefitValue(wage.hourly_rate, ' บาท/ชม.')
+            : formatBenefitValue(wage.monthly_salary, ' บาท/เดือน');
+
+        contentEl.innerHTML = `
+            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-cyan-400 pl-3">ค่าจ้างตามตำแหน่ง</h4>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                    <p class="text-[11px] text-slate-400">ประเภทค่าจ้าง</p>
+                    <p class="text-sm font-bold text-kcdark mt-0.5">${salaryTypeLabel[wage.salary_type] || '<span class="text-slate-400">รอข้อมูลจากฝ่ายบุคคล</span>'}</p>
+                </div>
+                <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                    <p class="text-[11px] text-slate-400">อัตราค่าจ้าง</p>
+                    <p class="text-sm font-bold text-kcdark mt-0.5">${wageRateLine}</p>
+                </div>
+            </div>
+
+            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-emerald-400 pl-3">ประกันสังคม</h4>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                    <p class="text-[11px] text-slate-400">อัตราหักฝั่งพนักงาน</p>
+                    <p class="text-sm font-bold text-kcdark mt-0.5">${wage.social_security_employee_rate ? (Number(wage.social_security_employee_rate) * 100).toFixed(2) + '%' : '<span class="text-slate-400">รอข้อมูลจากฝ่ายบุคคล</span>'}</p>
+                </div>
+                <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                    <p class="text-[11px] text-slate-400">ฐานคำนวณประกันสังคม</p>
+                    <p class="text-sm font-bold text-kcdark mt-0.5">${formatBenefitValue(wage.social_security_base, ' บาท')}</p>
+                </div>
+                <div class="col-span-2 rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                    <p class="text-[11px] text-slate-400">โรงพยาบาลตามสิทธิ (ม.33)</p>
+                    <p class="text-sm font-bold text-kcdark mt-0.5">${wage.sso_hospital_name || '<span class="text-slate-400">รอข้อมูลจากฝ่ายบุคคล</span>'}</p>
+                </div>
+            </div>
+
+            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-violet-400 pl-3">ข้อมูลลดหย่อนภาษี</h4>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                    <p class="text-[11px] text-slate-400">จำนวนบุตรที่ใช้ลดหย่อน</p>
+                    <p class="text-sm font-bold text-kcdark mt-0.5">${wage.tax_allowance_child ?? 0} คน</p>
+                </div>
+                <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                    <p class="text-[11px] text-slate-400">ลดหย่อนอื่นๆ</p>
+                    <p class="text-sm font-bold text-kcdark mt-0.5">${formatBenefitValue(wage.tax_allowance_other, ' บาท')}</p>
+                </div>
+            </div>
+
+            <h4 class="text-sm font-bold text-slate-800 mb-3 border-l-4 border-orange-400 pl-3">สวัสดิการที่ได้รับ</h4>
+            <div class="space-y-2">
+                ${(benefits && benefits.length > 0) ? benefits.map(b => `
+                    <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-3">
+                        <p class="text-sm font-bold text-kcdark">${b.benefit_types?.name_th || b.benefit_types?.code}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${b.benefit_types?.description || ''}</p>
+                    </div>
+                `).join('') : '<p class="text-center text-slate-400 text-sm py-4">ยังไม่มีข้อมูลสวัสดิการที่ผูกไว้ - รอฝ่ายบุคคลอัปเดต</p>'}
+            </div>
+            <p class="text-[11px] text-slate-400 mt-6 text-center">ข้อมูลบางส่วนอาจยังไม่สมบูรณ์ระหว่างที่ระบบ Payroll กำลังพัฒนา</p>
+        `;
+    } catch (err) {
+        console.error('loadBenefitsSummary error', err);
+        contentEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+// ============================================================
 // 🕒 ประวัติลงเวลา (attendance_logs)
 // ============================================================
 async function openAttendanceHistoryModal() {
@@ -802,14 +944,22 @@ function computeShiftStats(shift, checkIn, checkOut) {
     };
 }
 
-function renderShiftStatsBadges(stats) {
+function renderShiftStatsBadges(stats, item) {
     if (!stats || stats.noShift) return '<p class="text-[11px] text-slate-400 mt-2">ℹ️ ยังไม่ได้กำหนดกะการทำงาน - ติดต่อฝ่ายบุคคล</p>';
     const badges = [];
     if (stats.incomplete) {
         badges.push(`<span class="inline-block bg-red-50 text-red-600 border border-red-200 rounded-full px-2 py-0.5 text-[10px] font-bold">⚠️ ${stats.note}</span>`);
     }
-    if (stats.lateMinutes > 0) {
-        badges.push(`<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold">🐢 สาย ${stats.lateMinutes} นาที</span>`);
+    // late_minutes/is_late จาก DB (attendance_logs, trigger fn_attendance_compute_late_minutes) เป็นค่าทางการ
+    // ที่ใช้อ้างอิงคำนวณเงิน/สวัสดิการได้จริง ต่างจาก lateMinutes ฝั่ง client ที่เป็นแค่ประมาณการแสดงผล
+    // ใช้ค่า DB เป็นหลักถ้ามี (ไม่ null) เพราะแม่นยำกว่า (คำนวณจากกะที่ผูกไว้ ณ work_date นั้นจริงๆ)
+    const officialLate = item && item.late_minutes !== null && item.late_minutes !== undefined ? item.late_minutes : null;
+    if (officialLate !== null) {
+        if (officialLate > 0) {
+            badges.push(`<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold">🐢 สาย ${officialLate} นาที (ทางการ)</span>`);
+        }
+    } else if (stats.lateMinutes > 0) {
+        badges.push(`<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold">🐢 สาย ${stats.lateMinutes} นาที (ประมาณการ)</span>`);
     }
     if (!stats.incomplete && stats.earlyLeaveMinutes > 0) {
         badges.push(`<span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold">🚪 ออกก่อนเวลา ${stats.earlyLeaveMinutes} นาที</span>`);
@@ -817,7 +967,7 @@ function renderShiftStatsBadges(stats) {
     if (!stats.incomplete && stats.otHoursEstimate > 0) {
         badges.push(`<span class="inline-block bg-sky-50 text-sky-700 border border-sky-200 rounded-full px-2 py-0.5 text-[10px] font-bold">⏱️ ทำงานเกินกะ ~${stats.otHoursEstimate} ชม.</span>`);
     }
-    if (badges.length === 0 && !stats.incomplete) {
+    if (badges.length === 0 && !stats.incomplete && (officialLate === 0 || officialLate === null)) {
         badges.push('<span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5 text-[10px] font-bold">✅ ตรงเวลา</span>');
     }
     return badges.length > 0 ? `<div class="flex flex-wrap gap-1.5 mt-2">${badges.join('')}</div>` : '';
@@ -855,7 +1005,7 @@ async function loadAttendanceHistory() {
                     <p><span class="text-slate-400">เข้างาน:</span> <span class="font-bold text-slate-700">${item.check_in || '--:--'}</span></p>
                     <p><span class="text-slate-400">ออกงาน:</span> <span class="font-bold text-slate-700">${item.check_out || '--:--'}</span></p>
                 </div>
-                ${renderShiftStatsBadges(stats)}
+                ${renderShiftStatsBadges(stats, item)}
                 ${(!item.check_out) ? `<button onclick="openCorrectionModal('${item.id}', '${item.work_date}')" class="mt-3 text-xs font-bold text-kcblue hover:underline cursor-pointer">✏️ ขอแก้ไขเวลาเข้า-ออกงาน</button>` : ''}
             </div>
         `; }).join('');
@@ -1213,14 +1363,125 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
-// 📋 กล่องอนุมัติสำหรับหัวหน้างาน (เฉพาะ role supervisor เห็นปุ่มนี้)
+// ⏱️ ขอทำโอที (ot_requests) — ผู้อนุมัติ/เพดานชั่วโมงคำนวณฝั่ง DB ทั้งหมด (database/16_ot_requests.sql)
 // ============================================================
+const otStatusLabel = {
+    pending: '⏳ รอหัวหน้างานอนุมัติ',
+    pending_admin_review: '🔎 รอแอดมิน/payroll ตรวจสอบเพิ่ม (เกินเพดานชั่วโมง)',
+    approved: '✅ อนุมัติแล้ว',
+    rejected: '❌ ไม่อนุมัติ'
+};
+
+function openOtModal() {
+    const modal = document.getElementById('otModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    loadOtHistory();
+}
+function closeOtModal() {
+    const modal = document.getElementById('otModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function loadOtHistory() {
+    const listEl = document.getElementById('otHistoryList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp) return;
+    listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    try {
+        const list = await window.EmployeeSelfService.getMyOtRequests(emp.emp_id);
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีคำขอโอที</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div class="rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4">
+                <p class="text-sm font-bold text-kcdark">${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} — ${item.requested_hours} ชม.</p>
+                <p class="text-xs text-slate-500 mt-0.5">${item.requested_start || '--:--'} ถึง ${item.requested_end || '--:--'} · ${item.reason}</p>
+                <p class="text-xs font-bold mt-1">${otStatusLabel[item.status] || item.status}</p>
+                ${item.status === 'rejected' && item.rejection_reason ? `<p class="text-xs text-red-500 mt-1">เหตุผล: ${item.rejection_reason}</p>` : ''}
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadOtHistory error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('otForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emp = window.currentUserProfile;
+            const workDate = document.getElementById('otWorkDate').value;
+            const start = document.getElementById('otStart').value || null;
+            const end = document.getElementById('otEnd').value || null;
+            const hours = parseFloat(document.getElementById('otHours').value);
+            const reason = document.getElementById('otReason').value.trim();
+            const attachmentInput = document.getElementById('otAttachmentFile');
+            const attachmentFile = attachmentInput ? attachmentInput.files[0] : null;
+            const btn = document.getElementById('otSubmitBtn');
+
+            if (!emp || !emp.emp_id || !emp.employee_id) { showToast('⚠️ ไม่พบข้อมูลพนักงานของคุณ'); return; }
+            if (!workDate) { showToast('⚠️ กรุณาเลือกวันที่ต้องการทำโอที'); return; }
+            if (!hours || hours <= 0) { showToast('⚠️ กรุณาระบุจำนวนชั่วโมงที่ขอ'); return; }
+            if (!reason) { showToast('⚠️ กรุณาระบุเหตุผล'); return; }
+
+            btn.disabled = true; btn.classList.add('opacity-50');
+            try {
+                let attachmentUrl = null;
+                if (attachmentFile) {
+                    const fileName = `${emp.emp_id}/${Date.now()}_${attachmentFile.name}`;
+                    attachmentUrl = await window.EmployeeSelfService.uploadOtAttachment(attachmentFile, fileName);
+                }
+                await window.EmployeeSelfService.createOtRequest({
+                    empId: emp.emp_id,
+                    employeeId: emp.employee_id,
+                    companyId: emp.company_id,
+                    workDate,
+                    requestedStart: start,
+                    requestedEnd: end,
+                    requestedHours: hours,
+                    reason,
+                    attachmentUrl
+                });
+                showToast('✅ ส่งคำขอโอทีสำเร็จ รอการอนุมัติ');
+                form.reset();
+                await loadOtHistory();
+            } catch (err) {
+                console.error('createOtRequest error', err);
+                showToast('❌ ส่งคำขอไม่สำเร็จ: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-50');
+            }
+        });
+    }
+});
+
+// ============================================================
+// 📋 กล่องอนุมัติสำหรับหัวหน้างาน (เฉพาะ role supervisor เห็นปุ่มนี้)
+// รวม 2 ประเภทคำขอ: แก้ไขเวลา (attendance_correction_requests) + ขอโอที (ot_requests)
+// แยกด้วย field "type" ในตัวแปร list ฝั่ง client เพื่อ route ไปเรียก approve/reject ให้ถูกฟังก์ชัน
+// ============================================================
+async function getMergedApprovalInbox(userProfileId) {
+    const [corrections, otItems] = await Promise.all([
+        window.EmployeeSelfService.getPendingApprovalsForSupervisor(userProfileId),
+        window.EmployeeSelfService.getPendingOtApprovalsForSupervisor(userProfileId)
+    ]);
+    const tagged = [
+        ...(corrections || []).map(item => ({ ...item, _type: 'correction' })),
+        ...(otItems || []).map(item => ({ ...item, _type: 'ot' }))
+    ];
+    tagged.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    return tagged;
+}
+
 async function refreshApprovalInboxTeaser() {
     const emp = window.currentUserProfile;
     const teaserEl = document.getElementById('approvalInboxTeaser');
     if (!emp || !teaserEl) return;
     try {
-        const list = await window.EmployeeSelfService.getPendingApprovalsForSupervisor(emp.id);
+        const list = await getMergedApprovalInbox(emp.id);
         teaserEl.textContent = (list && list.length > 0) ? `🔔 มี ${list.length} คำขอรออนุมัติ` : '';
     } catch (err) {
         console.error('refreshApprovalInboxTeaser error', err);
@@ -1243,33 +1504,52 @@ async function loadApprovalInbox() {
     if (!listEl || !emp) return;
     listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
     try {
-        const list = await window.EmployeeSelfService.getPendingApprovalsForSupervisor(emp.id);
+        const list = await getMergedApprovalInbox(emp.id);
         if (!list || list.length === 0) {
             listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ไม่มีคำขอรออนุมัติในขณะนี้</p>';
             return;
         }
-        listEl.innerHTML = list.map(item => `
+        listEl.innerHTML = list.map(item => {
+            if (item._type === 'ot') {
+                return `
+            <div class="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                <p class="text-sm font-bold text-kcdark">⏱️ ${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
+                <p class="text-xs text-slate-500 mt-0.5">วันที่ ${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} — ขอโอที ${item.requested_hours} ชม. (${item.requested_start || '--:--'} ถึง ${item.requested_end || '--:--'})</p>
+                <p class="text-xs text-slate-600 mt-1">เหตุผล: ${item.reason}</p>
+                ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูหลักฐาน</a>` : ''}
+                ${item.requires_admin_review ? `<p class="text-[11px] font-bold text-amber-600 mt-1">⚠️ ยอด OT สะสมจะเกินเพดาน - หลังคุณอนุมัติ ต้องรอแอดมิน/payroll ตรวจสอบเพิ่มอีกชั้น</p>` : ''}
+                <div class="flex gap-2 mt-3">
+                    <button onclick="approveInboxItem('${item.id}', 'ot')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
+                    <button onclick="rejectInboxItem('${item.id}', 'ot')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
+                </div>
+            </div>`;
+            }
+            return `
             <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p class="text-sm font-bold text-kcdark">${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
+                <p class="text-sm font-bold text-kcdark">✏️ ${item.employees?.full_name || item.emp_id} (${item.employees?.emp_id || item.emp_id})</p>
                 <p class="text-xs text-slate-500 mt-0.5">วันที่ ${new Date(item.work_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })} — ขอเป็น ${item.requested_check_in || '--:--'} ถึง ${item.requested_check_out || '--:--'}</p>
                 <p class="text-xs text-slate-600 mt-1">เหตุผล: ${item.reason}</p>
                 ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-xs font-bold text-kcblue hover:underline">📎 ดูหลักฐาน</a>` : ''}
                 <div class="flex gap-2 mt-3">
-                    <button onclick="approveInboxItem('${item.id}')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
-                    <button onclick="rejectInboxItem('${item.id}')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
+                    <button onclick="approveInboxItem('${item.id}', 'correction')" class="bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold hover:bg-emerald-700 border-0 cursor-pointer rounded-full">✅ อนุมัติ</button>
+                    <button onclick="rejectInboxItem('${item.id}', 'correction')" class="bg-red-500 text-white px-3 py-1.5 text-xs font-bold hover:bg-red-600 border-0 cursor-pointer rounded-full">❌ ไม่อนุมัติ</button>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     } catch (err) {
         console.error('loadApprovalInbox error', err);
         listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
     }
 }
 
-async function approveInboxItem(id) {
-    if (!confirm('ยืนยันอนุมัติคำขอแก้ไขเวลานี้?')) return;
+async function approveInboxItem(id, type) {
+    if (!confirm('ยืนยันอนุมัติคำขอนี้?')) return;
     try {
-        await window.EmployeeSelfService.approveCorrectionRequest(id);
+        if (type === 'ot') {
+            await window.EmployeeSelfService.approveOtRequest(id, window.currentUserProfile?.id);
+        } else {
+            await window.EmployeeSelfService.approveCorrectionRequest(id);
+        }
         showToast('✅ อนุมัติคำขอสำเร็จ');
         await loadApprovalInbox();
         await refreshApprovalInboxTeaser();
@@ -1279,15 +1559,120 @@ async function approveInboxItem(id) {
     }
 }
 
-async function rejectInboxItem(id) {
+async function rejectInboxItem(id, type) {
     const reason = prompt('ระบุเหตุผลที่ไม่อนุมัติ (ถ้ามี):') || '';
     try {
-        await window.EmployeeSelfService.rejectCorrectionRequest(id, reason);
+        if (type === 'ot') {
+            await window.EmployeeSelfService.rejectOtRequest(id, reason);
+        } else {
+            await window.EmployeeSelfService.rejectCorrectionRequest(id, reason);
+        }
         showToast('✅ บันทึกการไม่อนุมัติสำเร็จ');
         await loadApprovalInbox();
         await refreshApprovalInboxTeaser();
     } catch (err) {
         console.error('rejectInboxItem error', err);
+        showToast('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
+    }
+}
+
+// ============================================================
+// 🔔 การแจ้งเตือน (notifications) - อ่านผ่าน database/21_notifications.sql
+// สร้างอัตโนมัติด้วย trigger ฝั่ง DB ทุกครั้งที่มีคำขอ OT/ลา/แก้ไขเวลาใหม่ หรือเปลี่ยนสถานะ
+// (email/line dispatch ยังไม่ได้เชื่อมต่อจริง - เป็น in-app เท่านั้นตอนนี้)
+// ============================================================
+const notificationCategoryIcon = {
+    ot_request_pending: '⏱️', ot_request_escalated: '⚠️', ot_request_approved: '✅', ot_request_rejected: '❌',
+    correction_request_pending: '✏️', correction_request_approved: '✅', correction_request_rejected: '❌',
+    leave_request_pending: '🏖️', leave_request_approved: '✅', leave_request_rejected: '❌'
+};
+
+async function refreshNotificationBadge() {
+    const emp = window.currentUserProfile;
+    const badgeEl = document.getElementById('notifUnreadBadge');
+    if (!emp || !badgeEl) return;
+    try {
+        const count = await window.EmployeeSelfService.getUnreadNotificationCount(emp.id);
+        if (count > 0) {
+            badgeEl.textContent = count > 99 ? '99+' : String(count);
+            badgeEl.classList.remove('hidden');
+        } else {
+            badgeEl.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error('refreshNotificationBadge error', err);
+    }
+}
+
+function openNotificationsModal() {
+    const modal = document.getElementById('notificationsModal');
+    if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    loadNotificationsList();
+}
+function closeNotificationsModal() {
+    const modal = document.getElementById('notificationsModal');
+    if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+function timeAgoTh(dateStr) {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'เมื่อสักครู่';
+    if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} ชม.ที่แล้ว`;
+    return `${Math.floor(diffHr / 24)} วันที่แล้ว`;
+}
+
+async function loadNotificationsList() {
+    const listEl = document.getElementById('notificationsList');
+    const emp = window.currentUserProfile;
+    if (!listEl || !emp) return;
+    listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">กำลังโหลดข้อมูล...</p>';
+    try {
+        const list = await window.EmployeeSelfService.getMyNotifications(emp.id, { limit: 30 });
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-slate-400 text-sm py-6">ยังไม่มีการแจ้งเตือน</p>';
+            return;
+        }
+        listEl.innerHTML = list.map(item => `
+            <div onclick="markNotificationReadUI('${item.id}')" class="rounded-2xl border ${item.is_read ? 'border-[#e6edf7] bg-white' : 'border-kcblue/30 bg-[#eef5ff]'} p-4 cursor-pointer transition-colors">
+                <div class="flex items-start gap-3">
+                    <span class="text-xl shrink-0">${notificationCategoryIcon[item.category] || '🔔'}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-bold ${item.is_read ? 'text-slate-600' : 'text-kcdark'}">${item.title}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${item.body || ''}</p>
+                        <p class="text-[11px] text-slate-400 mt-1">${timeAgoTh(item.created_at)}</p>
+                    </div>
+                    ${!item.is_read ? '<span class="w-2.5 h-2.5 rounded-full bg-kcblue shrink-0 mt-1"></span>' : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('loadNotificationsList error', err);
+        listEl.innerHTML = '<p class="text-center text-red-500 text-sm py-6">โหลดข้อมูลไม่สำเร็จ</p>';
+    }
+}
+
+async function markNotificationReadUI(id) {
+    try {
+        await window.EmployeeSelfService.markNotificationRead(id);
+        await loadNotificationsList();
+        await refreshNotificationBadge();
+    } catch (err) {
+        console.error('markNotificationReadUI error', err);
+    }
+}
+
+async function markAllNotificationsReadUI() {
+    const emp = window.currentUserProfile;
+    if (!emp) return;
+    try {
+        await window.EmployeeSelfService.markAllNotificationsRead(emp.id);
+        await loadNotificationsList();
+        await refreshNotificationBadge();
+    } catch (err) {
+        console.error('markAllNotificationsReadUI error', err);
         showToast('❌ ดำเนินการไม่สำเร็จ: ' + err.message);
     }
 }
