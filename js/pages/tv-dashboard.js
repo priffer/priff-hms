@@ -205,11 +205,11 @@ async function loadRecentFeed() {
     try {
         const { data, error } = await supabaseClient
             .from('attendance_logs')
-            .select(\`
+            .select(`
                 id, work_date, check_in, is_late, created_at, emp_id,
                 employees(full_name),
                 clients(client_name)
-            \`)
+            `)
             .order('created_at', { ascending: false })
             .limit(10);
             
@@ -242,23 +242,23 @@ function addFeedItem(record, highlight = true) {
     const statusIcon = isLate ? '⚠️ สาย' : '✅ เข้างาน';
 
     const div = document.createElement('div');
-    div.className = \`p-3 rounded-xl border \${statusColor} flex justify-between items-center transition-all duration-500 transform translate-x-0 opacity-100\`;
+    div.className = `p-3 rounded-xl border ${statusColor} flex justify-between items-center transition-all duration-500 transform translate-x-0 opacity-100`;
     if (highlight) {
         div.classList.add('-translate-x-full', 'opacity-0'); // start state for anim
     }
     
-    div.innerHTML = \`
+    div.innerHTML = `
         <div class="flex items-center gap-3 overflow-hidden">
-            <div class="text-sm font-bold opacity-80 shrink-0 w-12">\${timeStr}</div>
+            <div class="text-sm font-bold opacity-80 shrink-0 w-12">${timeStr}</div>
             <div class="truncate">
-                <div class="font-bold text-slate-200 truncate">\${empName}</div>
-                <div class="text-xs opacity-70 truncate">\${clientName}</div>
+                <div class="font-bold text-slate-200 truncate">${empName}</div>
+                <div class="text-xs opacity-70 truncate">${clientName}</div>
             </div>
         </div>
         <div class="text-xs font-bold px-2 py-1 rounded-lg bg-black/20 shrink-0">
-            \${statusIcon}
+            ${statusIcon}
         </div>
-    \`;
+    `;
 
     // Add to top
     if (list.firstChild) {
@@ -272,7 +272,7 @@ function addFeedItem(record, highlight = true) {
         requestAnimationFrame(() => {
             div.classList.remove('-translate-x-full', 'opacity-0');
         });
-        showToast(\`พนักงานใหม่เช็คอิน: \${empName}\`);
+        showToast(`พนักงานใหม่เช็คอิน: ${empName}`);
     }
 
     // Keep max 10 items
