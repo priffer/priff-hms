@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-kcblue: #0B2B5E;
-  --color-kcyellow: #FFD600;
+  --color-kcblue: #165DFF;
+  --color-kcdark: #0F2B73;
+  --color-kclight: #EEF5FF;
+  --color-kcyellow: #FFC72C;
+  --color-kcsoft: #F7FAFF;
+  --color-kcborder: #E6EDF7;
   --font-sarabun: "Sarabun", sans-serif;
 }
 
 @layer base {
-  /* กฎเหล็ก: ทรงเหลี่ยม 100% ทั่วทั้งโปรเจกต์ */
-  * {
-    border-radius: 0px !important;
-  }
   body {
-    @apply font-sarabun bg-gray-50 text-gray-800;
+    @apply font-sarabun bg-[#f7faff] text-slate-800;
   }
 }
