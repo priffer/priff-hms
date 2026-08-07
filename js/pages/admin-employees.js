@@ -36,11 +36,11 @@ function switchEmpMainTab(tabName) {
         viewDir.classList.remove('hidden');
         viewDept.classList.add('hidden');
         btnDir.className = 'px-6 py-2 font-bold border tab-active cursor-pointer transition-colors';
-        btnDept.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-gray-200';
+        btnDept.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-kclight';
     } else {
         viewDir.classList.add('hidden');
         viewDept.classList.remove('hidden');
-        btnDir.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-gray-200';
+        btnDir.className = 'px-6 py-2 font-bold border tab-inactive cursor-pointer transition-colors hover:bg-kclight';
         btnDept.className = 'px-6 py-2 font-bold border tab-active cursor-pointer transition-colors';
         
         loadDepartments();
@@ -58,7 +58,7 @@ async function loadDepartments() {
         container.innerHTML = '';
         
         if (!depts || depts.length === 0) {
-            container.innerHTML = '<p class="col-span-full text-center text-gray-500 bg-gray-50 p-6 border border-gray-200">ยังไม่มีข้อมูลแผนกในระบบ</p>';
+            container.innerHTML = '<p class="col-span-full text-center text-slate-500 bg-kcsoft p-6 border border-[#e6edf7]">ยังไม่มีข้อมูลแผนกในระบบ</p>';
             return;
         }
 
@@ -77,18 +77,18 @@ async function loadDepartments() {
             }
 
             container.innerHTML += `
-                <div class="border ${dept.is_active ? 'border-kcblue' : 'border-gray-300 bg-gray-50 opacity-80'} p-5 relative shadow-none flex flex-col h-full">
+                <div class="rounded-2xl border ${dept.is_active ? 'border-kcblue' : 'border-[#e6edf7] bg-kcsoft opacity-80'} p-5 relative shadow-[0_10px_25px_rgba(15,43,115,0.06)] flex flex-col h-full">
                     <div class="flex justify-between items-start mb-2">
-                        <span class="bg-gray-800 text-white text-xs font-bold px-2 py-1 tracking-wider">${dept.department_code}</span>
+                        <span class="bg-kcdark text-white text-xs font-bold px-2 py-1 rounded-lg tracking-wider">${dept.department_code}</span>
                         ${statusBadge}
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 leading-tight mb-1">${dept.department_name}</h3>
-                    <p class="text-sm text-gray-500 mb-4 line-clamp-2 min-h-10">${dept.description || '-'}</p>
+                    <h3 class="text-lg font-bold text-kcdark leading-tight mb-1">${dept.department_name}</h3>
+                    <p class="text-sm text-slate-500 mb-4 line-clamp-2 min-h-10">${dept.description || '-'}</p>
                     
-                    <div class="mt-auto border-t border-gray-200 pt-3 flex justify-between items-end">
+                    <div class="mt-auto border-t border-[#e6edf7] pt-3 flex justify-between items-end">
                         <div>
-                            <p class="text-xs text-gray-500 font-bold mb-1">จำนวนคนปัจจุบัน</p>
-                            <p class="text-3xl font-bold ${dept.headcount > 0 ? 'text-kcblue' : 'text-gray-400'}">${dept.headcount} <span class="text-sm font-normal text-gray-600">คน</span></p>
+                            <p class="text-xs text-slate-500 font-bold mb-1">จำนวนคนปัจจุบัน</p>
+                            <p class="text-3xl font-bold ${dept.headcount > 0 ? 'text-kcblue' : 'text-slate-400'}">${dept.headcount} <span class="text-sm font-normal text-slate-600">คน</span></p>
                         </div>
                         <div class="text-right flex items-center justify-end">
                             ${btnToggle}
