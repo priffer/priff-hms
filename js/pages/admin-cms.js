@@ -17,7 +17,7 @@ async function loadCmsSettings() {
             if (currentLogoUrl) {
                 document.getElementById('logoPreview').innerHTML = `<img src="${currentLogoUrl}?v=${Date.now()}" class="w-full h-full object-contain">`;
             } else {
-                document.getElementById('logoPreview').innerHTML = `<span class="text-[10px] text-gray-400 font-bold">No Logo</span>`;
+                document.getElementById('logoPreview').innerHTML = `<span class="text-[10px] text-slate-400 font-bold px-1 text-center">ยังไม่มีโลโก้</span>`;
             }
             
             const welfares = data.welfares || [];
@@ -35,10 +35,11 @@ async function loadCmsSettings() {
 function addWelfareInput(value = '') {
     const container = document.getElementById('welfareContainer');
     const div = document.createElement('div');
-    div.className = 'flex gap-2';
+    div.className = 'flex gap-2 items-center';
     div.innerHTML = `
-        <input type="text" value="${value}" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue welfare-item text-sm">
-        <button onclick="this.parentElement.remove()" class="bg-red-100 text-red-600 border border-red-300 px-3 font-bold hover:bg-red-600 hover:text-white transition-colors cursor-pointer">X</button>
+        <span class="shrink-0 text-base">🎁</span>
+        <input type="text" value="${value}" class="w-full rounded-xl border border-[#e6edf7] p-2.5 outline-none focus:border-kcblue focus:ring-4 focus:ring-[#eef5ff] welfare-item text-sm bg-white transition-all">
+        <button onclick="this.parentElement.remove()" class="shrink-0 rounded-xl bg-red-50 text-red-600 border border-red-100 w-9 h-9 font-bold hover:bg-red-600 hover:text-white transition-colors cursor-pointer">✕</button>
     `;
     container.appendChild(div);
 }
@@ -82,6 +83,8 @@ async function saveCmsSettings() {
         await CmsService.saveSettings(payload);
         
         document.getElementById('cmsLogo').value = '';
+        const fileNameEl = document.getElementById('cmsLogoFileName');
+        if (fileNameEl) fileNameEl.textContent = 'ไม่ได้เลือกไฟล์ใหม่ (ใช้โลโก้เดิม)';
         alert('บันทึกข้อมูลหน้าเว็บสำเร็จ');
         loadCmsSettings();
     } catch (err) {
@@ -92,11 +95,13 @@ async function saveCmsSettings() {
     }
 }
 
-// Event Listener พรีวิวรูปภาพ
+// Event Listener พรีวิวรูปภาพ + แสดงชื่อไฟล์ที่เลือก
 document.getElementById('cmsLogo').addEventListener('change', function(e) {
     const file = e.target.files[0];
+    const fileNameEl = document.getElementById('cmsLogoFileName');
     if (file) {
         const objectUrl = URL.createObjectURL(file);
         document.getElementById('logoPreview').innerHTML = `<img src="${objectUrl}" class="w-full h-full object-contain">`;
+        if (fileNameEl) fileNameEl.textContent = file.name;
     }
 });

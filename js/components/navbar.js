@@ -1,10 +1,10 @@
 const ADMIN_NAV_LINKS = [
-    { href: 'dashboard.html', match: 'dashboard.html', label: 'จัดการผู้สมัครงาน', roles: ['admin', 'payroll'] },
-    { href: 'admin-employees.html', match: 'admin-employees.html', label: 'จัดการพนักงาน', roles: ['admin', 'payroll'] },
-    { href: 'admin-jobs.html', match: 'admin-jobs.html', label: 'จัดการเว็บและประกาศงาน', roles: ['admin', 'payroll'] },
-    { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'จัดการเวลาทำงาน (ESS)', roles: ['admin', 'payroll'] },
-    { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที & สวัสดิการ', roles: ['admin', 'payroll'] },
-    { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ & วันหยุด', roles: ['admin', 'payroll'] },
+    { href: 'dashboard.html', match: 'dashboard.html', label: 'ผู้สมัครงาน', icon: '📋', roles: ['admin', 'payroll'] },
+    { href: 'admin-employees.html', match: 'admin-employees.html', label: 'พนักงาน', icon: '👥', roles: ['admin', 'payroll'] },
+    { href: 'admin-jobs.html', match: 'admin-jobs.html', label: 'เว็บ/ประกาศงาน', icon: '📢', roles: ['admin', 'payroll'] },
+    { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'เวลาทำงาน', icon: '⏱️', roles: ['admin', 'payroll'] },
+    { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที/สวัสดิการ', icon: '🛡️', roles: ['admin', 'payroll'] },
+    { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ/วันหยุด', icon: '🗓️', roles: ['admin', 'payroll'] },
 ];
 
 const ROLE_LABELS = {
@@ -22,56 +22,60 @@ function renderGlobalNavbar() {
     const isActive = (match) => currentPath.includes(match) || (match === 'dashboard.html' && currentPath.endsWith('/'));
 
     const desktopLinks = ADMIN_NAV_LINKS.map(link => `
-        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'text-kcyellow' : 'text-white/80 hover:text-white'} font-bold text-base tracking-wide transition-colors whitespace-nowrap">${link.label}</a>
+        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'bg-white/15 text-white' : 'text-white/65 hover:text-white hover:bg-white/10'} flex items-center gap-1.5 font-bold text-sm tracking-wide transition-colors whitespace-nowrap px-3 py-2 rounded-xl"><span>${link.icon}</span><span>${link.label}</span></a>
     `).join('');
 
     const mobileLinks = ADMIN_NAV_LINKS.map(link => `
-        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'bg-kcyellow text-kcblue' : 'text-white hover:bg-white/10'} block font-bold text-base px-4 py-3 border-b border-white/10 transition-colors">${link.label}</a>
+        <a href="${link.href}" data-roles="${link.roles.join(',')}" class="${isActive(link.match) ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10'} flex items-center gap-2 font-bold text-base px-4 py-3 rounded-xl transition-colors"><span>${link.icon}</span><span>${link.label}</span></a>
     `).join('');
 
     const navbarHtml = `
-        <nav class="bg-kcblue text-white shadow-none border-b-4 border-kcyellow shrink-0 relative z-30">
-            <div class="max-w-7xl mx-auto flex justify-between items-center p-4 gap-4">
-                <div class="flex items-center gap-4 min-w-0">
-                    <h1 class="text-lg sm:text-xl font-bold uppercase tracking-tight shrink-0">PRIFF HMS | Admin</h1>
-                    <div class="hidden lg:flex gap-6 xl:gap-8 ml-2 border-l border-white/30 pl-6 overflow-x-auto">
-                        ${desktopLinks}
-                    </div>
+        <nav class="bg-kcdark text-white shadow-[0_4px_20px_rgba(15,43,115,0.15)] shrink-0 relative z-30">
+            <div class="max-w-7xl mx-auto flex justify-between items-center px-4 pt-3 pb-2 gap-4">
+                <div class="flex items-center gap-2 shrink-0">
+                    <div class="w-9 h-9 rounded-xl bg-kcblue text-white font-black flex items-center justify-center text-sm shadow-md">KC</div>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight shrink-0 hidden sm:block">PRIFF HMS <span class="text-white/50 font-bold">| Admin</span></h1>
                 </div>
 
-                <div class="hidden lg:flex items-center gap-4 shrink-0">
-                    <button id="adminNotifBellBtn" onclick="openAdminNotificationsModal()" class="relative w-9 h-9 border-2 border-white/60 hover:bg-white/10 flex items-center justify-center cursor-pointer transition-colors" aria-label="การแจ้งเตือน">
+                <div class="hidden lg:flex items-center gap-3 shrink-0">
+                    <button id="adminNotifBellBtn" onclick="openAdminNotificationsModal()" class="relative w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors" aria-label="การแจ้งเตือน">
                         <span class="text-base">🔔</span>
-                        <span id="adminNotifUnreadBadge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-kcblue">0</span>
+                        <span id="adminNotifUnreadBadge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 border-2 border-kcdark">0</span>
                     </button>
                     <div id="navProfileArea" class="text-right leading-tight">
                         <p id="navProfileName" class="font-bold text-sm">กำลังโหลด...</p>
-                        <p id="navProfileMeta" class="text-xs text-blue-200"></p>
+                        <p id="navProfileMeta" class="text-xs text-white/50 font-bold"></p>
                     </div>
-                    <button onclick="handleGlobalLogout()" class="border-2 border-white px-4 py-1 text-sm font-bold hover:bg-white hover:text-kcblue transition-colors cursor-pointer shrink-0">ออกจากระบบ</button>
+                    <button onclick="handleGlobalLogout()" class="rounded-xl bg-white/10 border border-white/20 px-4 py-2 text-sm font-bold hover:bg-white hover:text-kcdark transition-colors cursor-pointer shrink-0">ออกจากระบบ</button>
                 </div>
 
                 <div class="lg:hidden flex items-center gap-2 shrink-0">
-                    <button id="adminNotifBellBtnMobile" onclick="openAdminNotificationsModal()" class="relative w-10 h-10 border-2 border-white/60 flex items-center justify-center cursor-pointer" aria-label="การแจ้งเตือน">
+                    <button id="adminNotifBellBtnMobile" onclick="openAdminNotificationsModal()" class="relative w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center cursor-pointer" aria-label="การแจ้งเตือน">
                         <span class="text-base">🔔</span>
-                        <span id="adminNotifUnreadBadgeMobile" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-kcblue">0</span>
+                        <span id="adminNotifUnreadBadgeMobile" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 border-2 border-kcdark">0</span>
                     </button>
-                    <button id="navHamburgerBtn" onclick="toggleMobileNav()" aria-label="เปิดเมนู" class="shrink-0 border-2 border-white/60 w-10 h-10 flex items-center justify-center text-2xl leading-none cursor-pointer">
+                    <button id="navHamburgerBtn" onclick="toggleMobileNav()" aria-label="เปิดเมนู" class="shrink-0 rounded-xl bg-white/10 w-10 h-10 flex items-center justify-center text-2xl leading-none cursor-pointer">
                         <span id="navHamburgerIcon">☰</span>
                     </button>
                 </div>
             </div>
 
-            <div id="navMobilePanel" class="hidden lg:hidden bg-kcblue border-t border-white/20">
-                <div class="px-2 pt-2 pb-1">
+            <div class="hidden lg:block border-t border-white/10">
+                <div class="max-w-7xl mx-auto px-4 py-1.5 flex flex-wrap items-center gap-1">
+                    ${desktopLinks}
+                </div>
+            </div>
+
+            <div id="navMobilePanel" class="hidden lg:hidden bg-kcdark border-t border-white/10">
+                <div class="px-3 pt-3 pb-1 space-y-1">
                     ${mobileLinks}
                 </div>
-                <div class="px-4 py-4 border-t border-white/20 flex items-center justify-between gap-3">
+                <div class="px-4 py-4 border-t border-white/10 flex items-center justify-between gap-3">
                     <div class="leading-tight min-w-0">
                         <p id="navProfileNameMobile" class="font-bold text-sm truncate">กำลังโหลด...</p>
-                        <p id="navProfileMetaMobile" class="text-xs text-blue-200 truncate"></p>
+                        <p id="navProfileMetaMobile" class="text-xs text-white/50 font-bold truncate"></p>
                     </div>
-                    <button onclick="handleGlobalLogout()" class="border-2 border-white px-4 py-2 text-sm font-bold hover:bg-white hover:text-kcblue transition-colors cursor-pointer shrink-0">ออกจากระบบ</button>
+                    <button onclick="handleGlobalLogout()" class="rounded-xl bg-white/10 border border-white/20 px-4 py-2 text-sm font-bold hover:bg-white hover:text-kcdark transition-colors cursor-pointer shrink-0">ออกจากระบบ</button>
                 </div>
             </div>
         </nav>
@@ -158,17 +162,17 @@ function ensureAdminNotificationsModal() {
     div.id = 'adminNotificationsModal';
     div.className = 'hidden fixed inset-0 z-[60] bg-black/70 items-center justify-center p-4';
     div.innerHTML = `
-        <div class="bg-white w-full max-w-lg border-t-8 border-kcblue shadow-none flex flex-col max-h-[85vh]">
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
-                <h3 class="text-lg font-bold text-gray-900 uppercase tracking-wide">🔔 การแจ้งเตือน</h3>
+        <div class="bg-white w-full max-w-lg rounded-[2rem] border border-[#e6edf7] shadow-[0_16px_40px_rgba(15,43,115,0.15)] flex flex-col max-h-[85vh] overflow-hidden">
+            <div class="p-6 border-b border-[#e6edf7] flex justify-between items-center bg-kcsoft shrink-0">
+                <h3 class="text-lg font-extrabold text-kcdark tracking-wide">🔔 การแจ้งเตือน</h3>
                 <div class="flex items-center gap-3">
                     <button onclick="markAllAdminNotificationsReadUI()" class="text-xs font-bold text-kcblue hover:underline cursor-pointer">อ่านทั้งหมด</button>
-                    <button onclick="closeAdminNotificationsModal()" class="text-gray-400 hover:text-red-600 font-bold text-2xl transition-colors cursor-pointer leading-none">✕</button>
+                    <button onclick="closeAdminNotificationsModal()" class="text-slate-400 hover:text-red-600 font-bold text-2xl transition-colors cursor-pointer leading-none">✕</button>
                 </div>
             </div>
             <div class="p-6 overflow-y-auto grow">
                 <div id="adminNotificationsList" class="space-y-3">
-                    <p class="text-center text-gray-400 text-sm py-6">กำลังโหลดข้อมูล...</p>
+                    <p class="text-center text-slate-400 text-sm py-6 font-bold">กำลังโหลดข้อมูล...</p>
                 </div>
             </div>
         </div>
@@ -237,13 +241,13 @@ async function loadAdminNotificationsList() {
             return;
         }
         listEl.innerHTML = data.map(item => `
-            <div onclick="markAdminNotificationReadUI('${item.id}')" class="border ${item.is_read ? 'border-gray-200 bg-white' : 'border-kcblue bg-blue-50'} p-3 cursor-pointer transition-colors">
+            <div onclick="markAdminNotificationReadUI('${item.id}')" class="rounded-2xl border ${item.is_read ? 'border-[#e6edf7] bg-white' : 'border-kcblue bg-kclight'} p-4 cursor-pointer transition-colors">
                 <div class="flex items-start gap-3">
                     <span class="text-xl shrink-0">${adminNotificationCategoryIcon[item.category] || '🔔'}</span>
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm font-bold ${item.is_read ? 'text-gray-600' : 'text-gray-900'}">${item.title}</p>
-                        <p class="text-xs text-gray-500 mt-0.5">${item.body || ''}</p>
-                        <p class="text-[11px] text-gray-400 mt-1">${adminTimeAgoTh(item.created_at)}</p>
+                        <p class="text-sm font-bold ${item.is_read ? 'text-slate-500' : 'text-kcdark'}">${item.title}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${item.body || ''}</p>
+                        <p class="text-[11px] text-slate-400 mt-1 font-bold">${adminTimeAgoTh(item.created_at)}</p>
                     </div>
                     ${!item.is_read ? '<span class="w-2.5 h-2.5 rounded-full bg-kcblue shrink-0 mt-1"></span>' : ''}
                 </div>
