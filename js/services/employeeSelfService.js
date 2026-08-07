@@ -603,6 +603,14 @@ const EmployeeSelfService = {
         if (error) throw error;
     },
 
+    async deleteAllNotifications(profileId) {
+        const { error } = await supabaseClient
+            .from('notifications')
+            .delete()
+            .eq('recipient_user_profile_id', profileId);
+        if (error) throw error;
+    },
+
     // ---------- สิทธิสวัสดิการของฉัน (database/18_employee_benefits_profile.sql) ----------
     // ดึงข้อมูลค่าจ้าง/ประกันสังคม/ภาษี (จาก employees ที่ employee เห็นได้อยู่แล้วผ่าน RLS เดิม)
     // รวมกับรายการสวัสดิการที่ผูกไว้ (employee_benefit_assignments) ในเรียกเดียว

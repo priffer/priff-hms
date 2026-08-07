@@ -314,6 +314,22 @@ async function viewEmployeeDetails(id) {
                                             </select>
                                         </div>
                                         <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">ประเภทการจ้างงาน * <span class="font-normal text-slate-400">(กระทบประกันสังคม/ภาษี)</span></label>
+                                            <select id="employmentTypeSelect" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                                <option value="regular" ${(emp.employment_type ?? 'regular') === 'regular' ? 'selected' : ''}>พนักงานประจำ (มีสัญญาจ้าง+ประกันสังคม)</option>
+                                                <option value="freelance" ${emp.employment_type === 'freelance' ? 'selected' : ''}>ฟรีแลนซ์/จ็อบพิเศษ (ไม่มีประกันสังคม หัก ณ ที่จ่าย 3%)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">รอบการจ่ายเงิน * <span class="font-normal text-slate-400">(ใช้จัดเข้ารอบ Payroll ที่ถูกต้อง)</span></label>
+                                            <select id="payFrequencySelect" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                                <option value="">-- เลือกรอบการจ่าย --</option>
+                                                <option value="monthly" ${emp.pay_frequency === 'monthly' ? 'selected' : ''}>รายเดือน (จ่ายเดือนละครั้ง วันที่ 25)</option>
+                                                <option value="semimonthly" ${emp.pay_frequency === 'semimonthly' ? 'selected' : ''}>กึ่งเดือน (จ่าย 2 ครั้ง/เดือน วันที่ 1 และ 16)</option>
+                                                <option value="daily" ${emp.pay_frequency === 'daily' ? 'selected' : ''}>รายวัน (จ่ายทุกวัน ไม่เกิน 24 ชม.)</option>
+                                            </select>
+                                        </div>
+                                        <div>
                                             <label class="block text-xs font-bold text-slate-600 mb-1">เงินเดือน (บาท/เดือน)</label>
                                             <input type="number" id="monthlySalaryInput" value="${emp.monthly_salary ?? ''}" min="0" step="0.01" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
                                         </div>
@@ -335,6 +351,13 @@ async function viewEmployeeDetails(id) {
                                         </div>
                                     </div>
                                     <button onclick="saveSalaryConfig('${emp.id}')" class="mt-3 bg-orange-600 text-white px-4 py-2 text-sm font-bold hover:bg-orange-700 rounded-xl border-0 cursor-pointer">บันทึกค่าจ้าง/เงินเดือน</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-lg text-purple-800 border-b border-[#e6edf7] pb-2 mb-4">🌙 กะดึกและค่ากะพิเศษ</h3>
+                                <div class="bg-purple-50/50 p-4 border border-purple-200 max-w-2xl border-dashed">
+                                    <p class="text-xs text-slate-500">ถ้ากะการทำงาน (ด้านบน) เป็นกะที่ข้ามเที่ยงคืน (เช่น 22:00-06:00) ระบบ Payroll Engine จะคำนวณค่ากะดึกเพิ่มให้อัตโนมัติทุกวันที่มาทำงานจริงในกะนั้น ไม่ต้องตั้งค่าอะไรเพิ่มที่นี่ (อัตราปรับได้ที่หน้า "เงินเดือน (Payroll) → อัตรา/เพดาน")</p>
                                 </div>
                             </div>
 

@@ -87,7 +87,7 @@ async function loadPayrollPeriods() {
             return `
             <tr class="border-t border-[#e6edf7]">
                 <td class="p-3 font-bold">${fmtDate(p.period_start)} - ${fmtDate(p.period_end)}</td>
-                <td class="p-3">${p.period_type === 'monthly' ? 'รายเดือน' : 'รายวัน'}</td>
+                <td class="p-3">${periodTypeLabel[p.period_type] || p.period_type}</td>
                 <td class="p-3">${fmtDate(p.pay_date)}</td>
                 <td class="p-3 text-center">${periodStatusLabel[p.status] || p.status}</td>
                 <td class="p-3">${runInfo}</td>
@@ -104,49 +104,20 @@ async function loadPayrollPeriods() {
     }
 }
 
-function openCreatePeriodModal() {
-    document.getElementById('newPeriodType').value = 'monthly';
-    document.getElementById('newPeriodStart').value = '';
-    document.getElementById('newPeriodEnd').value = '';
-    document.getElementById('newPeriodPayDate').value = '';
-    document.getElementById('createPeriodModal').classList.remove('hidden');
-    document.getElementById('createPeriodModal').classList.add('flex');
-}
-function closeCreatePeriodModal() {
-    document.getElementById('createPeriodModal').classList.add('hidden');
-    document.getElementById('createPeriodModal').classList.remove('flex');
-}
+const periodTypeLabel = { monthly: 'รายเดือน', semimonthly: 'กึ่งเดือน', daily: 'รายวัน' };
 
-async function confirmCreatePeriod() {
-    const period_type = document.getElementById('newPeriodType').value;
-    const period_start = document.getElementById('newPeriodStart').value;
-    const period_end = document.getElementById('newPeriodEnd').value;
-    const pay_date = document.getElementById('newPeriodPayDate').value || null;
-
-    if (!period_start || !period_end) {
-        alert('กรุณากรอกวันเริ่มงวดและวันสิ้นงวด');
-        return;
-    }
-    if (period_end < period_start) {
-        alert('วันสิ้นงวดต้องไม่ก่อนวันเริ่มงวด');
-        return;
-    }
-
+async function generateNextPeriod(periodType) {
+    const label = periodTypeLabel[periodType] || periodType;
+    if (!confirm(`ยืนยันสร้างงวด "${label}" ถัดไปให้อัตโนมัติตามกฎที่ตั้งไว้?`)) return;
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
-        const { error } = await supabaseClient
-            .from('payroll_periods')
-            .insert({
-                company_id: COMPANY_ID,
-                period_type,
-                period_start,
-                period_end,
-                pay_date,
-                status: 'open',
-                created_by: user ? user.id : null,
-            });
+        const { data, error } = await supabaseClient.rpc('fn_generate_next_payroll_period', {
+            p_company_id: COMPANY_ID,
+            p_period_type: periodType,
+            p_created_by: user ? user.id : null,
+        });
         if (error) throw error;
-        closeCreatePeriodModal();
+        alert(`สร้างงวด "${label}" สำเร็จ`);
         loadPayrollPeriods();
     } catch (err) {
         alert('เกิดข้อผิดพลาด: ' + err.message);
@@ -398,7 +369,10 @@ const rateTypeLabel = {
     ot_3: 'OT 3.0x (วันนักขัตฤกษ์)',
     social_security_employee: 'ประกันสังคม (ฝั่งพนักงาน)',
     social_security_employer: 'ประกันสังคม (ฝั่งนายจ้าง)',
+    freelance_withholding_tax: 'หัก ณ ที่จ่าย ฟรีแลนซ์/จ็อบพิเศษ (คงที่)',
+    night_shift_differential: 'ค่ากะดึก (% เพิ่มจากค่าแรง/วันฐาน)',
 };
+const percentRateTypes = ['social_security_employee', 'social_security_employer', 'freelance_withholding_tax', 'night_shift_differential'];
 
 async function loadPayrollRates() {
     const tbody = document.getElementById('ratesTableBody');
@@ -428,7 +402,7 @@ async function loadPayrollRates() {
         tbody.innerHTML = rows.map(r => `
             <tr class="border-t border-[#e6edf7]">
                 <td class="p-3 font-bold">${rateTypeLabel[r.rate_type] || r.rate_type}</td>
-                <td class="p-3 text-right">${r.rate_type.startsWith('social_security') ? (Number(r.rate_value) * 100).toFixed(2) + '%' : Number(r.rate_value).toFixed(2) + 'x'}</td>
+                <td class="p-3 text-right">${percentRateTypes.includes(r.rate_type) ? (Number(r.rate_value) * 100).toFixed(2) + '%' : Number(r.rate_value).toFixed(2) + 'x'}</td>
                 <td class="p-3 text-right">${r.social_security_max_cap != null ? fmtMoney(r.social_security_max_cap) + ' บาท' : '-'}</td>
                 <td class="p-3">${fmtDate(r.effective_from)}</td>
                 <td class="p-3 text-center">

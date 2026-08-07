@@ -183,12 +183,15 @@ async function updateEmployeeStatus(id) {
 }
 
 // บันทึกค่าจ้าง/เงินเดือนของพนักงาน (salary_type/monthly_salary/daily_rate/hourly_rate/
-// standard_monthly_hours/standard_working_hours) - ใช้เป็นฐานคำนวณยอดประมาณการเบิกล่วงหน้า
-// (database/22_advance_payment_estimate_summary.sql, 23_advance_payment_admin_tools.sql)
+// standard_monthly_hours/standard_working_hours/employment_type) - ใช้เป็นฐานคำนวณยอดประมาณการ
+// เบิกล่วงหน้า (database/22_advance_payment_estimate_summary.sql, 23_advance_payment_admin_tools.sql)
+// และเป็นฐานคำนวณ Payroll Engine จริง (employment_type กระทบประกันสังคม/ภาษี - database/31)
 async function saveSalaryConfig(id) {
     const salaryType = document.getElementById('salaryTypeSelect').value;
     if (!salaryType) { alert('กรุณาเลือกประเภทค่าจ้างก่อนบันทึก'); return; }
 
+    const employmentType = document.getElementById('employmentTypeSelect').value;
+    const payFrequency = document.getElementById('payFrequencySelect').value;
     const monthlySalary = document.getElementById('monthlySalaryInput').value;
     const dailyRate = document.getElementById('dailyRateInput').value;
     const hourlyRate = document.getElementById('hourlyRateInput').value;
@@ -198,6 +201,8 @@ async function saveSalaryConfig(id) {
     try {
         await CandidateService.updateCandidateData(id, {
             salary_type: salaryType,
+            employment_type: employmentType || 'regular',
+            pay_frequency: payFrequency || null,
             monthly_salary: monthlySalary ? Number(monthlySalary) : null,
             daily_rate: dailyRate ? Number(dailyRate) : null,
             hourly_rate: hourlyRate ? Number(hourlyRate) : null,
