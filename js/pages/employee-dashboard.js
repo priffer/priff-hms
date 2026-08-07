@@ -391,6 +391,7 @@ async function openAdvanceModal() {
 
 // โหลดยอดสะสมประมาณการ (วันทำงาน/OT/ลา/สาย/ยอดเบิกได้) - ตัวเลขประมาณการเท่านั้น
 // ไม่ใช่ยอดจริงจาก Payroll Engine (database/22_advance_payment_estimate_summary.sql)
+let advanceAvailableToRequestCache = null; // ใช้เตือนพนักงานทันทีตอนกรอกจำนวนเงิน (client-side, ไม่บล็อกการส่ง)
 async function loadAdvanceSummary() {
     const loadingEl = document.getElementById('advanceSummaryLoading');
     const contentEl = document.getElementById('advanceSummaryContent');
@@ -399,6 +400,7 @@ async function loadAdvanceSummary() {
     loadingEl.classList.remove('hidden');
     contentEl.classList.add('hidden');
     noSalaryEl.classList.add('hidden');
+    advanceAvailableToRequestCache = null;
     try {
         const s = await window.EmployeeSelfService.getAdvancePaymentEstimateSummary();
         loadingEl.classList.add('hidden');
@@ -416,6 +418,7 @@ async function loadAdvanceSummary() {
             document.getElementById('sumEstimatedEarned').textContent = `฿${Number(s.estimated_earned_total).toLocaleString()}`;
             document.getElementById('sumAvailable').textContent = `฿${Number(s.available_to_request).toLocaleString()}`;
             contentEl.classList.remove('hidden');
+            advanceAvailableToRequestCache = Number(s.available_to_request);
         } else {
             // ยังไม่มีข้อมูลเงินเดือนในระบบ - โชว์เฉพาะกล่องที่ไม่ใช่ตัวเลขเงิน
             document.getElementById('sumEstimatedEarned').textContent = 'ไม่มีข้อมูล';
@@ -423,11 +426,27 @@ async function loadAdvanceSummary() {
             contentEl.classList.remove('hidden');
             noSalaryEl.classList.remove('hidden');
         }
+        checkAdvanceAmountAgainstCap();
     } catch (err) {
         console.error('loadAdvanceSummary error', err);
         loadingEl.classList.add('hidden');
         noSalaryEl.textContent = 'ℹ️ ไม่สามารถโหลดข้อมูลสรุปได้ในขณะนี้';
         noSalaryEl.classList.remove('hidden');
+    }
+}
+
+// เตือนพนักงานทันทีตอนกรอกจำนวนเงินเกินยอดแนะนำ (soft warning - ไม่บล็อกการส่งคำขอ
+// admin ยังเป็นคนตัดสินใจสุดท้ายเสมอ - ดู database/23_advance_payment_admin_tools.sql)
+function checkAdvanceAmountAgainstCap() {
+    const amountInput = document.getElementById('advanceAmount');
+    const warningEl = document.getElementById('advanceCapWarning');
+    if (!amountInput || !warningEl) return;
+    const amount = Number(amountInput.value);
+    if (advanceAvailableToRequestCache !== null && amount > 0 && amount > advanceAvailableToRequestCache) {
+        warningEl.textContent = `⚠️ จำนวนเงินนี้เกินยอดเบิกได้สูงสุดที่แนะนำ (฿${advanceAvailableToRequestCache.toLocaleString()}) - ยังส่งคำขอได้ตามปกติ แต่แอดมินจะได้รับแจ้งเตือนพิเศษให้ตรวจสอบก่อนอนุมัติ`;
+        warningEl.classList.remove('hidden');
+    } else {
+        warningEl.classList.add('hidden');
     }
 }
 function closeAdvanceModal() {
@@ -469,6 +488,8 @@ async function loadAdvanceHistory() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('advanceForm');
+    const amountInputEl = document.getElementById('advanceAmount');
+    if (amountInputEl) amountInputEl.addEventListener('input', checkAdvanceAmountAgainstCap);
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();

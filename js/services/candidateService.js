@@ -111,6 +111,14 @@ const CandidateService = {
         if (error) throw error;
     },
 
+    // ยอดสะสมประมาณการของพนักงานคนนี้ (สำหรับ admin/payroll/supervisor ดูประกอบตอนอนุมัติเบิกเงิน)
+    // ตัวเลข "ประมาณการ" เท่านั้น ไม่ใช่ยอดจริงจาก Payroll Engine (database/23_advance_payment_admin_tools.sql)
+    async getAdvancePaymentEstimateForEmployee(empId) {
+        const { data, error } = await supabaseClient.rpc('fn_get_advance_payment_estimate_summary_for_employee', { p_emp_id: empId });
+        if (error) throw error;
+        return data;
+    },
+
     async uploadSlipAndGetUrl(file, fileName) {
         const { error } = await supabaseClient.storage
             .from('public-assets')
