@@ -107,6 +107,37 @@ async function viewEmployeeDetails(id) {
 
         // ประวัติการเบิกเงิน (คงโค้ดเดิมของคุณไว้ 100%)
         let advanceListHtml = '';
+        // ยอดสะสมประมาณการของพนักงานคนนี้ - แสดงให้ admin ดูประกอบการตัดสินใจอนุมัติ
+        // (ตัวเลขประมาณการเท่านั้น ไม่ใช่ยอดจริงจาก Payroll Engine - database/23_advance_payment_admin_tools.sql)
+        let advanceEstimateHtml = '';
+        if (emp.emp_id) {
+            try {
+                const est = await CandidateService.getAdvancePaymentEstimateForEmployee(emp.emp_id);
+                if (est && !est.error) {
+                    if (est.has_salary_config) {
+                        advanceEstimateHtml = `
+                            <div class="rounded-xl border border-[#e6edf7] bg-[#f7faff] p-4 mb-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h4 class="text-sm font-bold text-kcdark">📊 ยอดสะสมประมาณการ (งวดนี้)</h4>
+                                    <span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-bold">⚠️ ประมาณการ ไม่ใช่ยอดจริง</span>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                    <div class="bg-white border border-[#e6edf7] rounded-lg p-2"><p class="text-slate-500">วันทำงาน</p><p class="font-extrabold text-kcdark">${est.worked_days} วัน</p></div>
+                                    <div class="bg-white border border-[#e6edf7] rounded-lg p-2"><p class="text-slate-500">มาสาย</p><p class="font-extrabold text-kcdark">${est.late_count} ครั้ง</p></div>
+                                    <div class="bg-white border border-[#e6edf7] rounded-lg p-2"><p class="text-slate-500">วันลา</p><p class="font-extrabold text-kcdark">${est.leave_days} วัน</p></div>
+                                    <div class="bg-white border border-[#e6edf7] rounded-lg p-2"><p class="text-slate-500">OT (1.5/2/3x)</p><p class="font-extrabold text-kcdark">${est.ot15_hours}/${est.ot2_hours}/${est.ot3_hours} ชม.</p></div>
+                                    <div class="col-span-2 bg-white border border-[#e6edf7] rounded-lg p-2"><p class="text-slate-500">ค่าแรงสะสม (ประมาณการ)</p><p class="font-extrabold text-kcdark">฿${Number(est.estimated_earned_total).toLocaleString()}</p></div>
+                                    <div class="col-span-2 bg-emerald-50 border border-emerald-200 rounded-lg p-2"><p class="text-emerald-700">ยอดเบิกได้สูงสุดที่แนะนำ (30%)</p><p class="font-extrabold text-emerald-700">฿${Number(est.available_to_request).toLocaleString()}</p></div>
+                                </div>
+                            </div>`;
+                    } else {
+                        advanceEstimateHtml = `<div class="rounded-xl border border-amber-200 bg-amber-50 p-3 mb-4 text-xs text-amber-800">ℹ️ ยังไม่ได้ตั้งค่าเงินเดือน/ค่าแรงของพนักงานคนนี้ - ไปที่แท็บ "⚙️ ตั้งค่าสถานะ" เพื่อกรอกข้อมูล จะช่วยให้ระบบประมาณการยอดเบิกได้ให้อัตโนมัติ</div>`;
+                    }
+                }
+            } catch (estErr) {
+                console.error('โหลดยอดประมาณการไม่สำเร็จ:', estErr);
+            }
+        }
         if (emp.emp_id) {
             const advanceData = await CandidateService.getAdvancePayments(emp.emp_id);
             if (!advanceData || advanceData.length === 0) {
@@ -125,6 +156,10 @@ async function viewEmployeeDetails(id) {
                                 <div class="flex gap-2 items-center flex-wrap">
                                     <input type="file" id="slip_${adv.id}" accept="image/*" class="flex-1 border rounded-xl border-[#e6edf7] p-1.5 bg-white min-w-37.5">
                                     <button onclick="approveAdvance('${emp.id}', '${adv.id}')" class="bg-green-600 text-white px-3 py-1.5 font-bold hover:bg-green-700 rounded-xl border-0 cursor-pointer">ยืนยันการโอน</button>
+                                </div>
+                                <label class="block font-bold text-slate-600 mt-2 mb-1">หรือไม่อนุมัติ (ระบุเหตุผล ไม่บังคับ)</label>
+                                <div class="flex gap-2 items-center flex-wrap">
+                                    <input type="text" id="rejectReason_${adv.id}" placeholder="เหตุผลที่ไม่อนุมัติ (ถ้ามี)" class="flex-1 border rounded-xl border-[#e6edf7] p-1.5 bg-white min-w-37.5">
                                     <button onclick="rejectAdvance('${emp.id}', '${adv.id}')" class="bg-red-600 text-white px-3 py-1.5 font-bold hover:bg-red-700 rounded-xl border-0 cursor-pointer">ไม่อนุมัติ</button>
                                 </div>
                             </div>
@@ -136,6 +171,10 @@ async function viewEmployeeDetails(id) {
                         statusBadge = '<span class="bg-red-100 text-red-700 px-2 py-1 text-[10px] font-bold border border-red-300">❌ ไม่อนุมัติ</span>';
                     }
 
+                    const capBadge = adv.exceeds_estimated_cap
+                        ? '<span class="ml-1 inline-block bg-orange-100 text-orange-700 px-2 py-1 text-[10px] font-bold border border-orange-300">🔺 เกินยอดแนะนำ</span>'
+                        : '';
+
                     advanceListHtml += `
                         <div class="border rounded-xl border-[#e6edf7] p-4 mb-3 bg-white shadow-[0_16px_40px_rgba(15,43,115,0.15)]">
                             <div class="flex justify-between items-start mb-1">
@@ -143,7 +182,7 @@ async function viewEmployeeDetails(id) {
                                     <p class="font-bold text-kcdark text-sm">🗓️ วันที่ขอเบิก: ${reqDate}</p>
                                     <p class="text-orange-600 font-bold text-lg mt-1">ยอดเงิน: ฿${adv.amount.toLocaleString()}</p>
                                 </div>
-                                <div>${statusBadge}</div>
+                                <div>${statusBadge}${capBadge}</div>
                             </div>
                             ${adv.employee_remark ? `<p class="text-xs text-slate-600 mt-1">📝 หมายเหตุจากพนักงาน: ${adv.employee_remark}</p>` : ''}
                             ${actionHtml}
@@ -202,6 +241,7 @@ async function viewEmployeeDetails(id) {
                                 <h3 class="font-bold text-lg text-kcblue">ประวัติการเบิกเงินล่วงหน้า (Cash Advance)</h3>
                                 <button onclick="simulateAdvanceRequest('${emp.id}', '${emp.emp_id}')" class="bg-kcdark text-white text-xs px-3 py-1.5 font-bold hover:bg-kcblue rounded-xl border-0 cursor-pointer">+ ทดสอบจำลองคำขอเบิกเงิน</button>
                             </div>
+                            ${advanceEstimateHtml}
                             <div class="bg-kcsoft p-4 border border-[#e6edf7]">
                                 ${advanceListHtml}
                             </div>
@@ -256,6 +296,45 @@ async function viewEmployeeDetails(id) {
                                 <h3 class="font-bold text-lg text-sky-800 border-b border-[#e6edf7] pb-2 mb-4">⏰ กะการทำงาน (สำหรับตรวจจับมาสาย/ทำงานเกินกะ)</h3>
                                 <div class="bg-sky-50/50 p-4 border border-sky-200 max-w-2xl border-dashed">
                                     ${shiftAssignmentHtml}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-lg text-orange-800 border-b border-[#e6edf7] pb-2 mb-4">💰 ตั้งค่าเงินเดือน/ค่าจ้าง (ใช้คำนวณยอดประมาณการเบิกล่วงหน้าให้พนักงาน)</h3>
+                                <div class="bg-orange-50/50 p-4 border border-orange-200 max-w-2xl border-dashed">
+                                    <p class="text-xs text-slate-500 mb-3">ใช้เป็นฐานคำนวณ "ยอดสะสมประมาณการ" ในหน้าขอเบิกเงินล่วงหน้าของพนักงานเท่านั้น (ไม่ใช่ค่าที่ Payroll Engine จริงใช้คำนวณสลิปเงินเดือน)</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">ประเภทค่าจ้าง *</label>
+                                            <select id="salaryTypeSelect" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                                <option value="">-- เลือกประเภท --</option>
+                                                <option value="monthly" ${emp.salary_type === 'monthly' ? 'selected' : ''}>รายเดือน</option>
+                                                <option value="daily" ${emp.salary_type === 'daily' ? 'selected' : ''}>รายวัน</option>
+                                                <option value="hourly" ${emp.salary_type === 'hourly' ? 'selected' : ''}>รายชั่วโมง</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">เงินเดือน (บาท/เดือน)</label>
+                                            <input type="number" id="monthlySalaryInput" value="${emp.monthly_salary ?? ''}" min="0" step="0.01" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">ค่าจ้างรายวัน (บาท/วัน)</label>
+                                            <input type="number" id="dailyRateInput" value="${emp.daily_rate ?? ''}" min="0" step="0.01" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">ค่าจ้างรายชั่วโมง (บาท/ชม.)</label>
+                                            <input type="number" id="hourlyRateInput" value="${emp.hourly_rate ?? ''}" min="0" step="0.01" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">ชม.มาตรฐาน/เดือน (สำหรับรายเดือน)</label>
+                                            <input type="number" id="stdMonthlyHoursInput" value="${emp.standard_monthly_hours ?? ''}" min="0" step="0.01" placeholder="เช่น 173.33" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-600 mb-1">ชม.มาตรฐาน/วัน (สำหรับรายวัน)</label>
+                                            <input type="number" id="stdWorkingHoursInput" value="${emp.standard_working_hours ?? ''}" min="0" step="0.5" placeholder="เช่น 8" class="w-full border rounded-xl border-[#e6edf7] p-2 text-sm outline-none bg-white focus:border-kcblue">
+                                        </div>
+                                    </div>
+                                    <button onclick="saveSalaryConfig('${emp.id}')" class="mt-3 bg-orange-600 text-white px-4 py-2 text-sm font-bold hover:bg-orange-700 rounded-xl border-0 cursor-pointer">บันทึกค่าจ้าง/เงินเดือน</button>
                                 </div>
                             </div>
 

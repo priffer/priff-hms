@@ -163,6 +163,130 @@ async function saveEmployeeShift(employeeId) {
     }
 }
 
+// อัปเดตสถานะการทำงานของพนักงาน (บันทึกสถานะ ปุ่มในแท็บ "ตั้งค่าสถานะ")
+// หมายเหตุ: ฟังก์ชันนี้ถูกอ้างอิงใน modal.js มานานแล้วแต่ไม่เคยถูกสร้างจริง (พบระหว่างทำ
+// ฟีเจอร์เบิกเงินล่วงหน้ารอบนี้) - เพิ่มให้ใช้งานได้จริงในคราวเดียวกัน
+async function updateEmployeeStatus(id) {
+    const select = document.getElementById('empStatusSelect');
+    if (!select) return;
+    const newStatus = select.value;
+    if (!confirm(`ยืนยันเปลี่ยนสถานะพนักงานเป็น: ${newStatus}?`)) return;
+    try {
+        await CandidateService.updateCandidateData(id, { status: newStatus });
+        alert('บันทึกสถานะพนักงานเรียบร้อยแล้ว');
+        await viewEmployeeDetails(id);
+        switchEmpTab('settings');
+        if (typeof fetchEmployees === 'function') fetchEmployees();
+    } catch (err) {
+        alert('บันทึกสถานะไม่สำเร็จ: ' + err.message);
+    }
+}
+
+// บันทึกค่าจ้าง/เงินเดือนของพนักงาน (salary_type/monthly_salary/daily_rate/hourly_rate/
+// standard_monthly_hours/standard_working_hours) - ใช้เป็นฐานคำนวณยอดประมาณการเบิกล่วงหน้า
+// (database/22_advance_payment_estimate_summary.sql, 23_advance_payment_admin_tools.sql)
+async function saveSalaryConfig(id) {
+    const salaryType = document.getElementById('salaryTypeSelect').value;
+    if (!salaryType) { alert('กรุณาเลือกประเภทค่าจ้างก่อนบันทึก'); return; }
+
+    const monthlySalary = document.getElementById('monthlySalaryInput').value;
+    const dailyRate = document.getElementById('dailyRateInput').value;
+    const hourlyRate = document.getElementById('hourlyRateInput').value;
+    const stdMonthlyHours = document.getElementById('stdMonthlyHoursInput').value;
+    const stdWorkingHours = document.getElementById('stdWorkingHoursInput').value;
+
+    try {
+        await CandidateService.updateCandidateData(id, {
+            salary_type: salaryType,
+            monthly_salary: monthlySalary ? Number(monthlySalary) : null,
+            daily_rate: dailyRate ? Number(dailyRate) : null,
+            hourly_rate: hourlyRate ? Number(hourlyRate) : null,
+            standard_monthly_hours: stdMonthlyHours ? Number(stdMonthlyHours) : null,
+            standard_working_hours: stdWorkingHours ? Number(stdWorkingHours) : null
+        });
+        alert('บันทึกค่าจ้าง/เงินเดือนเรียบร้อยแล้ว');
+        await viewEmployeeDetails(id);
+        switchEmpTab('settings');
+    } catch (err) {
+        alert('บันทึกค่าจ้างไม่สำเร็จ: ' + err.message);
+    }
+}
+
+// ยืนยันการโอนเงินเบิกล่วงหน้า (บังคับแนบสลิปโอนเงินก่อนกดยืนยันเสมอ)
+// หมายเหตุ: ฟังก์ชันนี้ถูกอ้างอิงใน modal.js มานานแล้วแต่ไม่เคยถูกสร้างจริง - เพิ่มให้ใช้งาน
+// ได้จริงพร้อมกับฟีเจอร์แสดงยอดประมาณการตอนอนุมัติ (item เสนอเพิ่มรอบนี้)
+async function approveAdvance(employeeId, advanceId) {
+    const fileInput = document.getElementById(`slip_${advanceId}`);
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        alert('กรุณาแนบสลิปโอนเงินก่อนยืนยัน (บังคับแนบ)');
+        return;
+    }
+    if (!confirm('ยืนยันว่าได้โอนเงินให้พนักงานเรียบร้อยแล้ว?')) return;
+
+    try {
+        const file = fileInput.files[0];
+        const fileName = `advance-slips/${advanceId}-${Date.now()}-${file.name}`;
+        const slipUrl = await CandidateService.uploadSlipAndGetUrl(file, fileName);
+        const { data: userData } = await supabaseClient.auth.getUser();
+
+        await CandidateService.updateAdvancePayment(advanceId, {
+            status: 'approved',
+            transfer_slip_url: slipUrl,
+            approved_at: new Date().toISOString(),
+            approved_by: userData?.user?.id || null
+        });
+        alert('ยืนยันการโอนเงินเรียบร้อยแล้ว');
+        await viewEmployeeDetails(employeeId);
+        switchEmpTab('advance');
+    } catch (err) {
+        alert('ยืนยันการโอนเงินไม่สำเร็จ: ' + err.message);
+    }
+}
+
+async function rejectAdvance(employeeId, advanceId) {
+    const reasonInput = document.getElementById(`rejectReason_${advanceId}`);
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+    if (!confirm('ยืนยันไม่อนุมัติคำขอเบิกเงินนี้?')) return;
+
+    try {
+        await CandidateService.updateAdvancePayment(advanceId, {
+            status: 'rejected',
+            admin_remarks: reason || null
+        });
+        alert('บันทึกการไม่อนุมัติเรียบร้อยแล้ว');
+        await viewEmployeeDetails(employeeId);
+        switchEmpTab('advance');
+    } catch (err) {
+        alert('บันทึกไม่สำเร็จ: ' + err.message);
+    }
+}
+
+// สร้างคำขอเบิกเงินจำลองสำหรับทดสอบ QA เท่านั้น (ปุ่ม "+ ทดสอบจำลองคำขอเบิกเงิน" ใน
+// แท็บเบิกเงินล่วงหน้า) - เดิมเป็นปุ่มที่ไม่เคยมีฟังก์ชันจริงมาก่อน เพิ่มให้ใช้งานได้จริง
+// หมายเหตุ: ใช้จำนวนเงินคงที่ (500 บาท) แทน prompt() เพราะ prompt() ใช้ไม่ได้ในบาง
+// webview/เบราว์เซอร์มือถือ - ถ้าต้องการยอดอื่น ให้ใช้ปุ่มขอเบิกจริงจากฝั่งพนักงานแทน
+async function simulateAdvanceRequest(employeeId, empId) {
+    if (!empId || empId === 'null' || empId === 'undefined') {
+        alert('พนักงานคนนี้ยังไม่มีรหัสพนักงาน (emp_id) จึงจำลองคำขอไม่ได้');
+        return;
+    }
+    if (!confirm('สร้างคำขอเบิกเงินจำลองจำนวน 500 บาท สำหรับทดสอบ QA?')) return;
+
+    try {
+        await CandidateService.createAdvancePayment({
+            emp_id: empId,
+            amount: 500,
+            status: 'pending',
+            employee_remark: '(คำขอจำลองสำหรับทดสอบ QA โดยแอดมิน)'
+        });
+        alert('สร้างคำขอเบิกเงินจำลองเรียบร้อยแล้ว');
+        await viewEmployeeDetails(employeeId);
+        switchEmpTab('advance');
+    } catch (err) {
+        alert('สร้างคำขอจำลองไม่สำเร็จ: ' + err.message);
+    }
+}
+
 async function handleLogout() {
     if (typeof supabaseClient !== 'undefined' && supabaseClient.auth) {
         await supabaseClient.auth.signOut();
