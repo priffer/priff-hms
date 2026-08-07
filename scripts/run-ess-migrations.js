@@ -38,6 +38,7 @@ async function run() {
     path.resolve(__dirname, '..', 'database', '19_fix_attendance_delete_trigger.sql'),
     path.resolve(__dirname, '..', 'database', '20_night_shift_late_minutes_fix.sql'),
     path.resolve(__dirname, '..', 'database', '21_notifications.sql'),
+    path.resolve(__dirname, '..', 'database', '22_advance_payment_estimate_summary.sql'),
   ];
 
   const results = [];

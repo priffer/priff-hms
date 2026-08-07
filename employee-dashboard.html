@@ -193,6 +193,42 @@
           ℹ️ ฟีเจอร์นี้เปิดให้เฉพาะ<strong>พนักงานฝ่ายปฏิบัติการที่ประจำไซต์ลูกค้า</strong>เท่านั้น
           หากคุณคิดว่าควรมีสิทธิ์ใช้งานนี้ กรุณาติดต่อฝ่ายบุคคล/แอดมิน
         </div>
+        <div id="advanceSummaryCard" class="hidden rounded-2xl border border-[#e6edf7] bg-[#f7faff] p-4 mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-sm font-bold text-kcdark">📊 ยอดสะสมของคุณ (งวดนี้)</h4>
+            <span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-1 text-[10px] font-bold">⚠️ ประมาณการ ไม่ใช่ยอดจริง</span>
+          </div>
+          <div id="advanceSummaryLoading" class="text-center text-slate-400 text-xs py-4">กำลังคำนวณ...</div>
+          <div id="advanceSummaryContent" class="hidden grid grid-cols-2 gap-3 text-xs">
+            <div class="rounded-xl bg-white border border-[#e6edf7] p-3">
+              <p class="text-slate-500 font-bold mb-1">วันทำงาน</p>
+              <p id="sumWorkedDays" class="text-base font-extrabold text-kcdark">-</p>
+            </div>
+            <div class="rounded-xl bg-white border border-[#e6edf7] p-3">
+              <p class="text-slate-500 font-bold mb-1">มาสาย</p>
+              <p id="sumLateCount" class="text-base font-extrabold text-kcdark">-</p>
+            </div>
+            <div class="rounded-xl bg-white border border-[#e6edf7] p-3">
+              <p class="text-slate-500 font-bold mb-1">วันลา (อนุมัติแล้ว)</p>
+              <p id="sumLeaveDays" class="text-base font-extrabold text-kcdark">-</p>
+            </div>
+            <div class="rounded-xl bg-white border border-[#e6edf7] p-3">
+              <p class="text-slate-500 font-bold mb-1">OT สะสม (1.5x/2x/3x)</p>
+              <p id="sumOtHours" class="text-base font-extrabold text-kcdark">-</p>
+            </div>
+            <div class="col-span-2 rounded-xl bg-white border border-[#e6edf7] p-3">
+              <p class="text-slate-500 font-bold mb-1">ค่าแรงที่พึงได้สะสม (ประมาณการ)</p>
+              <p id="sumEstimatedEarned" class="text-base font-extrabold text-kcdark">-</p>
+            </div>
+            <div class="col-span-2 rounded-xl bg-emerald-50 border border-emerald-200 p-3">
+              <p class="text-emerald-700 font-bold mb-1">ยอดเบิกได้สูงสุด (30% ของค่าแรงสะสม หักที่เบิกไปแล้ว)</p>
+              <p id="sumAvailable" class="text-lg font-extrabold text-emerald-700">-</p>
+            </div>
+          </div>
+          <div id="advanceSummaryNoSalary" class="hidden text-center text-slate-500 text-xs py-3">
+            ℹ️ ยังไม่ได้ตั้งค่าเงินเดือน/ค่าแรงในระบบ จึงยังไม่สามารถประมาณการยอดเบิกได้ - แสดงได้เฉพาะวันทำงาน/OT/ลา/สาย
+          </div>
+        </div>
         <form id="advanceForm" class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">จำนวนเงินที่ต้องการเบิก (บาท) <span class="text-red-500">*</span></label>

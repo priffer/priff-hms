@@ -379,11 +379,56 @@ async function openAdvanceModal() {
     const modal = document.getElementById('advanceModal');
     const form = document.getElementById('advanceForm');
     const notice = document.getElementById('advanceIneligibleNotice');
+    const summaryCard = document.getElementById('advanceSummaryCard');
     const eligible = isAdvanceEligible();
     if (form) form.classList.toggle('hidden', !eligible);
     if (notice) notice.classList.toggle('hidden', eligible);
+    if (summaryCard) summaryCard.classList.toggle('hidden', !eligible);
     if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    if (eligible) await loadAdvanceSummary();
     await loadAdvanceHistory();
+}
+
+// โหลดยอดสะสมประมาณการ (วันทำงาน/OT/ลา/สาย/ยอดเบิกได้) - ตัวเลขประมาณการเท่านั้น
+// ไม่ใช่ยอดจริงจาก Payroll Engine (database/22_advance_payment_estimate_summary.sql)
+async function loadAdvanceSummary() {
+    const loadingEl = document.getElementById('advanceSummaryLoading');
+    const contentEl = document.getElementById('advanceSummaryContent');
+    const noSalaryEl = document.getElementById('advanceSummaryNoSalary');
+    if (!loadingEl) return;
+    loadingEl.classList.remove('hidden');
+    contentEl.classList.add('hidden');
+    noSalaryEl.classList.add('hidden');
+    try {
+        const s = await window.EmployeeSelfService.getAdvancePaymentEstimateSummary();
+        loadingEl.classList.add('hidden');
+        if (!s || s.error) {
+            noSalaryEl.textContent = 'ℹ️ ไม่สามารถโหลดข้อมูลสรุปได้ในขณะนี้';
+            noSalaryEl.classList.remove('hidden');
+            return;
+        }
+        document.getElementById('sumWorkedDays').textContent = `${s.worked_days ?? 0} วัน`;
+        document.getElementById('sumLateCount').textContent = `${s.late_count ?? 0} ครั้ง`;
+        document.getElementById('sumLeaveDays').textContent = `${s.leave_days ?? 0} วัน`;
+        document.getElementById('sumOtHours').textContent = `${Number(s.ot15_hours || 0)}/${Number(s.ot2_hours || 0)}/${Number(s.ot3_hours || 0)} ชม.`;
+
+        if (s.has_salary_config) {
+            document.getElementById('sumEstimatedEarned').textContent = `฿${Number(s.estimated_earned_total).toLocaleString()}`;
+            document.getElementById('sumAvailable').textContent = `฿${Number(s.available_to_request).toLocaleString()}`;
+            contentEl.classList.remove('hidden');
+        } else {
+            // ยังไม่มีข้อมูลเงินเดือนในระบบ - โชว์เฉพาะกล่องที่ไม่ใช่ตัวเลขเงิน
+            document.getElementById('sumEstimatedEarned').textContent = 'ไม่มีข้อมูล';
+            document.getElementById('sumAvailable').textContent = 'ไม่มีข้อมูล';
+            contentEl.classList.remove('hidden');
+            noSalaryEl.classList.remove('hidden');
+        }
+    } catch (err) {
+        console.error('loadAdvanceSummary error', err);
+        loadingEl.classList.add('hidden');
+        noSalaryEl.textContent = 'ℹ️ ไม่สามารถโหลดข้อมูลสรุปได้ในขณะนี้';
+        noSalaryEl.classList.remove('hidden');
+    }
 }
 function closeAdvanceModal() {
     const modal = document.getElementById('advanceModal');
