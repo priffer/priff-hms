@@ -11,51 +11,50 @@
     <style>body{visibility:hidden}</style>
     <link rel="stylesheet" href="dist/output.css">
     <style>
-        * { border-radius: 0 !important; }
-        .tab-active { background-color: #003366; color: white; border-color: #003366; }
-        .tab-inactive { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
+        .tab-active { background-color: #165DFF; color: white; border-color: #165DFF; border-radius: 0.75rem; }
+        .tab-inactive { background-color: #EEF5FF; color: #0F2B73; border-color: #E6EDF7; border-radius: 0.75rem; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col overflow-x-hidden">
+<body class="bg-kcsoft font-sans min-h-screen flex flex-col overflow-x-hidden">
 
     <div id="global-navbar"></div>
 
     <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1 min-w-0">
-        <div class="bg-white border border-gray-300 p-4 md:p-6 shadow-none">
+        <div class="bg-white rounded-[2rem] border border-[#e6edf7] p-4 md:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.06)]">
 
-            <div class="flex justify-between items-center border-l-8 border-kcyellow pl-3 mb-6">
+            <div class="flex justify-between items-center mb-6">
                 <div>
                     <h2 class="text-2xl font-bold text-kcblue">โอที & สวัสดิการพนักงาน</h2>
-                    <p class="text-sm text-gray-500 mt-1">ตรวจสอบคำขอโอทีที่ต้องอนุมัติเพิ่ม, ตั้งค่าเพดานชั่วโมง, จัดการสวัสดิการรายพนักงาน</p>
+                    <p class="text-sm text-slate-500 mt-1">ตรวจสอบคำขอโอทีที่ต้องอนุมัติเพิ่ม, ตั้งค่าเพดานชั่วโมง, จัดการสวัสดิการรายพนักงาน</p>
                 </div>
             </div>
 
             <div class="flex gap-2 mb-6 flex-wrap">
-                <button id="tabBtn-ot" onclick="switchAdminTab('ot')" class="tab-active border px-4 py-2 text-sm font-bold cursor-pointer">📋 คำขอโอทีรอตรวจสอบ</button>
-                <button id="tabBtn-policy" onclick="switchAdminTab('policy')" class="tab-inactive border px-4 py-2 text-sm font-bold cursor-pointer">⚙️ ตั้งค่าเพดานโอที</button>
-                <button id="tabBtn-benefits" onclick="switchAdminTab('benefits')" class="tab-inactive border px-4 py-2 text-sm font-bold cursor-pointer">🛡️ สวัสดิการพนักงาน</button>
+                <button id="tabBtn-ot" onclick="switchAdminTab('ot')" class="tab-active border-0 px-4 py-2 text-sm font-bold cursor-pointer">📋 คำขอโอทีรอตรวจสอบ</button>
+                <button id="tabBtn-policy" onclick="switchAdminTab('policy')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">⚙️ ตั้งค่าเพดานโอที</button>
+                <button id="tabBtn-benefits" onclick="switchAdminTab('benefits')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">🛡️ สวัสดิการพนักงาน</button>
             </div>
 
             <!-- TAB 1: คำขอโอทีรอตรวจสอบ -->
             <div id="tabView-ot">
                 <div class="flex justify-between items-center mb-3">
-                    <p class="text-sm text-gray-500">คำขอที่หัวหน้างานไม่มี หรืออนุมัติแล้วแต่จะทำให้ยอด OT เกินเพดาน ต้องผ่านชั้นนี้ก่อนมีผลจริง</p>
-                    <button onclick="loadOtAdminReview()" class="border border-gray-400 bg-white text-gray-700 px-4 py-2 text-sm font-bold hover:bg-gray-100 transition-colors cursor-pointer">🔄 รีเฟรช</button>
+                    <p class="text-sm text-slate-500">คำขอที่หัวหน้างานไม่มี หรืออนุมัติแล้วแต่จะทำให้ยอด OT เกินเพดาน ต้องผ่านชั้นนี้ก่อนมีผลจริง</p>
+                    <button onclick="loadOtAdminReview()" class="border border-[#e6edf7] bg-white text-slate-700 px-4 py-2 text-sm font-bold hover:bg-kclight transition-colors cursor-pointer">🔄 รีเฟรช</button>
                 </div>
-                <div class="overflow-x-auto border border-gray-300 bg-white">
+                <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-gray-900 text-white text-sm uppercase tracking-wider">
-                                <th class="p-3 border-b border-gray-300 font-bold">พนักงาน</th>
-                                <th class="p-3 border-b border-gray-300 font-bold">วันที่ / ชั่วโมง</th>
-                                <th class="p-3 border-b border-gray-300 font-bold">เหตุผล</th>
-                                <th class="p-3 border-b border-gray-300 font-bold">ยอด OT สะสม (คาดการณ์)</th>
-                                <th class="p-3 border-b border-gray-300 font-bold text-center">สถานะ</th>
-                                <th class="p-3 border-b border-gray-300 font-bold text-center">จัดการ</th>
+                            <tr class="bg-kclight text-kcdark text-sm">
+                                <th class="p-3 font-bold">พนักงาน</th>
+                                <th class="p-3 font-bold">วันที่ / ชั่วโมง</th>
+                                <th class="p-3 font-bold">เหตุผล</th>
+                                <th class="p-3 font-bold">ยอด OT สะสม (คาดการณ์)</th>
+                                <th class="p-3 font-bold text-center">สถานะ</th>
+                                <th class="p-3 font-bold text-center">จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody id="otReviewTableBody" class="text-sm text-gray-700">
-                            <tr><td colspan="6" class="p-8 text-center text-gray-500">⏳ กำลังโหลดข้อมูล...</td></tr>
+                        <tbody id="otReviewTableBody" class="text-sm text-slate-700">
+                            <tr><td colspan="6" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -63,52 +62,52 @@
 
             <!-- TAB 2: ตั้งค่าเพดานโอที -->
             <div id="tabView-policy" class="hidden max-w-lg">
-                <p class="text-sm text-gray-500 mb-4">เพดานรายวันเป็น hard cap (เกินไม่ให้ยื่นคำขอเลย) ส่วนรายสัปดาห์/เดือนเป็น soft cap (เกินแล้วต้องมาตรวจสอบชั้นนี้ก่อนอนุมัติจริง)</p>
+                <p class="text-sm text-slate-500 mb-4">เพดานรายวันเป็น hard cap (เกินไม่ให้ยื่นคำขอเลย) ส่วนรายสัปดาห์/เดือนเป็น soft cap (เกินแล้วต้องมาตรวจสอบชั้นนี้ก่อนอนุมัติจริง)</p>
                 <form id="otPolicyForm" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">เพดานชั่วโมงโอทีต่อวัน (hard cap)</label>
-                        <input type="number" id="policyDailyMax" step="0.5" min="0.5" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">เพดานชั่วโมงโอทีต่อวัน (hard cap)</label>
+                        <input type="number" id="policyDailyMax" step="0.5" min="0.5" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue text-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">เพดานชั่วโมงโอทีต่อสัปดาห์ (soft cap)</label>
-                        <input type="number" id="policyWeeklyMax" step="0.5" min="0.5" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">เพดานชั่วโมงโอทีต่อสัปดาห์ (soft cap)</label>
+                        <input type="number" id="policyWeeklyMax" step="0.5" min="0.5" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue text-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">เพดานชั่วโมงโอทีต่อเดือน (soft cap)</label>
-                        <input type="number" id="policyMonthlyMax" step="0.5" min="0.5" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">เพดานชั่วโมงโอทีต่อเดือน (soft cap)</label>
+                        <input type="number" id="policyMonthlyMax" step="0.5" min="0.5" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue text-sm">
                     </div>
-                    <button type="submit" class="bg-kcblue text-white px-6 py-2 text-sm font-bold hover:bg-kcyellow hover:text-kcblue border border-kcblue transition-colors cursor-pointer">💾 บันทึกการตั้งค่า</button>
+                    <button type="submit" class="bg-kcblue text-white px-6 py-2 text-sm font-bold hover:bg-kcdark rounded-xl shadow-sm transition-colors cursor-pointer">💾 บันทึกการตั้งค่า</button>
                 </form>
             </div>
 
             <!-- TAB 3: สวัสดิการพนักงาน -->
             <div id="tabView-benefits" class="hidden">
                 <div class="max-w-lg mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-1">เลือกพนักงาน</label>
-                    <select id="benefitsEmployeeSelect" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue bg-white text-sm">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">เลือกพนักงาน</label>
+                    <select id="benefitsEmployeeSelect" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue bg-white text-sm">
                         <option value="">-- เลือกพนักงาน --</option>
                     </select>
                 </div>
                 <div id="benefitsEditArea" class="hidden">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 max-w-3xl">
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">โรงพยาบาลตามสิทธิ (ม.33)</label>
-                            <input type="text" id="benefitsSsoHospitalName" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">โรงพยาบาลตามสิทธิ (ม.33)</label>
+                            <input type="text" id="benefitsSsoHospitalName" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">รหัสสถานพยาบาล</label>
-                            <input type="text" id="benefitsSsoHospitalCode" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">รหัสสถานพยาบาล</label>
+                            <input type="text" id="benefitsSsoHospitalCode" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-1">วันที่มีผล</label>
-                            <input type="date" id="benefitsSsoRegisteredAt" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">วันที่มีผล</label>
+                            <input type="date" id="benefitsSsoRegisteredAt" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue text-sm">
                         </div>
                     </div>
-                    <button onclick="saveSsoHospitalInfo()" class="bg-kcblue text-white px-6 py-2 text-sm font-bold hover:bg-kcyellow hover:text-kcblue border border-kcblue transition-colors cursor-pointer mb-6">💾 บันทึกข้อมูลประกันสังคม</button>
+                    <button onclick="saveSsoHospitalInfo()" class="bg-kcblue text-white px-6 py-2 text-sm font-bold hover:bg-kcdark rounded-xl shadow-sm transition-colors cursor-pointer mb-6">💾 บันทึกข้อมูลประกันสังคม</button>
 
-                    <h4 class="text-lg font-bold text-kcblue mb-3 border-l-4 border-kcyellow pl-2">สวัสดิการที่ผูกกับพนักงานคนนี้</h4>
+                    <h4 class="text-lg font-bold text-kcblue mb-3">สวัสดิการที่ผูกกับพนักงานคนนี้</h4>
                     <div id="benefitsAssignmentList" class="space-y-2 max-w-2xl">
-                        <p class="text-center text-gray-400 text-sm py-4">กำลังโหลดข้อมูล...</p>
+                        <p class="text-center text-slate-400 text-sm py-4">กำลังโหลดข้อมูล...</p>
                     </div>
                 </div>
             </div>
@@ -117,19 +116,19 @@
     </div>
 
     <!-- Modal: ปฏิเสธคำขอโอที (ระบุเหตุผล) -->
-    <div id="otRejectModal" class="hidden fixed inset-0 z-50 bg-black/80 items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md border-t-8 border-red-600 shadow-none flex flex-col">
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
-                <h3 class="text-lg font-bold text-gray-900 uppercase tracking-wide">❌ ปฏิเสธคำขอโอที</h3>
-                <button onclick="closeOtRejectModal()" class="text-gray-400 hover:text-red-600 font-bold text-2xl transition-colors cursor-pointer leading-none">✕</button>
+    <div id="otRejectModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2rem] shadow-[0_16px_40px_rgba(15,43,115,0.15)] flex flex-col">
+            <div class="p-6 border-b border-[#e6edf7] flex justify-between items-center bg-kcsoft shrink-0">
+                <h3 class="text-lg font-bold text-kcdark uppercase tracking-wide">❌ ปฏิเสธคำขอโอที</h3>
+                <button onclick="closeOtRejectModal()" class="text-slate-400 hover:text-red-600 font-bold text-2xl transition-colors cursor-pointer leading-none">✕</button>
             </div>
             <div class="p-6 space-y-3">
-                <label class="block text-sm font-bold text-gray-700 mb-1">เหตุผลที่ปฏิเสธ</label>
-                <textarea id="otRejectReason" rows="3" class="w-full border border-gray-300 p-2 outline-none focus:border-kcblue text-sm"></textarea>
+                <label class="block text-sm font-bold text-slate-700 mb-1">เหตุผลที่ปฏิเสธ</label>
+                <textarea id="otRejectReason" rows="3" class="w-full rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue text-sm"></textarea>
                 <input type="hidden" id="otRejectRequestId">
             </div>
-            <div class="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 shrink-0">
-                <button onclick="closeOtRejectModal()" class="border border-gray-400 bg-white text-gray-700 px-6 py-2 text-sm font-bold hover:bg-gray-100 transition-colors cursor-pointer">ยกเลิก</button>
+            <div class="p-6 border-t border-[#e6edf7] bg-kcsoft flex justify-end gap-3 shrink-0">
+                <button onclick="closeOtRejectModal()" class="border border-[#e6edf7] bg-white text-slate-700 px-6 py-2 text-sm font-bold hover:bg-kclight transition-colors cursor-pointer">ยกเลิก</button>
                 <button onclick="confirmRejectOt()" class="bg-red-600 text-white px-6 py-2 text-sm font-bold hover:bg-red-700 transition-colors cursor-pointer">ยืนยันปฏิเสธ</button>
             </div>
         </div>
