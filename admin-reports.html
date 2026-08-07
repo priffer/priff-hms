@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="th" class="overflow-x-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - รายงาน/Dashboard | PRIFF HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config/supabase.js"></script>
+    <script src="js/auth/auth-guard.js"></script>
+    <style>body{visibility:hidden}</style>
+    <link rel="stylesheet" href="dist/output.css">
+    <style>
+        .tab-active { background-color: #165DFF; color: white; border-color: #165DFF; border-radius: 0.75rem; }
+        .tab-inactive { background-color: #EEF5FF; color: #0F2B73; border-color: #E6EDF7; border-radius: 0.75rem; }
+    </style>
+</head>
+<body class="bg-kcsoft font-sans min-h-screen flex flex-col overflow-x-hidden">
+
+    <div id="global-navbar"></div>
+
+    <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1 min-w-0">
+        <div class="bg-white rounded-[2rem] border border-[#e6edf7] p-4 md:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.06)]">
+
+            <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                <div>
+                    <h2 class="text-2xl font-bold text-kcblue">📊 รายงาน/Dashboard</h2>
+                    <p class="text-sm text-slate-500 mt-1">สรุป OT/เวลาทำงาน, มาสาย/ขาดงาน, อัตราลาออก - รองรับ export และเชื่อมต่อ Power BI</p>
+                </div>
+                <button onclick="loadAllReports()" class="border border-[#e6edf7] bg-white text-slate-700 px-4 py-2 text-sm font-bold hover:bg-kclight transition-colors cursor-pointer rounded-xl">🔄 รีเฟรชทั้งหมด</button>
+            </div>
+
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button id="tabBtn-overview" onclick="switchReportTab('overview')" class="tab-active border-0 px-4 py-2 text-sm font-bold cursor-pointer">📅 ภาพรวมวันนี้</button>
+                <button id="tabBtn-ot" onclick="switchReportTab('ot')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">⏱️ สรุป OT</button>
+                <button id="tabBtn-attendance" onclick="switchReportTab('attendance')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">📌 มาสาย/ขาดงาน</button>
+                <button id="tabBtn-turnover" onclick="switchReportTab('turnover')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">🚪 อัตราลาออก</button>
+                <button id="tabBtn-powerbi" onclick="switchReportTab('powerbi')" class="tab-inactive border-0 px-4 py-2 text-sm font-bold cursor-pointer">🔗 เชื่อมต่อ Power BI</button>
+            </div>
+
+            <!-- TAB 1: ภาพรวมวันนี้ -->
+            <div id="tabView-overview">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <label class="text-sm font-bold text-slate-700">เลือกวันที่: <input type="date" id="overviewDate" class="rounded-xl border border-[#e6edf7] p-2 text-sm ml-2" onchange="loadOverview()"></label>
+                </div>
+                <div id="overviewCards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+                <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-kclight text-kcdark text-sm">
+                                <th class="p-3 font-bold">ไซต์งาน</th>
+                                <th class="p-3 font-bold text-right">มาทำงาน</th>
+                                <th class="p-3 font-bold text-right">มาสาย</th>
+                                <th class="p-3 font-bold text-right">ทำ OT (คน)</th>
+                                <th class="p-3 font-bold text-right">ชม.ทำงานรวม</th>
+                                <th class="p-3 font-bold text-right">ชม. OT รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overviewTableBody" class="text-sm text-slate-700">
+                            <tr><td colspan="6" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: สรุป OT -->
+            <div id="tabView-ot" class="hidden">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <div class="flex gap-2 flex-wrap items-center text-sm">
+                        <label class="font-bold text-slate-700">ตั้งแต่: <input type="date" id="otFromDate" class="rounded-xl border border-[#e6edf7] p-2 ml-1"></label>
+                        <label class="font-bold text-slate-700">ถึง: <input type="date" id="otToDate" class="rounded-xl border border-[#e6edf7] p-2 ml-1"></label>
+                        <select id="otSiteFilter" class="rounded-xl border border-[#e6edf7] p-2"><option value="">ทุกไซต์งาน</option></select>
+                        <button onclick="loadOtSummary()" class="bg-kcblue text-white px-4 py-2 text-sm font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-xl">🔍 ค้นหา</button>
+                    </div>
+                    <button onclick="exportOtCsv()" class="border border-[#e6edf7] bg-white text-slate-700 px-4 py-2 text-sm font-bold hover:bg-kclight transition-colors cursor-pointer rounded-xl">⬇️ Export CSV</button>
+                </div>
+                <p class="text-xs text-slate-400 mb-3">จัดอันดับคนทำ OT มากสุด-น้อยสุดในช่วงที่เลือก (คลิกหัวตารางเพื่อเรียงลำดับ)</p>
+                <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-kclight text-kcdark text-sm">
+                                <th class="p-3 font-bold cursor-pointer" onclick="sortOtTable('full_name')">พนักงาน</th>
+                                <th class="p-3 font-bold">ไซต์งาน</th>
+                                <th class="p-3 font-bold text-right cursor-pointer" onclick="sortOtTable('ot15_hours')">OT 1.5x</th>
+                                <th class="p-3 font-bold text-right cursor-pointer" onclick="sortOtTable('ot2_hours')">OT 2x</th>
+                                <th class="p-3 font-bold text-right cursor-pointer" onclick="sortOtTable('ot3_hours')">OT 3x</th>
+                                <th class="p-3 font-bold text-right cursor-pointer" onclick="sortOtTable('total_ot_hours')">รวม (ชม.)</th>
+                                <th class="p-3 font-bold text-right cursor-pointer" onclick="sortOtTable('total_ot_amount')">มูลค่า OT (บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="otTableBody" class="text-sm text-slate-700">
+                            <tr><td colspan="7" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: มาสาย/ขาดงาน -->
+            <div id="tabView-attendance" class="hidden">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <label class="text-sm font-bold text-slate-700">เดือน: <input type="month" id="attendanceMonth" class="rounded-xl border border-[#e6edf7] p-2 text-sm ml-2" onchange="loadAttendanceSummary()"></label>
+                    <button onclick="exportAttendanceCsv()" class="border border-[#e6edf7] bg-white text-slate-700 px-4 py-2 text-sm font-bold hover:bg-kclight transition-colors cursor-pointer rounded-xl">⬇️ Export CSV</button>
+                </div>
+                <p class="text-xs text-slate-400 mb-3">
+                    "ขาดงาน" คำนวณจากวันที่ควรมาตามกะ - วันที่มาจริง - วันลา (สูตรเดียวกับระบบเงินเดือน) เฉพาะพนักงานที่มีกะงานผูกไว้เท่านั้น<br>
+                    "อัตรามาสาย" คิดเฉพาะวันที่ระบบระบุได้ (มีกะผูกไว้ ไม่ใช่กะกลางคืน) - คอลัมน์ "ไม่ทราบ" คือวันที่ระบบระบุไม่ได้จริงๆ ไม่ได้แปลว่ามาตรงเวลา
+                </p>
+                <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-kclight text-kcdark text-sm">
+                                <th class="p-3 font-bold">พนักงาน</th>
+                                <th class="p-3 font-bold text-right">วันที่ควรมา</th>
+                                <th class="p-3 font-bold text-right">มาทำงานจริง</th>
+                                <th class="p-3 font-bold text-right">วันลา</th>
+                                <th class="p-3 font-bold text-right">ขาดงาน (วัน)</th>
+                                <th class="p-3 font-bold text-right">มาสาย (ครั้ง)</th>
+                                <th class="p-3 font-bold text-right">อัตรามาสาย</th>
+                                <th class="p-3 font-bold text-right">ไม่ทราบ (คำนวณไม่ได้)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody" class="text-sm text-slate-700">
+                            <tr><td colspan="8" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 4: อัตราลาออก -->
+            <div id="tabView-turnover" class="hidden">
+                <p class="text-xs text-slate-400 mb-3">อ้างอิงจากประวัติการเคลื่อนไหวพนักงาน (employee_movements, movement_type = 'resignation') รายเดือน</p>
+                <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-kclight text-kcdark text-sm">
+                                <th class="p-3 font-bold">เดือน</th>
+                                <th class="p-3 font-bold text-right">จำนวนคนลาออก</th>
+                            </tr>
+                        </thead>
+                        <tbody id="turnoverTableBody" class="text-sm text-slate-700">
+                            <tr><td colspan="2" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 5: เชื่อมต่อ Power BI -->
+            <div id="tabView-powerbi" class="hidden">
+                <div class="rounded-2xl border border-[#e6edf7] bg-kcsoft p-5 space-y-4 text-sm text-slate-700">
+                    <h3 class="text-lg font-extrabold text-kcdark">🔗 เชื่อมต่อ Power BI Desktop เข้าฐานข้อมูลโดยตรง</h3>
+                    <p>ระบบเตรียม SQL Views สรุปข้อมูลไว้ให้แล้ว 5 views พร้อม Postgres role อ่านอย่างเดียว (<code class="bg-white px-1 rounded border border-[#e6edf7]">powerbi_readonly</code>) แยกจาก service_role key เพื่อความปลอดภัย</p>
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li>เปิด Power BI Desktop → <b>Get Data</b> → เลือก <b>PostgreSQL database</b></li>
+                        <li>กรอก Server: <code class="bg-white px-1 rounded border border-[#e6edf7]">db.hcyibcqojsyldiyzperr.supabase.co</code>, Database: <code class="bg-white px-1 rounded border border-[#e6edf7]">postgres</code> (Port 5432)</li>
+                        <li>Username: <code class="bg-white px-1 rounded border border-[#e6edf7]">powerbi_readonly</code> — รหัสผ่านขอจากผู้ดูแลระบบฐานข้อมูล (ตั้งแยกไว้นอกไฟล์โค้ด ไม่ hardcode)</li>
+                        <li>เลือกตารางที่เป็น views: <code class="bg-white px-1 rounded border border-[#e6edf7]">v_attendance_daily_summary</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_ot_summary_daily</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_attendance_absence_summary</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_site_headcount_daily</code>, <code class="bg-white px-1 rounded border border-[#e6edf7]">v_turnover_summary</code></li>
+                        <li>ตั้งค่า Scheduled Refresh บน Power BI Service เพื่อให้จอใหญ่อัปเดตอัตโนมัติ</li>
+                    </ol>
+                    <p class="text-xs text-slate-500">Role นี้เห็นเฉพาะ 5 views ด้านบน ไม่สามารถเข้าถึงตารางดิบ (เช่น employees, payroll_lines) หรือแก้ไขข้อมูลใดๆ ได้</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/components/navbar.js"></script>
+    <script src="js/pages/admin-reports.js"></script>
+    <script>
+    (async ()=>{
+      // Admin Portal: จำกัดเฉพาะ admin และ payroll เท่านั้น
+      const ok = await window.PriffAuthGuard.requireAuth(['admin','payroll']);
+      if (!ok) return;
+      document.body.style.visibility = 'visible';
+    })();
+    </script>
+</body>
+</html>
