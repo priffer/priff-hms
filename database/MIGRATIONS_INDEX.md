@@ -45,5 +45,6 @@ Staging/Production (see `.agent-rules.md`).
 | `35_reporting_views_powerbi.sql` | Phase 4: หน้ารายงาน/Dashboard (OT/เวลาทำงาน) + เชื่อมต่อ Power BI |
 | `36_payroll_period_approval_workflow.sql` | Payroll Engine Milestone 4 (ต่อ): Approval Workflow สำหรับ payroll_periods |
 | `37_fix_attendance_daily_summary_fanout.sql` | Phase 4 follow-up bugfix: v_attendance_daily_summary double-counts |
+| `38_daily_roster_status_view.sql` | TV Dashboard follow-up: adds a "who should be working today" baseline so the |
 
-_Generated: 2026-08-07T13:37:57.753Z_
+_Generated: 2026-08-07T15:27:43.655Z_

@@ -50,10 +50,11 @@ async function loadDashboardData() {
     trendStart.setDate(trendStart.getDate() - 6);
 
     try {
-        const [todayRes, yesterdayRes, staffRes, sitesRes, trendRes] = await Promise.all([
+        const [todayRes, yesterdayRes, rosterRes, leaveRes, sitesRes, trendRes] = await Promise.all([
             supabaseClient.from('v_attendance_daily_summary').select('*').eq('company_id', COMPANY_ID).eq('work_date', today),
             supabaseClient.from('v_attendance_daily_summary').select('*').eq('company_id', COMPANY_ID).eq('work_date', yesterday),
-            supabaseClient.from('employees').select('id', { count: 'exact', head: true }).eq('company_id', COMPANY_ID).in('status', ['active', 'hired']),
+            supabaseClient.from('v_daily_roster_status').select('expected_count').eq('company_id', COMPANY_ID).eq('work_date', today).maybeSingle(),
+            supabaseClient.from('leave_requests').select('employee_id').eq('company_id', COMPANY_ID).eq('status', 'approved').lte('start_date', today).gte('end_date', today),
             supabaseClient.from('clients').select('id', { count: 'exact', head: true }),
             supabaseClient
                 .from('v_attendance_daily_summary')
@@ -65,16 +66,18 @@ async function loadDashboardData() {
 
         if (todayRes.error) throw todayRes.error;
         if (yesterdayRes.error) throw yesterdayRes.error;
-        if (staffRes.error) throw staffRes.error;
+        if (rosterRes.error) throw rosterRes.error;
+        if (leaveRes.error) throw leaveRes.error;
         if (sitesRes.error) throw sitesRes.error;
         if (trendRes.error) throw trendRes.error;
 
         const todayRows = todayRes.data || [];
         const yesterdayRows = yesterdayRes.data || [];
-        const totalActiveStaff = staffRes.count || 0;
+        const expectedCount = rosterRes.data ? Number(rosterRes.data.expected_count || 0) : 0;
+        const onLeaveCount = new Set((leaveRes.data || []).map(r => r.employee_id)).size;
         const totalSites = sitesRes.count || 0;
 
-        updateBigNumbers(todayRows, yesterdayRows, totalActiveStaff, totalSites);
+        updateBigNumbers(todayRows, yesterdayRows, expectedCount, onLeaveCount, totalSites);
         renderAttentionList(todayRows);
         renderTrendChart(trendRes.data || [], trendStart, todayDate);
 
@@ -96,29 +99,36 @@ function updateLastSyncLabel() {
     el.textContent = `ซิงก์ล่าสุด ${now}`;
 }
 
-function updateBigNumbers(rows, yesterdayRows, totalActiveStaff, totalSites) {
+// expectedCount: how many employees should be working today (has a shift assignment covering
+// today, excluding company holidays and their own weekly rest day - same rule as the payroll
+// engine's absence calculation). onLeaveCount: employees on approved leave covering today, so
+// they aren't double-counted as "absent" on top of being expected to work.
+function updateBigNumbers(rows, yesterdayRows, expectedCount, onLeaveCount, totalSites) {
     const totalPresent = rows.reduce((s, r) => s + Number(r.present_count || 0), 0);
     const totalLate = rows.reduce((s, r) => s + Number(r.late_count || 0), 0);
     const totalOtHours = rows.reduce((s, r) => s + Number(r.total_ot_hours || 0), 0);
     const activeSites = rows.filter(r => Number(r.present_count || 0) > 0).length;
+    const totalAbsent = Math.max(expectedCount - totalPresent - onLeaveCount, 0);
 
     const yTotalLate = yesterdayRows.reduce((s, r) => s + Number(r.late_count || 0), 0);
     const yTotalOtHours = yesterdayRows.reduce((s, r) => s + Number(r.total_ot_hours || 0), 0);
 
     animateValue('tvTotalPresent', totalPresent);
+    animateValue('tvTotalPresentBig', totalPresent);
+    animateValue('tvTotalAbsent', totalAbsent);
     animateValue('tvTotalLate', totalLate);
     animateValue('tvActiveSites', activeSites);
-    document.getElementById('tvTotalActiveStaff').textContent = totalActiveStaff;
+    document.getElementById('tvTotalExpected').textContent = expectedCount;
     document.getElementById('tvTotalSites').textContent = totalSites;
     document.getElementById('tvTotalOtHours').textContent = totalOtHours.toFixed(1);
 
     renderTrendBadge('tvLateTrend', totalLate - yTotalLate, true);
     renderTrendBadge('tvOtTrend', totalOtHours - yTotalOtHours, true);
 
-    const rate = totalActiveStaff > 0 ? Math.min(100, Math.round((totalPresent / totalActiveStaff) * 100)) : 0;
+    const rate = expectedCount > 0 ? Math.min(100, Math.round((totalPresent / expectedCount) * 100)) : 0;
     const rateEl = document.getElementById('tvAttendanceRatePct');
     const cardEl = document.getElementById('tvRateCard');
-    rateEl.textContent = totalActiveStaff > 0 ? `${rate}%` : '-';
+    rateEl.textContent = expectedCount > 0 ? `${rate}%` : '-';
 
     // Plain text color-coding instead of a gauge chart: green/amber/red conveys status at a glance
     const colorClass = rate >= 90 ? 'text-emerald-600' : rate >= 70 ? 'text-amber-600' : 'text-red-600';
