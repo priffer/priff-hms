@@ -37,6 +37,16 @@
 
             <!-- TAB 1: รอบเงินเดือน (payroll_periods + payroll_runs) -->
             <div id="tabView-periods">
+                <div class="bg-kclight border border-blue-100 rounded-2xl p-4 mb-5">
+                    <p class="text-sm font-bold text-kcdark mb-3">ลำดับการทำงานของรอบเงินเดือน</p>
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs text-slate-600">
+                        <div><span class="font-bold text-kcblue">1. สร้างงวด</span><br>เลือกงวดให้ตรงกับรอบจ่ายของพนักงาน</div>
+                        <div><span class="font-bold text-kcblue">2. รันคำนวณ</span><br>ระบบสร้าง Run และรายการเงินเดือน</div>
+                        <div><span class="font-bold text-kcblue">3. ตรวจรายการ</span><br>คลิก Run ล่าสุดหรือดูรายละเอียด</div>
+                        <div><span class="font-bold text-kcblue">4. ส่งตรวจ/อนุมัติ</span><br>Payroll ส่ง และ Admin อนุมัติงวด</div>
+                        <div><span class="font-bold text-kcblue">5. ล็อกหลังจ่าย</span><br>ปิดการแก้ไขข้อมูลย้อนหลังของงวด</div>
+                    </div>
+                </div>
                 <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
                     <p class="text-sm text-slate-500">สร้างรอบใหม่ (รายเดือน/รายวัน), รันคำนวณ, ดูสถานะ run ล่าสุดของแต่ละรอบ</p>
                     <div class="flex gap-2 flex-wrap">
@@ -55,7 +65,7 @@
                                 <th class="p-3 font-bold">ประเภท</th>
                                 <th class="p-3 font-bold">วันจ่าย</th>
                                 <th class="p-3 font-bold text-center">สถานะงวด</th>
-                                <th class="p-3 font-bold">Run ล่าสุด</th>
+                                <th class="p-3 font-bold">Run ล่าสุด <span class="block text-xs font-normal text-slate-500">คลิกเพื่อดูรายการพนักงาน</span></th>
                                 <th class="p-3 font-bold text-right">ยอดสุทธิรวม</th>
                                 <th class="p-3 font-bold text-center">จัดการ</th>
                             </tr>
