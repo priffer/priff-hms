@@ -92,7 +92,10 @@ async function loadPayrollPeriods() {
         tbody.innerHTML = periods.map(p => {
             const run = latestRunByPeriod[p.id];
             const runInfo = run
-                ? `${run.run_name || run.id.slice(0, 8)} <span class="text-xs text-slate-400">(${run.status})</span>`
+                ? `<button type="button" onclick="viewPeriodInLinesTab('${run.id}')" class="text-left text-kcblue font-bold hover:text-kcdark hover:underline cursor-pointer">
+                    ${run.run_name || run.id.slice(0, 8)}
+                    <span class="block text-xs text-slate-400 font-normal">สถานะ ${run.status} · เปิดรายละเอียด →</span>
+                   </button>`
                 : '<span class="text-slate-400">ยังไม่รัน</span>';
             const netTotal = run ? fmtMoney(run.total_net_amount) + ' บาท' : '-';
 
