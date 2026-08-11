@@ -4,6 +4,13 @@
 
 const COMPANY_ID = 'comp_kc_clean'; // ระบบ single-tenant ในตอนนี้ (เหมือน pattern เดิมทั่วทั้งระบบ)
 
+async function uiConfirm(message, options) {
+    return window.PriffConfirm.confirm(message, options);
+}
+async function uiAlert(message, options) {
+    return window.PriffConfirm.alert(message, options);
+}
+
 let currentUserRole = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -92,7 +99,10 @@ async function loadPayrollPeriods() {
         tbody.innerHTML = periods.map(p => {
             const run = latestRunByPeriod[p.id];
             const runInfo = run
-                ? `${run.run_name || run.id.slice(0, 8)} <span class="text-xs text-slate-400">(${run.status})</span>`
+                ? `<button type="button" onclick="viewPeriodInLinesTab('${run.id}')" class="text-left text-kcblue font-bold hover:text-kcdark hover:underline cursor-pointer">
+                    ${run.run_name || run.id.slice(0, 8)}
+                    <span class="block text-xs text-slate-400 font-normal">สถานะ ${run.status} · เปิดรายละเอียด →</span>
+                   </button>`
                 : '<span class="text-slate-400">ยังไม่รัน</span>';
             const netTotal = run ? fmtMoney(run.total_net_amount) + ' บาท' : '-';
 
@@ -142,7 +152,7 @@ const periodTypeLabel = { monthly: 'รายเดือน', semimonthly: 'ก
 
 async function generateNextPeriod(periodType) {
     const label = periodTypeLabel[periodType] || periodType;
-    if (!confirm(`ยืนยันสร้างงวด "${label}" ถัดไปให้อัตโนมัติตามกฎที่ตั้งไว้?`)) return;
+    if (!(await uiConfirm(`ยืนยันสร้างงวด "${label}" ถัดไปให้อัตโนมัติตามกฎที่ตั้งไว้?`))) return;
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const { data, error } = await supabaseClient.rpc('fn_generate_next_payroll_period', {
@@ -151,15 +161,15 @@ async function generateNextPeriod(periodType) {
             p_created_by: user ? user.id : null,
         });
         if (error) throw error;
-        alert(`สร้างงวด "${label}" สำเร็จ`);
+        await uiAlert(`สร้างงวด "${label}" สำเร็จ`);
         loadPayrollPeriods();
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
 async function runPayrollForPeriod(periodId) {
-    if (!confirm('ยืนยันการรันคำนวณเงินเดือนสำหรับรอบนี้? ระบบจะสร้าง payroll run ใหม่และคำนวณค่าแรง/OT/ประกันสังคม/ภาษี/หักเบิกล่วงหน้าให้ทุกคน')) return;
+    if (!(await uiConfirm('ยืนยันการรันคำนวณเงินเดือนสำหรับรอบนี้? ระบบจะคำนวณค่าแรง/OT/ประกันสังคม/ภาษี/หักเบิกล่วงหน้า (reuse draft run ของงวดนี้ถ้ามีอยู่แล้ว)'))) return;
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const { data, error } = await supabaseClient.rpc('fn_run_payroll_period', {
@@ -167,11 +177,11 @@ async function runPayrollForPeriod(periodId) {
             p_created_by: user ? user.id : null,
         });
         if (error) throw error;
-        alert('รันคำนวณเงินเดือนสำเร็จ (run_id: ' + data + ')');
+        await uiAlert('รันคำนวณเงินเดือนสำเร็จ (run_id: ' + data + ')');
         loadPayrollPeriods();
         loadRunsForSelect();
     } catch (err) {
-        alert('เกิดข้อผิดพลาดขณะรันคำนวณ: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาดขณะรันคำนวณ: ' + err.message);
     }
 }
 
@@ -191,52 +201,52 @@ function viewPeriodInLinesTab(runId) {
 //   (+ "ส่งกลับแก้ไข": submitted -> open) - บังคับสิทธิ์จริงในฟังก์ชัน SQL (SECURITY DEFINER)
 // ============================================================
 async function submitPeriod(periodId) {
-    if (!confirm('ยืนยันส่งงวดนี้ให้ admin ตรวจสอบ? ต้องอนุมัติรายการพนักงานให้ครบทุกคนก่อนถึงจะส่งได้')) return;
+    if (!(await uiConfirm('ยืนยันส่งงวดนี้ให้ admin ตรวจสอบ? ต้องอนุมัติรายการพนักงานให้ครบทุกคนก่อนถึงจะส่งได้'))) return;
     try {
         const { error } = await supabaseClient.rpc('fn_payroll_period_submit', { p_period_id: periodId });
         if (error) throw error;
-        alert('ส่งงวดเงินเดือนเรียบร้อย รอ admin ตรวจสอบ');
+        await uiAlert('ส่งงวดเงินเดือนเรียบร้อย รอ admin ตรวจสอบ');
         loadPayrollPeriods();
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
 async function approvePeriod(periodId) {
-    if (!confirm('ยืนยันอนุมัติงวดเงินเดือนนี้?')) return;
+    if (!(await uiConfirm('ยืนยันอนุมัติงวดเงินเดือนนี้?'))) return;
     try {
         const { error } = await supabaseClient.rpc('fn_payroll_period_approve', { p_period_id: periodId });
         if (error) throw error;
-        alert('อนุมัติงวดเงินเดือนเรียบร้อย');
+        await uiAlert('อนุมัติงวดเงินเดือนเรียบร้อย');
         loadPayrollPeriods();
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
 async function rejectPeriod(periodId) {
     const reason = prompt('เหตุผลที่ส่งกลับแก้ไข (ถ้ามี):', '');
     if (reason === null) return; // กด cancel
-    if (!confirm('ยืนยันส่งงวดนี้กลับให้เจ้าหน้าที่ payroll แก้ไข? รายการที่อนุมัติแล้วทั้งหมดจะกลับเป็น "รอตรวจสอบ"')) return;
+    if (!(await uiConfirm('ยืนยันส่งงวดนี้กลับให้เจ้าหน้าที่ payroll แก้ไข? รายการที่อนุมัติแล้วทั้งหมดจะกลับเป็น "รอตรวจสอบ"'))) return;
     try {
         const { error } = await supabaseClient.rpc('fn_payroll_period_reject', { p_period_id: periodId, p_reason: reason || null });
         if (error) throw error;
-        alert('ส่งงวดกลับแก้ไขเรียบร้อย');
+        await uiAlert('ส่งงวดกลับแก้ไขเรียบร้อย');
         loadPayrollPeriods();
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
 async function lockPeriod(periodId) {
-    if (!confirm('ยืนยันล็อกงวดนี้? หลังล็อกแล้วจะแก้ไข attendance/เงินเดือนของงวดนี้ไม่ได้อีก (ใช้เมื่อจ่ายเงินจริงแล้วเท่านั้น)')) return;
+    if (!(await uiConfirm('ยืนยันล็อกงวดนี้? หลังล็อกแล้วจะแก้ไข attendance/เงินเดือนของงวดนี้ไม่ได้อีก (ใช้เมื่อจ่ายเงินจริงแล้วเท่านั้น)'))) return;
     try {
         const { error } = await supabaseClient.rpc('fn_payroll_period_lock', { p_period_id: periodId });
         if (error) throw error;
-        alert('ล็อกงวดเงินเดือนเรียบร้อย');
+        await uiAlert('ล็อกงวดเงินเดือนเรียบร้อย');
         loadPayrollPeriods();
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
@@ -377,7 +387,7 @@ async function viewLineDetail(lineId) {
         document.getElementById('lineDetailModal').classList.remove('hidden');
         document.getElementById('lineDetailModal').classList.add('flex');
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 function closeLineDetailModal() {
@@ -386,7 +396,7 @@ function closeLineDetailModal() {
 }
 
 async function approveLine(lineId) {
-    if (!confirm('ยืนยันอนุมัติรายการเงินเดือนนี้?')) return;
+    if (!(await uiConfirm('ยืนยันอนุมัติรายการเงินเดือนนี้?'))) return;
     try {
         const { error } = await supabaseClient
             .from('payroll_lines')
@@ -399,12 +409,12 @@ async function approveLine(lineId) {
             .eq('payroll_line_id', lineId);
         loadPayrollLines(currentLinesRunId);
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
 async function markLinePaid(lineId) {
-    if (!confirm('ยืนยันว่าจ่ายเงินให้พนักงานคนนี้แล้ว?')) return;
+    if (!(await uiConfirm('ยืนยันว่าจ่ายเงินให้พนักงานคนนี้แล้ว?'))) return;
     try {
         const { error } = await supabaseClient
             .from('payroll_lines')
@@ -417,13 +427,13 @@ async function markLinePaid(lineId) {
             .eq('payroll_line_id', lineId);
         loadPayrollLines(currentLinesRunId);
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
 async function approveAllReadyLines() {
-    if (!currentLinesRunId) { alert('กรุณาเลือก payroll run ก่อน'); return; }
-    if (!confirm('ยืนยันอนุมัติทุกรายการที่ไม่มีสถานะ "ต้องตรวจสอบ" ใน run นี้?')) return;
+    if (!currentLinesRunId) { await uiAlert('กรุณาเลือก payroll run ก่อน'); return; }
+    if (!(await uiConfirm('ยืนยันอนุมัติทุกรายการที่ไม่มีสถานะ "ต้องตรวจสอบ" ใน run นี้?'))) return;
     try {
         const { data: lines, error: fetchErr } = await supabaseClient
             .from('payroll_lines')
@@ -431,7 +441,7 @@ async function approveAllReadyLines() {
             .eq('payroll_run_id', currentLinesRunId)
             .eq('pay_status', 'pending');
         if (fetchErr) throw fetchErr;
-        if (!lines || lines.length === 0) { alert('ไม่มีรายการที่รออนุมัติ'); return; }
+        if (!lines || lines.length === 0) { await uiAlert('ไม่มีรายการที่รออนุมัติ'); return; }
         const ids = lines.map(l => l.id);
         const { error } = await supabaseClient
             .from('payroll_lines')
@@ -444,7 +454,7 @@ async function approveAllReadyLines() {
             .in('payroll_line_id', ids);
         loadPayrollLines(currentLinesRunId);
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
 
@@ -525,7 +535,7 @@ async function confirmEditRate() {
     const effective_from = document.getElementById('editRateEffectiveFrom').value;
 
     if (isNaN(rate_value) || !effective_from) {
-        alert('กรุณากรอกค่าอัตราและวันที่มีผลให้ครบถ้วน');
+        await uiAlert('กรุณากรอกค่าอัตราและวันที่มีผลให้ครบถ้วน');
         return;
     }
     try {
@@ -545,6 +555,6 @@ async function confirmEditRate() {
         closeEditRateModal();
         loadPayrollRates();
     } catch (err) {
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
 }
