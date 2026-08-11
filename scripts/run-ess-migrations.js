@@ -84,9 +84,15 @@ async function run() {
     '36_payroll_period_approval_workflow.sql',
     '37_fix_attendance_daily_summary_fanout.sql',
     '38_daily_roster_status_view.sql',
+    '39_add_company_id_to_clients.sql',
     '40_break_policy_settings.sql',
     '41_attendance_break_columns.sql',
     '42_attendance_break_total_hours_triggers.sql',
+    '43_attendance_ot_rematerialize_on_break.sql',
+    '44_attendance_update_payroll_role.sql',
+    '45_payroll_run_reuse_draft.sql',
+    '46_attendance_audit_payroll_fix.sql',
+    '47_payroll_runs_one_draft_per_period.sql',
     // เพิ่มไฟล์ migration ใหม่ต่อท้ายลิสต์นี้เสมอ (ห้าม auto-discover ทั้งโฟลเดอร์ database/
     // เพราะไฟล์ 01-05 และ schema.sql เป็นของ scripts/run-sql.js คนละ workflow กัน)
   ].map(f => path.resolve(__dirname, '..', 'database', f));

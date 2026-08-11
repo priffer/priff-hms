@@ -46,8 +46,14 @@ Staging/Production (see `.agent-rules.md`).
 | `36_payroll_period_approval_workflow.sql` | Payroll Engine Milestone 4 (ต่อ): Approval Workflow สำหรับ payroll_periods |
 | `37_fix_attendance_daily_summary_fanout.sql` | Phase 4 follow-up bugfix: v_attendance_daily_summary double-counts |
 | `38_daily_roster_status_view.sql` | TV Dashboard follow-up: adds a "who should be working today" baseline so the |
+| `39_add_company_id_to_clients.sql` | Migration 39: Add company_id to public.clients |
 | `40_break_policy_settings.sql` | Attendance / Payroll: company-level break deduction policy |
 | `41_attendance_break_columns.sql` | Attendance break metadata on attendance_logs |
 | `42_attendance_break_total_hours_triggers.sql` | Auto break policy + total_hours calculation |
+| `43_attendance_ot_rematerialize_on_break.sql` | Migration 43: Rematerialize OT when break fields change |
+| `44_attendance_update_payroll_role.sql` | Migration 44: Allow role 'payroll' to UPDATE attendance_logs |
+| `45_payroll_run_reuse_draft.sql` | Reuse draft payroll_runs on re-run instead of always inserting. |
+| `46_attendance_audit_payroll_fix.sql` | Migration 46: Fix attendance audit trigger for payroll role updates |
+| `47_payroll_runs_one_draft_per_period.sql` | 1) Staging cleanup of duplicate/empty draft payroll_runs (approved 2026-08-11) |
 
-_Generated: 2026-08-11T10:47:45.413Z_
+_Generated: 2026-08-11T12:30:27.978Z_

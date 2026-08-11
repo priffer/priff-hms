@@ -108,10 +108,10 @@ async function loadClientsForAdmin() {
 }
 
 // 🔍 เปิดหน้าต่างตรวจสอบ
-function openReviewModal(logId) {
+async function openReviewModal(logId) {
     const log = attendanceLogById.get(logId);
     if (!log) {
-        alert('ไม่พบข้อมูลการลงเวลานี้');
+        await PriffConfirm.alert('ไม่พบข้อมูลการลงเวลานี้', { variant: 'error' });
         return;
     }
 
@@ -143,10 +143,10 @@ function closeReviewModal() {
     document.getElementById('reviewModal').classList.remove('flex');
 }
 
-function openBreakModal(logId) {
+async function openBreakModal(logId) {
     const log = attendanceLogById.get(logId);
     if (!log) {
-        alert('ไม่พบข้อมูลการลงเวลานี้');
+        await PriffConfirm.alert('ไม่พบข้อมูลการลงเวลานี้', { variant: 'error' });
         return;
     }
 
@@ -182,15 +182,15 @@ async function saveBreakMinutes() {
     const breakMinutes = Number(rawMinutes);
 
     if (rawMinutes === '' || !Number.isFinite(breakMinutes) || !Number.isInteger(breakMinutes)) {
-        alert('กรุณาระบุเบรกเป็นจำนวนเต็มนาที');
+        await PriffConfirm.alert('กรุณาระบุเบรกเป็นจำนวนเต็มนาที', { variant: 'error' });
         return;
     }
     if (breakMinutes < 0 || breakMinutes > 1440) {
-        alert('เบรกต้องอยู่ระหว่าง 0–1440 นาที');
+        await PriffConfirm.alert('เบรกต้องอยู่ระหว่าง 0–1440 นาที', { variant: 'error' });
         return;
     }
 
-    if (!confirm(`ยืนยันตั้งเบรก ${breakMinutes} นาที (manual) ใช่หรือไม่?`)) return;
+    if (!(await PriffConfirm.confirm(`ยืนยันตั้งเบรก ${breakMinutes} นาที (manual) ใช่หรือไม่?`))) return;
 
     try {
         const breakUpdatedBy = await resolveBreakUpdatedBy();
@@ -207,18 +207,18 @@ async function saveBreakMinutes() {
 
         if (error) throw error;
 
-        alert('บันทึกเบรกสำเร็จ');
+        await PriffConfirm.alert('บันทึกเบรกสำเร็จ');
         closeBreakModal();
         loadAttendanceLogs();
     } catch (err) {
         console.error('Error updating break minutes:', err);
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await PriffConfirm.alert('เกิดข้อผิดพลาด: ' + err.message, { variant: 'error' });
     }
 }
 
 async function resetBreakToPolicy() {
     const logId = document.getElementById('breakLogId').value;
-    if (!confirm('ยืนยันให้ระบบคำนวณเบรกตาม policy อัตโนมัติอีกครั้งใช่หรือไม่?')) return;
+    if (!(await PriffConfirm.confirm('ยืนยันให้ระบบคำนวณเบรกตาม policy อัตโนมัติอีกครั้งใช่หรือไม่?'))) return;
 
     try {
         // Clearing source lets the BEFORE trigger re-apply company policy.
@@ -232,12 +232,12 @@ async function resetBreakToPolicy() {
 
         if (error) throw error;
 
-        alert('กลับไปใช้ break policy แล้ว');
+        await PriffConfirm.alert('กลับไปใช้ break policy แล้ว');
         closeBreakModal();
         loadAttendanceLogs();
     } catch (err) {
         console.error('Error resetting break to policy:', err);
-        alert('เกิดข้อผิดพลาด: ' + err.message);
+        await PriffConfirm.alert('เกิดข้อผิดพลาด: ' + err.message, { variant: 'error' });
     }
 }
 
@@ -247,31 +247,30 @@ async function saveAdminCorrection() {
     const newClientId = document.getElementById('adminSiteSelect').value;
 
     if (!newClientId) {
-        alert("กรุณาเลือกไซต์งานที่ถูกต้อง");
+        await PriffConfirm.alert('กรุณาเลือกไซต์งานที่ถูกต้อง', { variant: 'error' });
         return;
     }
 
-    if (confirm("ยืนยันการแก้ไขไซต์งานและอนุมัติการลงเวลานี้ใช่หรือไม่?")) {
-        try {
-            // อัปเดตตาราง: เปลี่ยน client_id และเปลี่ยนสถานะกลับเป็น present
-            const { error } = await supabaseClient
-                .from('attendance_logs')
-                .update({
-                    client_id: newClientId,
-                    status: 'present',
-                    manual_override_reason: 'Resolved by Admin' // ล้างค่าหรือใส่โน้ตแอดมินทับ
-                })
-                .eq('id', logId);
+    if (!(await PriffConfirm.confirm('ยืนยันการแก้ไขไซต์งานและอนุมัติการลงเวลานี้ใช่หรือไม่?'))) return;
 
-            if (error) throw error;
+    try {
+        // อัปเดตตาราง: เปลี่ยน client_id และเปลี่ยนสถานะกลับเป็น present
+        const { error } = await supabaseClient
+            .from('attendance_logs')
+            .update({
+                client_id: newClientId,
+                status: 'present',
+                manual_override_reason: 'Resolved by Admin' // ล้างค่าหรือใส่โน้ตแอดมินทับ
+            })
+            .eq('id', logId);
 
-            alert("✅ บันทึกการแก้ไขสำเร็จ!");
-            closeReviewModal();
-            loadAttendanceLogs(); // รีเฟรชตารางใหม่
+        if (error) throw error;
 
-        } catch (err) {
-            console.error("Error updating log:", err);
-            alert("❌ เกิดข้อผิดพลาด: " + err.message);
-        }
+        await PriffConfirm.alert('บันทึกการแก้ไขสำเร็จ!');
+        closeReviewModal();
+        loadAttendanceLogs(); // รีเฟรชตารางใหม่
+    } catch (err) {
+        console.error('Error updating log:', err);
+        await PriffConfirm.alert('เกิดข้อผิดพลาด: ' + err.message, { variant: 'error' });
     }
 }
