@@ -85,6 +85,10 @@
                         <select id="linesRunSelect" class="rounded-xl border border-[#e6edf7] p-2 outline-none focus:border-kcblue bg-white text-sm min-w-[280px]">
                             <option value="">-- เลือก payroll run --</option>
                         </select>
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none ml-1">
+                            <input type="checkbox" id="linesShowZeroNetToggle" class="rounded border-[#e6edf7] text-kcblue focus:ring-kcblue" onchange="toggleShowZeroNetPayLines(this.checked)">
+                            <span>แสดงพนักงานที่ไม่มีรายได้ในงวดนี้</span>
+                        </label>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="approveAllReadyLines()" class="bg-emerald-600 text-white px-4 py-2 text-sm font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-xl">✅ อนุมัติทั้งหมด (ที่ไม่ต้องตรวจสอบ)</button>

@@ -282,17 +282,93 @@ const payStatusLabel = {
 };
 
 let currentLinesRunId = null;
+let currentLinesData = null;
+let showZeroNetPayLines = false;
 
-async function loadPayrollLines(runId) {
-    currentLinesRunId = runId || null;
+function toggleShowZeroNetPayLines(checked) {
+    showZeroNetPayLines = !!checked;
+    renderPayrollLinesTable();
+}
+
+function renderPayrollLinesTable() {
     const tbody = document.getElementById('linesTableBody');
     const summaryBar = document.getElementById('linesSummaryBar');
-    if (!runId) {
+    if (!currentLinesRunId) {
         tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">กรุณาเลือก payroll run ด้านบน</td></tr>';
         summaryBar.classList.add('hidden');
         return;
     }
+    const data = currentLinesData || [];
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่มีข้อมูลใน run นี้</td></tr>';
+        summaryBar.classList.add('hidden');
+        return;
+    }
+
+    const visible = showZeroNetPayLines
+        ? data
+        : data.filter(l => Number(l.net_pay || 0) !== 0);
+
+    if (visible.length === 0) {
+        const hiddenCount = data.length;
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่มีพนักงานที่มีรายได้ในงวดนี้ (${hiddenCount} คนถูกซ่อน — เปิด "แสดงพนักงานที่ไม่มีรายได้ในงวดนี้" เพื่อดู)</td></tr>`;
+        summaryBar.classList.remove('hidden');
+        summaryBar.innerHTML = `
+            <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">จำนวนพนักงาน</p><p class="text-lg font-bold text-kcdark">0</p></div>
+            <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">รายได้รวม</p><p class="text-lg font-bold text-kcdark">${fmtMoney(0)}</p></div>
+            <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">สุทธิรวม</p><p class="text-lg font-bold text-kcblue">${fmtMoney(0)}</p></div>
+            <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">ต้องตรวจสอบ</p><p class="text-lg font-bold text-kcdark">0</p></div>
+        `;
+        return;
+    }
+
+    const totalGross = visible.reduce((s, l) => s + Number(l.gross_pay || 0), 0);
+    const totalNet = visible.reduce((s, l) => s + Number(l.net_pay || 0), 0);
+    const needsReviewCount = visible.filter(l => l.pay_status === 'needs_review').length;
+    summaryBar.classList.remove('hidden');
+    summaryBar.innerHTML = `
+        <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">จำนวนพนักงาน</p><p class="text-lg font-bold text-kcdark">${visible.length}</p></div>
+        <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">รายได้รวม</p><p class="text-lg font-bold text-kcdark">${fmtMoney(totalGross)}</p></div>
+        <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">สุทธิรวม</p><p class="text-lg font-bold text-kcblue">${fmtMoney(totalNet)}</p></div>
+        <div class="${needsReviewCount > 0 ? 'bg-red-50 border border-red-200' : 'bg-kclight'} rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">ต้องตรวจสอบ</p><p class="text-lg font-bold ${needsReviewCount > 0 ? 'text-red-600' : 'text-kcdark'}">${needsReviewCount}</p></div>
+    `;
+
+    tbody.innerHTML = visible.map(l => {
+        const otTotal = Number(l.overtime_amount || 0);
+        const emp = l.employees;
+        const canApprove = l.pay_status === 'pending';
+        const canMarkPaid = l.pay_status === 'approved';
+        return `
+        <tr class="border-t border-[#e6edf7] ${l.pay_status === 'needs_review' ? 'bg-red-50/50' : ''}">
+            <td class="p-3 font-bold">${emp ? emp.full_name : l.emp_id} <span class="text-xs text-slate-400 block">${l.emp_id}</span></td>
+            <td class="p-3 text-right">${fmtMoney(l.base_salary)}</td>
+            <td class="p-3 text-right">${fmtMoney(otTotal)}</td>
+            <td class="p-3 text-right font-bold">${fmtMoney(l.gross_pay)}</td>
+            <td class="p-3 text-right text-red-600">-${fmtMoney(l.social_security_employee)}</td>
+            <td class="p-3 text-right text-red-600">-${fmtMoney(l.withholding_tax)}</td>
+            <td class="p-3 text-right text-red-600">-${fmtMoney(l.advance_deduction)}</td>
+            <td class="p-3 text-right font-bold text-kcblue">${fmtMoney(l.net_pay)}</td>
+            <td class="p-3 text-center">${payStatusLabel[l.pay_status] || l.pay_status}</td>
+            <td class="p-3 text-center whitespace-nowrap">
+                <button onclick="viewLineDetail('${l.id}')" class="border border-[#e6edf7] bg-white text-slate-700 px-2 py-1 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg mb-1">🔍 ดู</button>
+                ${canApprove ? `<button onclick="approveLine('${l.id}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg mb-1">✅ อนุมัติ</button>` : ''}
+                ${canMarkPaid ? `<button onclick="markLinePaid('${l.id}')" class="bg-kcblue text-white px-2 py-1 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg mb-1">💸 จ่ายแล้ว</button>` : ''}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function loadPayrollLines(runId) {
+    currentLinesRunId = runId || null;
+    currentLinesData = null;
+    const tbody = document.getElementById('linesTableBody');
+    const summaryBar = document.getElementById('linesSummaryBar');
+    if (!runId) {
+        renderPayrollLinesTable();
+        return;
+    }
     tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
+    summaryBar.classList.add('hidden');
     try {
         const { data, error } = await supabaseClient
             .from('payroll_lines')
@@ -300,51 +376,40 @@ async function loadPayrollLines(runId) {
             .eq('payroll_run_id', runId)
             .order('emp_id', { ascending: true });
         if (error) throw error;
-
-        if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่มีข้อมูลใน run นี้</td></tr>';
-            summaryBar.classList.add('hidden');
-            return;
-        }
-
-        const totalGross = data.reduce((s, l) => s + Number(l.gross_pay || 0), 0);
-        const totalNet = data.reduce((s, l) => s + Number(l.net_pay || 0), 0);
-        const needsReviewCount = data.filter(l => l.pay_status === 'needs_review').length;
-        summaryBar.classList.remove('hidden');
-        summaryBar.innerHTML = `
-            <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">จำนวนพนักงาน</p><p class="text-lg font-bold text-kcdark">${data.length}</p></div>
-            <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">รายได้รวม</p><p class="text-lg font-bold text-kcdark">${fmtMoney(totalGross)}</p></div>
-            <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">สุทธิรวม</p><p class="text-lg font-bold text-kcblue">${fmtMoney(totalNet)}</p></div>
-            <div class="${needsReviewCount > 0 ? 'bg-red-50 border border-red-200' : 'bg-kclight'} rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">ต้องตรวจสอบ</p><p class="text-lg font-bold ${needsReviewCount > 0 ? 'text-red-600' : 'text-kcdark'}">${needsReviewCount}</p></div>
-        `;
-
-        tbody.innerHTML = data.map(l => {
-            const otTotal = Number(l.overtime_amount || 0);
-            const emp = l.employees;
-            const canApprove = l.pay_status === 'pending';
-            const canMarkPaid = l.pay_status === 'approved';
-            return `
-            <tr class="border-t border-[#e6edf7] ${l.pay_status === 'needs_review' ? 'bg-red-50/50' : ''}">
-                <td class="p-3 font-bold">${emp ? emp.full_name : l.emp_id} <span class="text-xs text-slate-400 block">${l.emp_id}</span></td>
-                <td class="p-3 text-right">${fmtMoney(l.base_salary)}</td>
-                <td class="p-3 text-right">${fmtMoney(otTotal)}</td>
-                <td class="p-3 text-right font-bold">${fmtMoney(l.gross_pay)}</td>
-                <td class="p-3 text-right text-red-600">-${fmtMoney(l.social_security_employee)}</td>
-                <td class="p-3 text-right text-red-600">-${fmtMoney(l.withholding_tax)}</td>
-                <td class="p-3 text-right text-red-600">-${fmtMoney(l.advance_deduction)}</td>
-                <td class="p-3 text-right font-bold text-kcblue">${fmtMoney(l.net_pay)}</td>
-                <td class="p-3 text-center">${payStatusLabel[l.pay_status] || l.pay_status}</td>
-                <td class="p-3 text-center whitespace-nowrap">
-                    <button onclick="viewLineDetail('${l.id}')" class="border border-[#e6edf7] bg-white text-slate-700 px-2 py-1 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg mb-1">🔍 ดู</button>
-                    ${canApprove ? `<button onclick="approveLine('${l.id}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg mb-1">✅ อนุมัติ</button>` : ''}
-                    ${canMarkPaid ? `<button onclick="markLinePaid('${l.id}')" class="bg-kcblue text-white px-2 py-1 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg mb-1">💸 จ่ายแล้ว</button>` : ''}
-                </td>
-            </tr>`;
-        }).join('');
+        currentLinesData = data || [];
+        renderPayrollLinesTable();
     } catch (err) {
         console.error(err);
+        currentLinesData = null;
         tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-red-600">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
     }
+}
+
+// แถวที่ quantity/rate เป็น placeholder (qty=1 คงที่) — แสดง "-" ไม่โชว์ตัวเลขหลอก
+const DETAIL_QTY_RATE_PLACEHOLDER_TYPES = new Set(['social_security', 'withholding_tax', 'advance']);
+
+function formatLineDetailDescription(d) {
+    let desc = d.description || d.detail_type || '';
+    if (d.detail_type === 'base') {
+        desc = desc
+            .replace(/\(\s*daily\s*\)/i, '(รายวัน)')
+            .replace(/\(\s*monthly\s*\)/i, '(รายเดือน)');
+    }
+    return desc;
+}
+
+function formatLineDetailQuantity(d) {
+    if (DETAIL_QTY_RATE_PLACEHOLDER_TYPES.has(d.detail_type)) return '-';
+    return d.quantity != null ? d.quantity : '-';
+}
+
+function formatLineDetailRate(d) {
+    if (DETAIL_QTY_RATE_PLACEHOLDER_TYPES.has(d.detail_type)) return '-';
+    // ค่าจ้างพื้นฐาน: แสดงอัตรารายวัน (amount/วัน) ให้ qty × อัตรา = มูลค่า ไม่ใช้ hourly แบบ derived
+    if (d.detail_type === 'base' && d.quantity != null && Number(d.quantity) !== 0) {
+        return fmtMoney(Number(d.amount) / Number(d.quantity));
+    }
+    return d.rate != null ? fmtMoney(d.rate) : '-';
 }
 
 async function viewLineDetail(lineId) {
@@ -373,9 +438,9 @@ async function viewLineDetail(lineId) {
                 <tbody>
                 ${(details || []).map(d => `
                     <tr class="border-t border-[#e6edf7]">
-                        <td class="p-1">${d.description || d.detail_type}</td>
-                        <td class="p-1 text-right">${d.quantity != null ? d.quantity : '-'}</td>
-                        <td class="p-1 text-right">${d.rate != null ? fmtMoney(d.rate) : '-'}</td>
+                        <td class="p-1">${formatLineDetailDescription(d)}</td>
+                        <td class="p-1 text-right">${formatLineDetailQuantity(d)}</td>
+                        <td class="p-1 text-right">${formatLineDetailRate(d)}</td>
                         <td class="p-1 text-right font-bold ${Number(d.amount) < 0 ? 'text-red-600' : 'text-slate-800'}">${fmtMoney(d.amount)}</td>
                     </tr>`).join('')}
                 </tbody>
