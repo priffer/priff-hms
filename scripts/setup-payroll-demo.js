@@ -63,8 +63,7 @@ async function run() {
             standard_monthly_hours = 208,
             social_security_base = 600,
             social_security_employee_rate = 0.05,
-            social_security_employer_rate = 0.05,
-            updated_at = timezone('utc', now())
+            social_security_employer_rate = 0.05
         WHERE id = $1
       `, [employeeId]);
     } else {
@@ -132,7 +131,7 @@ async function run() {
       await client.query(`
         UPDATE public.attendance_logs
         SET emp_id = $1, company_id = $2, client_id = $3,
-            check_in = '08:00', check_out = '18:00', total_hours = 10,
+            check_in = '08:00', check_out = '18:00',
             status = 'present', check_in_method = 'demo'
         WHERE id = $4
       `, [EMP_ID, COMPANY_ID, clientId, attendanceId]);
@@ -140,9 +139,9 @@ async function run() {
       const insertedAttendance = await client.query(`
         INSERT INTO public.attendance_logs (
           employee_id, emp_id, company_id, client_id, work_date,
-          check_in, check_out, total_hours, status, check_in_method
+          check_in, check_out, status, check_in_method
         )
-        VALUES ($1, $2, $3, $4, $5, '08:00', '18:00', 10, 'present', 'demo')
+        VALUES ($1, $2, $3, $4, $5, '08:00', '18:00', 'present', 'demo')
         RETURNING id
       `, [employeeId, EMP_ID, COMPANY_ID, clientId, workDate]);
       attendanceId = insertedAttendance.rows[0].id;
@@ -174,6 +173,23 @@ async function run() {
     }
     await client.query('SELECT public.fn_materialize_attendance_ot($1)', [attendanceId]);
 
+    const attendanceVerifyResult = await client.query(`
+      SELECT total_hours, break_minutes, break_source
+      FROM public.attendance_logs
+      WHERE id = $1
+    `, [attendanceId]);
+    if (attendanceVerifyResult.rowCount !== 1) {
+      throw new Error('Attendance verification failed: expected one demo attendance row');
+    }
+    const attendanceVerify = attendanceVerifyResult.rows[0];
+    if (
+      Number(attendanceVerify.total_hours) !== 9 ||
+      Number(attendanceVerify.break_minutes) !== 60 ||
+      attendanceVerify.break_source !== 'policy'
+    ) {
+      throw new Error(`Attendance verification failed: expected total_hours=9, break_minutes=60, break_source=policy but got ${JSON.stringify(attendanceVerify)}`);
+    }
+
     const periodResult = await client.query(`
       SELECT id
       FROM public.payroll_periods
@@ -197,25 +213,11 @@ async function run() {
       periodId = insertedPeriod.rows[0].id;
     }
 
-    const existingDemoRun = await client.query(`
-      SELECT r.id
-      FROM public.payroll_runs r
-      JOIN public.payroll_lines l ON l.payroll_run_id = r.id
-      WHERE r.period_id = $1 AND l.employee_id = $2 AND l.net_pay > 0
-      ORDER BY r.created_at DESC
-      LIMIT 1
-    `, [periodId, employeeId]);
-
-    let runId;
-    if (existingDemoRun.rowCount > 0) {
-      runId = existingDemoRun.rows[0].id;
-    } else {
-      const createdRun = await client.query(
-        'SELECT public.fn_run_payroll_period($1, NULL) AS run_id',
-        [periodId]
-      );
-      runId = createdRun.rows[0].run_id;
-    }
+    const createdRun = await client.query(
+      'SELECT public.fn_run_payroll_period($1, NULL) AS run_id',
+      [periodId]
+    );
+    const runId = createdRun.rows[0].run_id;
 
     const summaryResult = await client.query(`
       SELECT r.id AS run_id, r.total_gross_amount, r.total_deductions, r.total_net_amount,
@@ -231,16 +233,30 @@ async function run() {
       FROM public.payroll_lines l
       WHERE l.payroll_run_id = $1 AND l.employee_id = $2
     `, [runId, employeeId]);
-    if (demoLineResult.rowCount !== 1 || Number(demoLineResult.rows[0].net_pay) <= 0) {
-      throw new Error('Payroll demo verification failed: expected one non-zero DEMOPAY001 line');
+    if (demoLineResult.rowCount !== 1) {
+      throw new Error('Payroll demo verification failed: expected exactly one DEMOPAY001 line');
+    }
+    const demoLine = demoLineResult.rows[0];
+    const runSummary = summaryResult.rows[0];
+    if (
+      Number(runSummary.total_gross_amount) !== 712.5 ||
+      Number(runSummary.total_deductions) !== 30 ||
+      Number(runSummary.total_net_amount) !== 682.5 ||
+      Number(demoLine.ot15_hours) !== 1 ||
+      Number(demoLine.overtime_amount) !== 112.5 ||
+      Number(demoLine.social_security_employee) !== 30 ||
+      Number(demoLine.net_pay) !== 682.5
+    ) {
+      throw new Error(`Payroll demo verification failed: unexpected run totals ${JSON.stringify({ run: runSummary, demo_line: demoLine })}`);
     }
 
     await client.query('COMMIT');
     console.log(JSON.stringify({
       period_id: periodId,
       work_date: workDate,
-      run: summaryResult.rows[0],
-      demo_line: demoLineResult.rows[0],
+      attendance: attendanceVerify,
+      run: runSummary,
+      demo_line: demoLine,
     }, null, 2));
   } catch (error) {
     await client.query('ROLLBACK');

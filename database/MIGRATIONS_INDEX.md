@@ -46,5 +46,8 @@ Staging/Production (see `.agent-rules.md`).
 | `36_payroll_period_approval_workflow.sql` | Payroll Engine Milestone 4 (ต่อ): Approval Workflow สำหรับ payroll_periods |
 | `37_fix_attendance_daily_summary_fanout.sql` | Phase 4 follow-up bugfix: v_attendance_daily_summary double-counts |
 | `38_daily_roster_status_view.sql` | TV Dashboard follow-up: adds a "who should be working today" baseline so the |
+| `40_break_policy_settings.sql` | Attendance / Payroll: company-level break deduction policy |
+| `41_attendance_break_columns.sql` | Attendance break metadata on attendance_logs |
+| `42_attendance_break_total_hours_triggers.sql` | Auto break policy + total_hours calculation |
 
-_Generated: 2026-08-07T15:27:43.655Z_
+_Generated: 2026-08-11T10:47:45.413Z_
