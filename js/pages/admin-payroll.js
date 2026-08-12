@@ -253,6 +253,8 @@ async function lockPeriod(periodId) {
 // ============================================================
 // TAB 2: รายละเอียดต่อพนักงาน (payroll_lines / payroll_line_details)
 // ============================================================
+let payrollRunsById = {};
+
 async function loadRunsForSelect() {
     const sel = document.getElementById('linesRunSelect');
     const prevValue = sel.value;
@@ -263,6 +265,8 @@ async function loadRunsForSelect() {
             .eq('company_id', COMPANY_ID)
             .order('created_at', { ascending: false });
         if (error) throw error;
+        payrollRunsById = {};
+        (data || []).forEach(r => { payrollRunsById[r.id] = r; });
         sel.innerHTML = '<option value="">-- เลือก payroll run --</option>' + (data || []).map(r => {
             const pd = r.payroll_periods;
             const label = pd ? `${fmtDate(pd.period_start)} - ${fmtDate(pd.period_end)}` : r.id.slice(0, 8);
@@ -284,34 +288,57 @@ const payStatusLabel = {
 let currentLinesRunId = null;
 let currentLinesData = null;
 let showZeroNetPayLines = false;
+let linesViewMode = 'by_employee'; // 'by_employee' | 'by_site'
+let currentEmpSitesByEmp = null; // Map emp_id -> [{ clientId, clientName, days }]
+let currentSiteAggRunId = null;
+let siteAggLoading = false;
+
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function getVisiblePayrollLines() {
+    const data = currentLinesData || [];
+    return showZeroNetPayLines ? data : data.filter(l => Number(l.net_pay || 0) !== 0);
+}
 
 function toggleShowZeroNetPayLines(checked) {
     showZeroNetPayLines = !!checked;
-    renderPayrollLinesTable();
+    renderLinesView();
 }
 
-function renderPayrollLinesTable() {
-    const tbody = document.getElementById('linesTableBody');
+function setLinesViewMode(mode) {
+    if (mode !== 'by_employee' && mode !== 'by_site') return;
+    linesViewMode = mode;
+    const empBtn = document.getElementById('linesViewBtn-by_employee');
+    const siteBtn = document.getElementById('linesViewBtn-by_site');
+    const empPanel = document.getElementById('linesByEmployeePanel');
+    const sitePanel = document.getElementById('linesBySitePanel');
+    const active = 'px-3 py-1.5 text-sm font-bold rounded-lg bg-white text-kcblue shadow-sm cursor-pointer border-0';
+    const inactive = 'px-3 py-1.5 text-sm font-bold rounded-lg text-slate-500 hover:text-kcdark cursor-pointer border-0 bg-transparent';
+    if (empBtn) empBtn.className = mode === 'by_employee' ? active : inactive;
+    if (siteBtn) siteBtn.className = mode === 'by_site' ? active : inactive;
+    if (empPanel) empPanel.classList.toggle('hidden', mode !== 'by_employee');
+    if (sitePanel) sitePanel.classList.toggle('hidden', mode !== 'by_site');
+    renderLinesView();
+}
+
+function renderLinesSummaryBar(visible) {
     const summaryBar = document.getElementById('linesSummaryBar');
+    if (!summaryBar) return;
     if (!currentLinesRunId) {
-        tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">กรุณาเลือก payroll run ด้านบน</td></tr>';
         summaryBar.classList.add('hidden');
         return;
     }
-    const data = currentLinesData || [];
-    if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่มีข้อมูลใน run นี้</td></tr>';
+    if ((currentLinesData || []).length === 0) {
         summaryBar.classList.add('hidden');
         return;
     }
-
-    const visible = showZeroNetPayLines
-        ? data
-        : data.filter(l => Number(l.net_pay || 0) !== 0);
-
     if (visible.length === 0) {
-        const hiddenCount = data.length;
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่มีพนักงานที่มีรายได้ในงวดนี้ (${hiddenCount} คนถูกซ่อน — เปิด "แสดงพนักงานที่ไม่มีรายได้ในงวดนี้" เพื่อดู)</td></tr>`;
         summaryBar.classList.remove('hidden');
         summaryBar.innerHTML = `
             <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">จำนวนพนักงาน</p><p class="text-lg font-bold text-kcdark">0</p></div>
@@ -321,7 +348,6 @@ function renderPayrollLinesTable() {
         `;
         return;
     }
-
     const totalGross = visible.reduce((s, l) => s + Number(l.gross_pay || 0), 0);
     const totalNet = visible.reduce((s, l) => s + Number(l.net_pay || 0), 0);
     const needsReviewCount = visible.filter(l => l.pay_status === 'needs_review').length;
@@ -332,15 +358,48 @@ function renderPayrollLinesTable() {
         <div class="bg-kclight rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">สุทธิรวม</p><p class="text-lg font-bold text-kcblue">${fmtMoney(totalNet)}</p></div>
         <div class="${needsReviewCount > 0 ? 'bg-red-50 border border-red-200' : 'bg-kclight'} rounded-xl p-3"><p class="text-xs text-slate-500 font-bold">ต้องตรวจสอบ</p><p class="text-lg font-bold ${needsReviewCount > 0 ? 'text-red-600' : 'text-kcdark'}">${needsReviewCount}</p></div>
     `;
+}
+
+function lineActionButtonsHtml(l) {
+    const canApprove = l.pay_status === 'pending';
+    const canMarkPaid = l.pay_status === 'approved';
+    return `
+        <button onclick="viewLineDetail('${l.id}')" class="border border-[#e6edf7] bg-white text-slate-700 px-2 py-1 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg">🔍 ดู</button>
+        ${canApprove ? `<button onclick="approveLine('${l.id}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg">✅ อนุมัติ</button>` : ''}
+        ${canMarkPaid ? `<button onclick="markLinePaid('${l.id}')" class="bg-kcblue text-white px-2 py-1 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg">💸 จ่ายแล้ว</button>` : ''}
+    `;
+}
+
+function renderPayrollLinesTable() {
+    const tbody = document.getElementById('linesTableBody');
+    if (!tbody) return;
+    if (!currentLinesRunId) {
+        tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">กรุณาเลือก payroll run ด้านบน</td></tr>';
+        renderLinesSummaryBar([]);
+        return;
+    }
+    const data = currentLinesData || [];
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่มีข้อมูลใน run นี้</td></tr>';
+        renderLinesSummaryBar([]);
+        return;
+    }
+
+    const visible = getVisiblePayrollLines();
+    renderLinesSummaryBar(visible);
+
+    if (visible.length === 0) {
+        const hiddenCount = data.length;
+        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500">ไม่มีพนักงานที่มีรายได้ในงวดนี้ (${hiddenCount} คนถูกซ่อน — เปิด "แสดงพนักงานที่ไม่มีรายได้ในงวดนี้" เพื่อดู)</td></tr>`;
+        return;
+    }
 
     tbody.innerHTML = visible.map(l => {
         const otTotal = Number(l.overtime_amount || 0);
         const emp = l.employees;
-        const canApprove = l.pay_status === 'pending';
-        const canMarkPaid = l.pay_status === 'approved';
         return `
         <tr class="border-t border-[#e6edf7] ${l.pay_status === 'needs_review' ? 'bg-red-50/50' : ''}">
-            <td class="p-3 font-bold">${emp ? emp.full_name : l.emp_id} <span class="text-xs text-slate-400 block">${l.emp_id}</span></td>
+            <td class="p-3 font-bold">${emp ? escapeHtml(emp.full_name) : escapeHtml(l.emp_id)} <span class="text-xs text-slate-400 block">${escapeHtml(l.emp_id)}</span></td>
             <td class="p-3 text-right">${fmtMoney(l.base_salary)}</td>
             <td class="p-3 text-right">${fmtMoney(otTotal)}</td>
             <td class="p-3 text-right font-bold">${fmtMoney(l.gross_pay)}</td>
@@ -349,26 +408,256 @@ function renderPayrollLinesTable() {
             <td class="p-3 text-right text-red-600">-${fmtMoney(l.advance_deduction)}</td>
             <td class="p-3 text-right font-bold text-kcblue">${fmtMoney(l.net_pay)}</td>
             <td class="p-3 text-center">${payStatusLabel[l.pay_status] || l.pay_status}</td>
-            <td class="p-3 text-center whitespace-nowrap">
-                <button onclick="viewLineDetail('${l.id}')" class="border border-[#e6edf7] bg-white text-slate-700 px-2 py-1 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg mb-1">🔍 ดู</button>
-                ${canApprove ? `<button onclick="approveLine('${l.id}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg mb-1">✅ อนุมัติ</button>` : ''}
-                ${canMarkPaid ? `<button onclick="markLinePaid('${l.id}')" class="bg-kcblue text-white px-2 py-1 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg mb-1">💸 จ่ายแล้ว</button>` : ''}
-            </td>
+            <td class="p-3 text-center whitespace-nowrap">${lineActionButtonsHtml(l)}</td>
         </tr>`;
     }).join('');
+}
+
+function buildSiteViewModel(visibleLines, empSitesByEmp) {
+    const sitesMap = new Map(); // clientId -> { clientId, clientName, employees: [], totalNet }
+    const orphans = [];
+
+    for (const line of visibleLines) {
+        const sites = empSitesByEmp.get(line.emp_id) || [];
+        if (sites.length === 0) {
+            orphans.push(line);
+            continue;
+        }
+        for (const site of sites) {
+            if (!sitesMap.has(site.clientId)) {
+                sitesMap.set(site.clientId, {
+                    clientId: site.clientId,
+                    clientName: site.clientName,
+                    employees: [],
+                    totalNet: 0,
+                });
+            }
+            const card = sitesMap.get(site.clientId);
+            const otherSites = sites
+                .filter(s => s.clientId !== site.clientId)
+                .map(s => ({ name: s.clientName, days: s.days }));
+            card.employees.push({
+                line,
+                daysAtThisSite: site.days,
+                otherSites,
+            });
+            card.totalNet += Number(line.net_pay || 0);
+        }
+    }
+
+    const sites = Array.from(sitesMap.values()).sort((a, b) => b.totalNet - a.totalNet);
+    for (const site of sites) {
+        site.employees.sort((a, b) => {
+            const na = (a.line.employees && a.line.employees.full_name) || a.line.emp_id;
+            const nb = (b.line.employees && b.line.employees.full_name) || b.line.emp_id;
+            return String(na).localeCompare(String(nb), 'th');
+        });
+    }
+    return { sites, orphans };
+}
+
+async function loadSiteAttendanceForRun(runId) {
+    if (!runId || !currentLinesData) {
+        currentEmpSitesByEmp = new Map();
+        currentSiteAggRunId = runId || null;
+        return;
+    }
+    if (currentSiteAggRunId === runId && currentEmpSitesByEmp) return;
+
+    const run = payrollRunsById[runId];
+    const period = run && run.payroll_periods;
+    if (!period || !period.period_start || !period.period_end) {
+        throw new Error('ไม่พบช่วงวันที่ของงวดเงินเดือนสำหรับ run นี้');
+    }
+
+    const empIds = [...new Set((currentLinesData || []).map(l => l.emp_id).filter(Boolean))];
+    const empSitesByEmp = new Map();
+    empIds.forEach(id => empSitesByEmp.set(id, []));
+
+    if (empIds.length === 0) {
+        currentEmpSitesByEmp = empSitesByEmp;
+        currentSiteAggRunId = runId;
+        return;
+    }
+
+    const { data: logs, error: logErr } = await supabaseClient
+        .from('attendance_logs')
+        .select('emp_id, client_id, work_date')
+        .eq('company_id', COMPANY_ID)
+        .gte('work_date', period.period_start)
+        .lte('work_date', period.period_end)
+        .in('emp_id', empIds)
+        .not('client_id', 'is', null);
+    if (logErr) throw logErr;
+
+    // emp_id -> client_id -> Set(work_date)
+    const daySets = new Map();
+    for (const row of logs || []) {
+        if (!row.emp_id || !row.client_id) continue;
+        if (!daySets.has(row.emp_id)) daySets.set(row.emp_id, new Map());
+        const byClient = daySets.get(row.emp_id);
+        if (!byClient.has(row.client_id)) byClient.set(row.client_id, new Set());
+        byClient.get(row.client_id).add(row.work_date);
+    }
+
+    const clientIds = [...new Set(
+        [...daySets.values()].flatMap(byClient => [...byClient.keys()])
+    )];
+    const nameById = new Map();
+    if (clientIds.length > 0) {
+        const { data: clients, error: clientErr } = await supabaseClient
+            .from('clients')
+            .select('id, client_name')
+            .in('id', clientIds);
+        if (clientErr) throw clientErr;
+        (clients || []).forEach(c => nameById.set(c.id, c.client_name || c.id));
+    }
+
+    for (const [empId, byClient] of daySets.entries()) {
+        const sites = [...byClient.entries()]
+            .map(([clientId, dates]) => ({
+                clientId,
+                clientName: nameById.get(clientId) || clientId,
+                days: dates.size,
+            }))
+            .sort((a, b) => b.days - a.days || String(a.clientName).localeCompare(String(b.clientName), 'th'));
+        empSitesByEmp.set(empId, sites);
+    }
+
+    currentEmpSitesByEmp = empSitesByEmp;
+    currentSiteAggRunId = runId;
+}
+
+function renderPayrollLinesBySite() {
+    const panel = document.getElementById('linesBySitePanel');
+    if (!panel) return;
+
+    if (!currentLinesRunId) {
+        panel.innerHTML = '<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-slate-500">กรุณาเลือก payroll run ด้านบน</div>';
+        renderLinesSummaryBar([]);
+        return;
+    }
+    const data = currentLinesData || [];
+    if (data.length === 0) {
+        panel.innerHTML = '<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-slate-500">ไม่มีข้อมูลใน run นี้</div>';
+        renderLinesSummaryBar([]);
+        return;
+    }
+
+    const visible = getVisiblePayrollLines();
+    renderLinesSummaryBar(visible);
+
+    if (visible.length === 0) {
+        panel.innerHTML = `<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-slate-500">ไม่มีพนักงานที่มีรายได้ในงวดนี้ (${data.length} คนถูกซ่อน — เปิด "แสดงพนักงานที่ไม่มีรายได้ในงวดนี้" เพื่อดู)</div>`;
+        return;
+    }
+
+    if (siteAggLoading) {
+        panel.innerHTML = '<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูลไซต์งาน...</div>';
+        return;
+    }
+
+    const { sites, orphans } = buildSiteViewModel(visible, currentEmpSitesByEmp || new Map());
+
+    if (sites.length === 0 && orphans.length === 0) {
+        panel.innerHTML = '<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-slate-500">ไม่พบข้อมูลไซต์งานในงวดนี้</div>';
+        return;
+    }
+
+    const renderEmpRow = (entry) => {
+        const l = entry.line;
+        const emp = l.employees;
+        const badges = (entry.otherSites || []).map(s =>
+            `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold px-2 py-0.5 rounded-lg">+ ${escapeHtml(s.name)} ${s.days} วัน</span>`
+        ).join(' ');
+        const daysLabel = entry.daysAtThisSite != null
+            ? `<span class="text-xs text-slate-400 font-normal">${entry.daysAtThisSite} วันที่ไซต์นี้</span>`
+            : '';
+        return `
+            <div class="flex flex-wrap items-center justify-between gap-2 border-t border-[#e6edf7] px-4 py-3 ${l.pay_status === 'needs_review' ? 'bg-red-50/50' : ''}">
+                <div class="min-w-0">
+                    <p class="font-bold text-sm text-kcdark">${emp ? escapeHtml(emp.full_name) : escapeHtml(l.emp_id)}
+                        <span class="text-xs text-slate-400 font-normal ml-1">${escapeHtml(l.emp_id)}</span>
+                        ${daysLabel ? `<span class="ml-2">${daysLabel}</span>` : ''}
+                    </p>
+                    <div class="flex flex-wrap gap-1 mt-1">${badges}</div>
+                    <div class="mt-1">${payStatusLabel[l.pay_status] || l.pay_status}</div>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap justify-end">
+                    <span class="font-bold text-kcblue text-sm whitespace-nowrap">${fmtMoney(l.net_pay)}</span>
+                    <div class="flex gap-1 flex-wrap justify-end">${lineActionButtonsHtml(l)}</div>
+                </div>
+            </div>`;
+    };
+
+    const siteCardsHtml = sites.map(site => `
+        <div class="rounded-xl border border-[#e6edf7] bg-white overflow-hidden">
+            <div class="bg-kclight px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-kcdark text-sm">${escapeHtml(site.clientName)}</h3>
+                <span class="text-xs font-bold text-slate-500">${site.employees.length} คนที่มาทำงาน</span>
+            </div>
+            ${site.employees.map(renderEmpRow).join('')}
+        </div>
+    `).join('');
+
+    const orphanCardHtml = orphans.length > 0 ? `
+        <div class="rounded-xl border border-dashed border-slate-300 bg-white overflow-hidden">
+            <div class="bg-slate-50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-bold text-slate-600 text-sm">ไม่มีข้อมูลไซต์งาน</h3>
+                <span class="text-xs font-bold text-slate-500">${orphans.length} คน</span>
+            </div>
+            ${orphans.map(line => renderEmpRow({ line, daysAtThisSite: null, otherSites: [] })).join('')}
+        </div>
+    ` : '';
+
+    const noteHtml = sites.some(s => s.employees.some(e => e.otherSites && e.otherSites.length > 0))
+        ? `<p class="text-xs text-slate-500">หมายเหตุ: พนักงานที่ทำงานหลายไซต์จะโชว์ยอดสุทธิเต็มจำนวนในทุกไซต์ (ไม่ใช่การแบ่งเงิน) — ดู badge สีเหลืองเพื่อรู้ไซต์อื่นในงวดเดียวกัน</p>`
+        : '';
+
+    panel.innerHTML = noteHtml + siteCardsHtml + orphanCardHtml;
+}
+
+async function renderLinesView() {
+    if (linesViewMode === 'by_site') {
+        if (currentLinesRunId && currentLinesData && currentSiteAggRunId !== currentLinesRunId) {
+            siteAggLoading = true;
+            renderPayrollLinesBySite();
+            try {
+                await loadSiteAttendanceForRun(currentLinesRunId);
+            } catch (err) {
+                console.error(err);
+                const panel = document.getElementById('linesBySitePanel');
+                if (panel) {
+                    panel.innerHTML = `<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-red-600">เกิดข้อผิดพลาดขณะโหลดไซต์งาน: ${escapeHtml(err.message)}</div>`;
+                }
+                siteAggLoading = false;
+                return;
+            }
+            siteAggLoading = false;
+        }
+        renderPayrollLinesBySite();
+        return;
+    }
+    renderPayrollLinesTable();
 }
 
 async function loadPayrollLines(runId) {
     currentLinesRunId = runId || null;
     currentLinesData = null;
+    currentEmpSitesByEmp = null;
+    currentSiteAggRunId = null;
     const tbody = document.getElementById('linesTableBody');
     const summaryBar = document.getElementById('linesSummaryBar');
+    const sitePanel = document.getElementById('linesBySitePanel');
     if (!runId) {
-        renderPayrollLinesTable();
+        renderLinesView();
         return;
     }
-    tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
-    summaryBar.classList.add('hidden');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
+    if (sitePanel && linesViewMode === 'by_site') {
+        sitePanel.innerHTML = '<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</div>';
+    }
+    if (summaryBar) summaryBar.classList.add('hidden');
     try {
         const { data, error } = await supabaseClient
             .from('payroll_lines')
@@ -377,11 +666,12 @@ async function loadPayrollLines(runId) {
             .order('emp_id', { ascending: true });
         if (error) throw error;
         currentLinesData = data || [];
-        renderPayrollLinesTable();
+        await renderLinesView();
     } catch (err) {
         console.error(err);
         currentLinesData = null;
-        tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-red-600">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-red-600">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+        if (sitePanel) sitePanel.innerHTML = `<div class="rounded-xl border border-[#e6edf7] bg-white p-8 text-center text-red-600">เกิดข้อผิดพลาด: ${escapeHtml(err.message)}</div>`;
     }
 }
 

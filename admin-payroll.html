@@ -94,28 +94,37 @@
                         <button onclick="approveAllReadyLines()" class="bg-emerald-600 text-white px-4 py-2 text-sm font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-xl">✅ อนุมัติทั้งหมด (ที่ไม่ต้องตรวจสอบ)</button>
                     </div>
                 </div>
-                <div id="linesSummaryBar" class="hidden grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
-                <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-kclight text-kcdark text-sm">
-                                <th class="p-3 font-bold">พนักงาน</th>
-                                <th class="p-3 font-bold text-right">เงินเดือนฐาน</th>
-                                <th class="p-3 font-bold text-right">OT รวม</th>
-                                <th class="p-3 font-bold text-right">รายได้รวม</th>
-                                <th class="p-3 font-bold text-right">หักประกันสังคม</th>
-                                <th class="p-3 font-bold text-right">หักภาษี</th>
-                                <th class="p-3 font-bold text-right">หักเบิกล่วงหน้า</th>
-                                <th class="p-3 font-bold text-right">สุทธิ</th>
-                                <th class="p-3 font-bold text-center">สถานะ</th>
-                                <th class="p-3 font-bold text-center">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="linesTableBody" class="text-sm text-slate-700">
-                            <tr><td colspan="10" class="p-8 text-center text-slate-500">กรุณาเลือก payroll run ด้านบน</td></tr>
-                        </tbody>
-                    </table>
+                <div class="flex gap-1 mb-3 p-1 bg-kclight rounded-xl w-fit flex-wrap">
+                    <button type="button" id="linesViewBtn-by_employee" onclick="setLinesViewMode('by_employee')"
+                        class="px-3 py-1.5 text-sm font-bold rounded-lg bg-white text-kcblue shadow-sm cursor-pointer border-0">ตามพนักงาน</button>
+                    <button type="button" id="linesViewBtn-by_site" onclick="setLinesViewMode('by_site')"
+                        class="px-3 py-1.5 text-sm font-bold rounded-lg text-slate-500 hover:text-kcdark cursor-pointer border-0 bg-transparent">ตามไซต์งาน</button>
                 </div>
+                <div id="linesSummaryBar" class="hidden grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+                <div id="linesByEmployeePanel">
+                    <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-kclight text-kcdark text-sm">
+                                    <th class="p-3 font-bold">พนักงาน</th>
+                                    <th class="p-3 font-bold text-right">เงินเดือนฐาน</th>
+                                    <th class="p-3 font-bold text-right">OT รวม</th>
+                                    <th class="p-3 font-bold text-right">รายได้รวม</th>
+                                    <th class="p-3 font-bold text-right">หักประกันสังคม</th>
+                                    <th class="p-3 font-bold text-right">หักภาษี</th>
+                                    <th class="p-3 font-bold text-right">หักเบิกล่วงหน้า</th>
+                                    <th class="p-3 font-bold text-right">สุทธิ</th>
+                                    <th class="p-3 font-bold text-center">สถานะ</th>
+                                    <th class="p-3 font-bold text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="linesTableBody" class="text-sm text-slate-700">
+                                <tr><td colspan="10" class="p-8 text-center text-slate-500">กรุณาเลือก payroll run ด้านบน</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="linesBySitePanel" class="hidden space-y-4"></div>
             </div>
 
             <!-- TAB 3: อัตรา/เพดาน (payroll_rates) -->
