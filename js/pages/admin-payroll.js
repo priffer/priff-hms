@@ -12,15 +12,18 @@ async function uiAlert(message, options) {
 }
 
 let currentUserRole = null;
+let currentUserProfileId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const profile = await window.PriffAuthGuard.getCurrentUserProfile();
         currentUserRole = profile ? profile.role : null;
+        currentUserProfileId = profile ? profile.id : null;
     } catch (e) {
         console.error('โหลด role ผู้ใช้ไม่สำเร็จ', e);
     }
-    loadPayrollPeriods();
+    cleanupDuplicateDraftRuns().finally(() => loadPayrollPeriods());
+    loadDueToday();
 
     const runSelect = document.getElementById('linesRunSelect');
     if (runSelect) {
@@ -68,6 +71,286 @@ const periodStatusLabel = {
     closed: '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 text-xs font-bold border border-emerald-300 rounded-lg">ปิดรอบแล้ว</span>',
 };
 
+function todayInBangkokYmd() {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+}
+
+async function cleanupDuplicateDraftRuns() {
+    try {
+        const { error } = await supabaseClient.rpc('fn_cleanup_duplicate_draft_payroll_runs');
+        if (error) console.error('cleanup duplicate draft payroll runs', error);
+    } catch (e) {
+        console.error('cleanup duplicate draft payroll runs', e);
+    }
+}
+
+const APPROVAL_STEP_ROLE = { 1: 'supervisor', 2: 'hr', 3: 'accounting', 4: 'executive' };
+const INTERMEDIATE_PAY_STATUSES = ['pending', 'pending_supervisor', 'pending_hr', 'pending_accounting', 'pending_executive'];
+
+function isFreelancePayGroup(emp) {
+    const employmentType = emp && emp.employment_type;
+    const payFrequency = (emp && emp.pay_frequency) || (emp && emp.salary_type === 'monthly' ? 'monthly' : null);
+    return employmentType === 'freelance' || payFrequency === 'daily';
+}
+
+function payGroupBadgeHtml(emp) {
+    const payFrequency = (emp && emp.pay_frequency) || (emp && emp.salary_type === 'monthly' ? 'monthly' : null);
+    if (isFreelancePayGroup(emp)) {
+        return '<span class="inline-block bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold rounded-lg border border-amber-200">ฟรีแลนซ์</span>';
+    }
+    if (payFrequency === 'semimonthly') {
+        return '<span class="inline-block bg-sky-100 text-sky-800 px-2 py-0.5 text-[10px] font-bold rounded-lg border border-sky-200">รายวันประจำ</span>';
+    }
+    return '<span class="inline-block bg-indigo-100 text-indigo-800 px-2 py-0.5 text-[10px] font-bold rounded-lg border border-indigo-200">รายเดือน</span>';
+}
+
+function chainLastStepForEmp(emp) {
+    return isFreelancePayGroup(emp) ? 3 : 4;
+}
+
+function pendingStatusForStep(stepOrder) {
+    const role = APPROVAL_STEP_ROLE[stepOrder];
+    return role ? ('pending_' + role) : 'pending';
+}
+
+function deriveApprovalPointer(trail, startStep) {
+    let pointer = startStep;
+    for (const row of trail || []) {
+        const order = Number(row.step_order);
+        if (row.action === 'approved' && order === pointer) pointer += 1;
+        else if (row.action === 'rejected' && order === pointer) pointer = Math.max(startStep, pointer - 1);
+    }
+    return pointer;
+}
+
+async function ensureCurrentUserProfileId() {
+    if (currentUserProfileId) return currentUserProfileId;
+    const profile = await window.PriffAuthGuard.getCurrentUserProfile();
+    currentUserRole = profile ? profile.role : currentUserRole;
+    currentUserProfileId = profile ? profile.id : null;
+    return currentUserProfileId;
+}
+
+async function resolvePayrollStartStep(employeeId) {
+    const { data, error } = await supabaseClient.rpc('resolve_approver_for_employee', { p_employee_id: employeeId });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row && row.approver_role === 'supervisor' && row.approver_user_profile_id) return 1;
+    return 2;
+}
+
+async function loadLineApprovalContext(lineId) {
+    const { data: line, error: lineErr } = await supabaseClient
+        .from('payroll_lines')
+        .select('id, company_id, payroll_run_id, employee_id, pay_status, employees(employment_type, salary_type, pay_frequency)')
+        .eq('id', lineId)
+        .single();
+    if (lineErr) throw lineErr;
+    if (!line) throw new Error('ไม่พบรายการเงินเดือน');
+
+    const { data: run, error: runErr } = await supabaseClient
+        .from('payroll_runs')
+        .select('id, period_id')
+        .eq('id', line.payroll_run_id)
+        .single();
+    if (runErr) throw runErr;
+
+    const { data: trail, error: trailErr } = await supabaseClient
+        .from('payroll_approval_trail')
+        .select('id, step_role, step_order, action, approver_id, acted_at')
+        .eq('line_id', lineId)
+        .order('acted_at', { ascending: true });
+    if (trailErr) throw trailErr;
+
+    const emp = line.employees;
+    const lastStep = chainLastStepForEmp(emp);
+    const startStep = await resolvePayrollStartStep(line.employee_id);
+    const pointer = deriveApprovalPointer(trail || [], startStep);
+    return {
+        line,
+        periodId: run && run.period_id,
+        trail: trail || [],
+        lastStep,
+        startStep,
+        pointer,
+        chainComplete: pointer > lastStep,
+    };
+}
+
+function mostFrequentClientId(clientIds) {
+    const counts = new Map();
+    for (const id of clientIds || []) {
+        if (!id) continue;
+        counts.set(id, (counts.get(id) || 0) + 1);
+    }
+    let bestId = null;
+    let bestN = 0;
+    counts.forEach((n, id) => {
+        if (n > bestN || (n === bestN && (!bestId || id < bestId))) {
+            bestId = id;
+            bestN = n;
+        }
+    });
+    return bestId;
+}
+
+async function loadDueToday() {
+    const body = document.getElementById('dueTodayBody');
+    const warningsEl = document.getElementById('dueTodayWarnings');
+    const hint = document.getElementById('dueTodayDateHint');
+    if (!body) return;
+    const today = todayInBangkokYmd();
+    if (hint) hint.textContent = `ตามเขตเวลา Asia/Bangkok · วันจ่าย ${today}`;
+    if (warningsEl) warningsEl.innerHTML = '';
+    body.innerHTML = '<p class="text-slate-500">⏳ กำลังโหลด...</p>';
+    try {
+        const { data: periods, error: periodErr } = await supabaseClient
+            .from('payroll_periods')
+            .select('id, period_type, period_start, period_end, pay_date, status')
+            .eq('company_id', COMPANY_ID)
+            .eq('pay_date', today)
+            .order('period_type', { ascending: true });
+        if (periodErr) throw periodErr;
+
+        if (!periods || periods.length === 0) {
+            body.innerHTML = '<p class="text-slate-500 font-medium">วันนี้ไม่มีรายการต้องจ่าย</p>';
+            return;
+        }
+
+        const periodIds = periods.map(p => p.id);
+        const { data: runs, error: runErr } = await supabaseClient
+            .from('payroll_runs')
+            .select('id, period_id, status, created_at')
+            .in('period_id', periodIds)
+            .order('created_at', { ascending: false });
+        if (runErr) throw runErr;
+
+        const runIds = (runs || []).map(r => r.id);
+        let lines = [];
+        if (runIds.length > 0) {
+            const { data: lineRows, error: lineErr } = await supabaseClient
+                .from('payroll_lines')
+                .select('id, payroll_run_id, employee_id, emp_id, net_pay, employees(full_name, emp_id, interested_position, employment_type, salary_type, pay_frequency)')
+                .in('payroll_run_id', runIds);
+            if (lineErr) throw lineErr;
+            lines = lineRows || [];
+        }
+
+        const lineCountByRun = {};
+        lines.forEach(l => { lineCountByRun[l.payroll_run_id] = (lineCountByRun[l.payroll_run_id] || 0) + 1; });
+
+        const calculatedRunByPeriod = {};
+        (runs || []).forEach(r => {
+            if (!lineCountByRun[r.id]) return;
+            if (!calculatedRunByPeriod[r.period_id]) calculatedRunByPeriod[r.period_id] = r;
+        });
+
+        const uncalculated = periods.filter(p => !calculatedRunByPeriod[p.id]);
+        if (warningsEl && uncalculated.length > 0) {
+            warningsEl.innerHTML = uncalculated.map(p => `
+                <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-sm font-bold mb-3">
+                    งวดนี้ถึงกำหนดจ่ายวันนี้ แต่ยังไม่ได้คำนวณ
+                    <span class="block text-xs font-normal mt-1">${periodTypeLabel[p.period_type] || p.period_type} · ${fmtDate(p.period_start)} - ${fmtDate(p.period_end)}</span>
+                    <button type="button" onclick="switchPayrollTab('periods')" class="mt-2 bg-kcblue text-white px-3 py-1.5 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg">ไปหน้าคำนวณ</button>
+                </div>
+            `).join('');
+        }
+
+        const chosenRunIds = new Set(Object.values(calculatedRunByPeriod).map(r => r.id));
+        const visibleLines = lines.filter(l => chosenRunIds.has(l.payroll_run_id));
+        if (visibleLines.length === 0) {
+            body.innerHTML = uncalculated.length > 0
+                ? '<p class="text-slate-500">ยังไม่มีรายชื่อจากงวดที่คำนวณแล้ว</p>'
+                : '<p class="text-slate-500 font-medium">วันนี้ไม่มีรายการต้องจ่าย</p>';
+            return;
+        }
+
+        const periodById = new Map(periods.map(p => [p.id, p]));
+        const runById = new Map((runs || []).map(r => [r.id, r]));
+        const empPeriodRange = new Map();
+
+        const empCodes = new Set();
+        let minStart = null;
+        let maxEnd = null;
+        visibleLines.forEach(l => {
+            const code = l.emp_id || (l.employees && l.employees.emp_id);
+            if (!code) return;
+            empCodes.add(code);
+            const period = periodById.get(runById.get(l.payroll_run_id).period_id);
+            if (!period) return;
+            empPeriodRange.set(code, { start: period.period_start, end: period.period_end });
+            if (!minStart || period.period_start < minStart) minStart = period.period_start;
+            if (!maxEnd || period.period_end > maxEnd) maxEnd = period.period_end;
+        });
+
+        const attendanceByEmp = new Map();
+        if (empCodes.size > 0 && minStart && maxEnd) {
+            const { data: attRows, error: attErr } = await supabaseClient
+                .from('attendance_logs')
+                .select('emp_id, client_id, work_date')
+                .in('emp_id', [...empCodes])
+                .gte('work_date', minStart)
+                .lte('work_date', maxEnd);
+            if (attErr) throw attErr;
+            (attRows || []).forEach(a => {
+                const range = empPeriodRange.get(a.emp_id);
+                if (!range || a.work_date < range.start || a.work_date > range.end) return;
+                if (!attendanceByEmp.has(a.emp_id)) attendanceByEmp.set(a.emp_id, []);
+                attendanceByEmp.get(a.emp_id).push(a.client_id);
+            });
+        }
+
+        const clientIds = new Set();
+        attendanceByEmp.forEach(ids => ids.forEach(id => { if (id) clientIds.add(id); }));
+
+        const clientsById = new Map();
+        if (clientIds.size > 0) {
+            const { data: clients, error: clientErr } = await supabaseClient
+                .from('clients')
+                .select('id, client_name')
+                .in('id', [...clientIds]);
+            if (clientErr) throw clientErr;
+            (clients || []).forEach(c => clientsById.set(c.id, c.client_name));
+        }
+
+        const rows = visibleLines.map(l => {
+            const emp = l.employees || {};
+            const name = emp.full_name || l.emp_id || '-';
+            const position = emp.interested_position || '-';
+            const empCode = l.emp_id || emp.emp_id;
+            const topClientId = mostFrequentClientId(attendanceByEmp.get(empCode) || []);
+            const site = (topClientId && clientsById.get(topClientId)) || '-';
+            return `
+                <tr class="border-t border-[#e6edf7]">
+                    <td class="p-3 font-bold">${escapeHtml(name)} <span class="block text-xs text-slate-400 font-normal">${escapeHtml(empCode || '')}</span></td>
+                    <td class="p-3">${escapeHtml(position)}</td>
+                    <td class="p-3">${escapeHtml(site)}</td>
+                    <td class="p-3 text-center">${payGroupBadgeHtml(emp)}</td>
+                    <td class="p-3 text-right font-bold text-kcblue">${fmtMoney(l.net_pay)}</td>
+                </tr>`;
+        }).join('');
+
+        body.innerHTML = `
+            <div class="overflow-x-auto rounded-xl border border-[#e6edf7] bg-white">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-white text-kcdark text-sm">
+                            <th class="p-3 font-bold">พนักงาน</th>
+                            <th class="p-3 font-bold">ตำแหน่ง</th>
+                            <th class="p-3 font-bold">สถานที่ทำงาน</th>
+                            <th class="p-3 font-bold text-center">กลุ่ม</th>
+                            <th class="p-3 font-bold text-right">ยอดที่ต้องจ่าย</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm text-slate-700">${rows}</tbody>
+                </table>
+            </div>`;
+    } catch (err) {
+        console.error(err);
+        body.innerHTML = `<p class="text-red-600">เกิดข้อผิดพลาด: ${escapeHtml(err.message)}</p>`;
+    }
+}
+
 async function loadPayrollPeriods() {
     const tbody = document.getElementById('periodsTableBody');
     tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500">⏳ กำลังโหลดข้อมูล...</td></tr>';
@@ -81,6 +364,7 @@ async function loadPayrollPeriods() {
 
         if (!periods || periods.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-500">ยังไม่มีรอบเงินเดือน</td></tr>';
+            loadDueToday();
             return;
         }
 
@@ -95,6 +379,8 @@ async function loadPayrollPeriods() {
         (runs || []).forEach(r => {
             if (!latestRunByPeriod[r.period_id]) latestRunByPeriod[r.period_id] = r;
         });
+
+        loadDueToday();
 
         tbody.innerHTML = periods.map(p => {
             const run = latestRunByPeriod[p.id];
@@ -169,8 +455,24 @@ async function generateNextPeriod(periodType) {
 }
 
 async function runPayrollForPeriod(periodId) {
+    try {
+        const { data: period, error: periodErr } = await supabaseClient
+            .from('payroll_periods')
+            .select('id, period_end')
+            .eq('id', periodId)
+            .single();
+        if (periodErr) throw periodErr;
+        if (period && period.period_end && period.period_end > todayInBangkokYmd()) {
+            await uiAlert('งวดนี้ยังไม่จบ ไม่สามารถคำนวณได้');
+            return;
+        }
+    } catch (err) {
+        await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
+        return;
+    }
     if (!(await uiConfirm('ยืนยันการรันคำนวณเงินเดือนสำหรับรอบนี้? ระบบจะคำนวณค่าแรง/OT/ประกันสังคม/ภาษี/หักเบิกล่วงหน้า (reuse draft run ของงวดนี้ถ้ามีอยู่แล้ว)'))) return;
     try {
+        await cleanupDuplicateDraftRuns();
         const { data: { user } } = await supabaseClient.auth.getUser();
         const { data, error } = await supabaseClient.rpc('fn_run_payroll_period', {
             p_period_id: periodId,
@@ -280,6 +582,10 @@ async function loadRunsForSelect() {
 
 const payStatusLabel = {
     pending: '<span class="bg-slate-100 text-slate-600 px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg">รอตรวจสอบ</span>',
+    pending_supervisor: '<span class="bg-slate-100 text-slate-600 px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg">รอหัวหน้างาน</span>',
+    pending_hr: '<span class="bg-slate-100 text-slate-600 px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg">รอ HR</span>',
+    pending_accounting: '<span class="bg-slate-100 text-slate-600 px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg">รอบัญชี</span>',
+    pending_executive: '<span class="bg-slate-100 text-slate-600 px-2 py-1 text-xs font-bold border border-slate-300 rounded-lg">รอผู้บริหาร</span>',
     needs_review: '<span class="bg-red-100 text-red-700 px-2 py-1 text-xs font-bold border border-red-300 rounded-lg">⚠️ ต้องตรวจสอบ (OT เกิน 36 ชม./สัปดาห์)</span>',
     approved: '<span class="bg-blue-100 text-blue-700 px-2 py-1 text-xs font-bold border border-blue-300 rounded-lg">อนุมัติแล้ว</span>',
     paid: '<span class="bg-emerald-100 text-emerald-700 px-2 py-1 text-xs font-bold border border-emerald-300 rounded-lg">จ่ายแล้ว</span>',
@@ -361,11 +667,12 @@ function renderLinesSummaryBar(visible) {
 }
 
 function lineActionButtonsHtml(l) {
-    const canApprove = l.pay_status === 'pending';
+    const canApprove = INTERMEDIATE_PAY_STATUSES.includes(l.pay_status);
     const canMarkPaid = l.pay_status === 'approved';
     return `
         <button onclick="viewLineDetail('${l.id}')" class="border border-[#e6edf7] bg-white text-slate-700 px-2 py-1 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg">🔍 ดู</button>
         ${canApprove ? `<button onclick="approveLine('${l.id}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg">✅ อนุมัติ</button>` : ''}
+        ${canApprove ? `<button onclick="rejectLine('${l.id}')" class="bg-red-600 text-white px-2 py-1 text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer rounded-lg">❌ ปฏิเสธ</button>` : ''}
         ${canMarkPaid ? `<button onclick="markLinePaid('${l.id}')" class="bg-kcblue text-white px-2 py-1 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg">💸 จ่ายแล้ว</button>` : ''}
     `;
 }
@@ -661,7 +968,7 @@ async function loadPayrollLines(runId) {
     try {
         const { data, error } = await supabaseClient
             .from('payroll_lines')
-            .select('*, employees(full_name, emp_id)')
+            .select('*, employees(full_name, emp_id, employment_type, salary_type, pay_frequency)')
             .eq('payroll_run_id', runId)
             .order('emp_id', { ascending: true });
         if (error) throw error;
@@ -688,6 +995,16 @@ function formatLineDetailDescription(d) {
     return desc;
 }
 
+function formatWithholdingTaxLabelHtml(employmentType) {
+    if (employmentType === 'freelance') {
+        return `<span class="block font-medium">ภาษีหัก ณ ที่จ่าย 3%</span><span class="block text-[10px] text-slate-400 font-normal leading-snug mt-0.5">อัตราคงที่ 3% — หักจากค่าจ้างฟรีแลนซ์ที่จ่ายในงวดนี้โดยตรง (ไม่ประมาณการรายได้ทั้งปี)</span>`;
+    }
+    if (employmentType === 'regular') {
+        return `<span class="block font-medium">ภาษีบุคคล</span><span class="block text-[10px] text-slate-400 font-normal leading-snug mt-0.5">คำนวณแบบอัตราก้าวหน้า จากประมาณการรายได้ทั้งปี — หักจากเงินเดือน/ค่าจ้างรวมของงวดนี้</span>`;
+    }
+    return null;
+}
+
 function formatLineDetailQuantity(d) {
     if (DETAIL_QTY_RATE_PLACEHOLDER_TYPES.has(d.detail_type)) return '-';
     return d.quantity != null ? d.quantity : '-';
@@ -706,7 +1023,7 @@ async function viewLineDetail(lineId) {
     try {
         const { data: line, error: lineErr } = await supabaseClient
             .from('payroll_lines')
-            .select('*, employees(full_name, emp_id)')
+            .select('*, employees(full_name, emp_id, employment_type)')
             .eq('id', lineId)
             .single();
         if (lineErr) throw lineErr;
@@ -726,13 +1043,19 @@ async function viewLineDetail(lineId) {
             <table class="w-full text-sm">
                 <thead><tr class="text-slate-500 text-xs"><th class="text-left p-1">รายการ</th><th class="text-right p-1">จำนวน</th><th class="text-right p-1">อัตรา</th><th class="text-right p-1">มูลค่า</th></tr></thead>
                 <tbody>
-                ${(details || []).map(d => `
+                ${(details || []).map(d => {
+                    const taxLabelHtml = d.detail_type === 'withholding_tax'
+                        ? formatWithholdingTaxLabelHtml(line.employees && line.employees.employment_type)
+                        : null;
+                    const descHtml = taxLabelHtml || escapeHtml(formatLineDetailDescription(d));
+                    return `
                     <tr class="border-t border-[#e6edf7]">
-                        <td class="p-1">${formatLineDetailDescription(d)}</td>
+                        <td class="p-1">${descHtml}</td>
                         <td class="p-1 text-right">${formatLineDetailQuantity(d)}</td>
                         <td class="p-1 text-right">${formatLineDetailRate(d)}</td>
                         <td class="p-1 text-right font-bold ${Number(d.amount) < 0 ? 'text-red-600' : 'text-slate-800'}">${fmtMoney(d.amount)}</td>
-                    </tr>`).join('')}
+                    </tr>`;
+                }).join('')}
                 </tbody>
                 <tfoot>
                     <tr class="border-t-2 border-kcblue"><td class="p-1 font-bold" colspan="3">สุทธิ (Net Pay)</td><td class="p-1 text-right font-bold text-kcblue text-base">${fmtMoney(line.net_pay)}</td></tr>
@@ -750,18 +1073,106 @@ function closeLineDetailModal() {
     document.getElementById('lineDetailModal').classList.remove('flex');
 }
 
-async function approveLine(lineId) {
-    if (!(await uiConfirm('ยืนยันอนุมัติรายการเงินเดือนนี้?'))) return;
+async function insertApprovalTrailRow({ ctx, action, comment, approverId, stepOrder }) {
+    const stepRole = APPROVAL_STEP_ROLE[stepOrder];
+    const payload = {
+        company_id: ctx.line.company_id,
+        period_id: ctx.periodId,
+        run_id: ctx.line.payroll_run_id,
+        line_id: ctx.line.id,
+        step_role: stepRole,
+        step_order: stepOrder,
+        action,
+        approver_id: approverId,
+        comment: comment || null,
+    };
+    const { error } = await supabaseClient.from('payroll_approval_trail').insert(payload);
+    if (error) throw error;
+}
+
+async function approveLine(lineId, options) {
+    const opts = options || {};
+    if (!opts.skipConfirm && !(await uiConfirm('ยืนยันอนุมัติรายการเงินเดือนนี้?'))) return { skipped: true };
     try {
+        const approverId = await ensureCurrentUserProfileId();
+        if (!approverId) throw new Error('ไม่พบ user_profiles ของผู้ใช้ที่ล็อกอิน');
+        const ctx = await loadLineApprovalContext(lineId);
+        if (ctx.chainComplete) {
+            if (!opts.skipConfirm) await uiAlert('รายการนี้ผ่านขั้นอนุมัติครบแล้ว');
+            return { skipped: true, reason: 'complete' };
+        }
+        if (ctx.pointer > ctx.startStep) {
+            const prevApproved = [...ctx.trail].reverse().find(
+                r => r.action === 'approved' && Number(r.step_order) === ctx.pointer - 1
+            );
+            if (prevApproved && prevApproved.approver_id === approverId) {
+                const msg = 'ผู้อนุมัติขั้นก่อนหน้าเป็นคนเดียวกัน ไม่สามารถอนุมัติขั้นถัดไปต่อเนื่องได้ (รอแยกสิทธิ์จริงใน Phase 3.5-3d)';
+                if (!opts.skipConfirm) await uiAlert(msg);
+                return { skipped: true, reason: 'segregation', message: msg };
+            }
+        }
+        await insertApprovalTrailRow({
+            ctx,
+            action: 'approved',
+            approverId,
+            stepOrder: ctx.pointer,
+        });
+        const finishesChain = ctx.pointer === ctx.lastStep;
+        if (finishesChain) {
+            const { error } = await supabaseClient
+                .from('payroll_lines')
+                .update({ pay_status: 'approved', updated_at: new Date().toISOString() })
+                .eq('id', lineId);
+            if (error) throw error;
+            await supabaseClient
+                .from('payroll_payslips')
+                .update({ status: 'approved', updated_at: new Date().toISOString() })
+                .eq('payroll_line_id', lineId);
+        } else {
+            const { error } = await supabaseClient
+                .from('payroll_lines')
+                .update({ pay_status: pendingStatusForStep(ctx.pointer + 1), updated_at: new Date().toISOString() })
+                .eq('id', lineId);
+            if (error) throw error;
+        }
+        if (!opts.skipReload) loadPayrollLines(currentLinesRunId);
+        return { ok: true, finished: finishesChain };
+    } catch (err) {
+        if (!opts.skipConfirm) await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
+        return { error: err };
+    }
+}
+
+async function rejectLine(lineId) {
+    if (!(await uiConfirm('ยืนยันปฏิเสธรายการเงินเดือนนี้?'))) return;
+    const comment = window.prompt('เหตุผลการปฏิเสธ:');
+    if (comment == null) return;
+    const reason = String(comment).trim();
+    if (!reason) {
+        await uiAlert('กรุณาระบุเหตุผลการปฏิเสธ');
+        return;
+    }
+    try {
+        const approverId = await ensureCurrentUserProfileId();
+        if (!approverId) throw new Error('ไม่พบ user_profiles ของผู้ใช้ที่ล็อกอิน');
+        const ctx = await loadLineApprovalContext(lineId);
+        if (ctx.chainComplete) {
+            await uiAlert('รายการนี้ผ่านขั้นอนุมัติครบแล้ว ไม่สามารถปฏิเสธได้');
+            return;
+        }
+        await insertApprovalTrailRow({
+            ctx,
+            action: 'rejected',
+            comment: reason,
+            approverId,
+            stepOrder: ctx.pointer,
+        });
+        const newPointer = Math.max(ctx.startStep, ctx.pointer - 1);
         const { error } = await supabaseClient
             .from('payroll_lines')
-            .update({ pay_status: 'approved', updated_at: new Date().toISOString() })
+            .update({ pay_status: pendingStatusForStep(newPointer), updated_at: new Date().toISOString() })
             .eq('id', lineId);
         if (error) throw error;
-        await supabaseClient
-            .from('payroll_payslips')
-            .update({ status: 'approved', updated_at: new Date().toISOString() })
-            .eq('payroll_line_id', lineId);
         loadPayrollLines(currentLinesRunId);
     } catch (err) {
         await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
@@ -794,20 +1205,19 @@ async function approveAllReadyLines() {
             .from('payroll_lines')
             .select('id')
             .eq('payroll_run_id', currentLinesRunId)
-            .eq('pay_status', 'pending');
+            .in('pay_status', INTERMEDIATE_PAY_STATUSES);
         if (fetchErr) throw fetchErr;
         if (!lines || lines.length === 0) { await uiAlert('ไม่มีรายการที่รออนุมัติ'); return; }
-        const ids = lines.map(l => l.id);
-        const { error } = await supabaseClient
-            .from('payroll_lines')
-            .update({ pay_status: 'approved', updated_at: new Date().toISOString() })
-            .in('id', ids);
-        if (error) throw error;
-        await supabaseClient
-            .from('payroll_payslips')
-            .update({ status: 'approved', updated_at: new Date().toISOString() })
-            .in('payroll_line_id', ids);
+        const blocked = [];
+        const failed = [];
+        for (const row of lines) {
+            const result = await approveLine(row.id, { skipConfirm: true, skipReload: true });
+            if (result && result.reason === 'segregation') blocked.push(row.id);
+            else if (result && result.error) failed.push(result.error.message || String(result.error));
+        }
         loadPayrollLines(currentLinesRunId);
+        if (failed.length) await uiAlert('บางรายการอนุมัติไม่สำเร็จ: ' + failed[0]);
+        else if (blocked.length) await uiAlert('ข้าม ' + blocked.length + ' รายการ เพราะผู้อนุมัติขั้นก่อนหน้าเป็นคนเดียวกัน (รอแยกสิทธิ์จริงใน Phase 3.5-3d)');
     } catch (err) {
         await uiAlert('เกิดข้อผิดพลาด: ' + err.message);
     }
