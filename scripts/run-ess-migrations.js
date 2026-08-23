@@ -93,6 +93,8 @@ async function run() {
     '45_payroll_run_reuse_draft.sql',
     '46_attendance_audit_payroll_fix.sql',
     '47_payroll_runs_one_draft_per_period.sql',
+    '54_user_profiles_approval_step_roles.sql',
+    '55_expand_payroll_rls_hr_accounting_executive.sql',
     // เพิ่มไฟล์ migration ใหม่ต่อท้ายลิสต์นี้เสมอ (ห้าม auto-discover ทั้งโฟลเดอร์ database/
     // เพราะไฟล์ 01-05 และ schema.sql เป็นของ scripts/run-sql.js คนละ workflow กัน)
   ].map(f => path.resolve(__dirname, '..', 'database', f));

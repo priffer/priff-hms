@@ -55,5 +55,7 @@ Staging/Production (see `.agent-rules.md`).
 | `45_payroll_run_reuse_draft.sql` | Reuse draft payroll_runs on re-run instead of always inserting. |
 | `46_attendance_audit_payroll_fix.sql` | Migration 46: Fix attendance audit trigger for payroll role updates |
 | `47_payroll_runs_one_draft_per_period.sql` | 1) Staging cleanup of duplicate/empty draft payroll_runs (approved 2026-08-11) |
+| `54_user_profiles_approval_step_roles.sql` | Phase 3.5-3d: constrain user_profiles.role and add approval_step_role |
+| `55_expand_payroll_rls_hr_accounting_executive.sql` | Expand payroll SELECT to approval-chain roles (supervisor/hr/accounting/executive) |
 
-_Generated: 2026-08-11T12:30:27.978Z_
+_Generated: 2026-08-21T14:10:10.948Z_
