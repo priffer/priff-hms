@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th" class="overflow-x-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - สิทธิ์ผู้ใช้ | PRIFF HMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config/supabase.js"></script>
+    <script src="js/auth/auth-guard.js"></script>
+    <style>body{visibility:hidden}</style>
+    <link rel="stylesheet" href="dist/output.css">
+</head>
+<body class="bg-kcsoft font-sans min-h-screen flex flex-col overflow-x-hidden">
+
+    <div id="global-navbar"></div>
+
+    <div class="max-w-7xl w-full mx-auto p-4 md:p-6 flex-1 min-w-0">
+        <div class="bg-white rounded-[2rem] border border-[#e6edf7] p-4 md:p-6 shadow-[0_16px_30px_rgba(15,43,115,0.06)]">
+            <h2 class="text-2xl font-bold text-kcblue mb-1">สิทธิ์ผู้ใช้</h2>
+            <p class="text-sm text-slate-500 mb-6">แก้ role และขั้นอนุมัติเงินเดือน (approval_step_role) ของแต่ละบัญชี — เฉพาะ admin</p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-slate-500 border-b border-[#e6edf7]">
+                            <th class="p-3">อีเมล</th>
+                            <th class="p-3">ชื่อ</th>
+                            <th class="p-3">Role</th>
+                            <th class="p-3">ขั้นอนุมัติ</th>
+                            <th class="p-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="rolesTableBody">
+                        <tr><td colspan="5" class="p-8 text-center text-slate-500">กำลังโหลด...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/components/navbar.js"></script>
+    <script src="js/pages/admin-roles.js"></script>
+    <script>
+    (async () => {
+      const ok = await window.PriffAuthGuard.requireAuth(['admin']);
+      if (!ok) return;
+      document.body.style.visibility = 'visible';
+      if (typeof loadUserRoles === 'function') loadUserRoles();
+    })();
+    </script>
+</body>
+</html>

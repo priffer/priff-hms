@@ -13,12 +13,14 @@ async function uiAlert(message, options) {
 
 let currentUserRole = null;
 let currentUserProfileId = null;
+let currentUserApprovalStepRole = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const profile = await window.PriffAuthGuard.getCurrentUserProfile();
         currentUserRole = profile ? profile.role : null;
         currentUserProfileId = profile ? profile.id : null;
+        currentUserApprovalStepRole = profile ? profile.approval_step_role : null;
     } catch (e) {
         console.error('โหลด role ผู้ใช้ไม่สำเร็จ', e);
     }
@@ -128,6 +130,7 @@ async function ensureCurrentUserProfileId() {
     const profile = await window.PriffAuthGuard.getCurrentUserProfile();
     currentUserRole = profile ? profile.role : currentUserRole;
     currentUserProfileId = profile ? profile.id : null;
+    currentUserApprovalStepRole = profile ? profile.approval_step_role : currentUserApprovalStepRole;
     return currentUserProfileId;
 }
 
@@ -175,6 +178,40 @@ async function loadLineApprovalContext(lineId) {
         pointer,
         chainComplete: pointer > lastStep,
     };
+}
+
+async function attachLineApprovalContexts(lines) {
+    if (!lines || lines.length === 0) return;
+    const lineIds = lines.map(l => l.id);
+    const { data: trails, error: trailErr } = await supabaseClient
+        .from('payroll_approval_trail')
+        .select('line_id, step_order, action, acted_at')
+        .in('line_id', lineIds)
+        .order('acted_at', { ascending: true });
+    if (trailErr) throw trailErr;
+    const trailsByLine = {};
+    (trails || []).forEach(row => {
+        if (!trailsByLine[row.line_id]) trailsByLine[row.line_id] = [];
+        trailsByLine[row.line_id].push(row);
+    });
+    const uniqueEmpIds = [...new Set(lines.map(l => l.employee_id).filter(Boolean))];
+    const startByEmp = {};
+    await Promise.all(uniqueEmpIds.map(async (empId) => {
+        startByEmp[empId] = await resolvePayrollStartStep(empId);
+    }));
+    lines.forEach(l => {
+        const startStep = startByEmp[l.employee_id] || 2;
+        const pointer = deriveApprovalPointer(trailsByLine[l.id] || [], startStep);
+        l._approvalPointer = pointer;
+        l._approvalStepRole = APPROVAL_STEP_ROLE[pointer] || null;
+    });
+}
+
+function canActOnCurrentApprovalStep(line) {
+    if (currentUserRole === 'admin') return true;
+    const needed = line && line._approvalStepRole;
+    if (!needed) return false;
+    return currentUserApprovalStepRole === needed;
 }
 
 function mostFrequentClientId(clientIds) {
@@ -669,10 +706,24 @@ function renderLinesSummaryBar(visible) {
 function lineActionButtonsHtml(l) {
     const canApprove = INTERMEDIATE_PAY_STATUSES.includes(l.pay_status);
     const canMarkPaid = l.pay_status === 'approved';
+    const canAct = canActOnCurrentApprovalStep(l);
+    const stepHint = l._approvalStepRole || '';
+    const disabledTitle = stepHint ? ('ต้องเป็นผู้อนุมัติขั้น ' + stepHint) : 'ต้องเป็นผู้อนุมัติขั้นปัจจุบัน';
+    const disabledCls = 'opacity-40 cursor-not-allowed';
+    const approveBtn = canApprove
+        ? (canAct
+            ? `<button onclick="approveLine('${l.id}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg">✅ อนุมัติ</button>`
+            : `<button type="button" disabled title="${disabledTitle}" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold rounded-lg ${disabledCls}">✅ อนุมัติ</button>`)
+        : '';
+    const rejectBtn = canApprove
+        ? (canAct
+            ? `<button onclick="rejectLine('${l.id}')" class="bg-red-600 text-white px-2 py-1 text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer rounded-lg">❌ ปฏิเสธ</button>`
+            : `<button type="button" disabled title="${disabledTitle}" class="bg-red-600 text-white px-2 py-1 text-xs font-bold rounded-lg ${disabledCls}">❌ ปฏิเสธ</button>`)
+        : '';
     return `
         <button onclick="viewLineDetail('${l.id}')" class="border border-[#e6edf7] bg-white text-slate-700 px-2 py-1 text-xs font-bold hover:bg-kclight transition-colors cursor-pointer rounded-lg">🔍 ดู</button>
-        ${canApprove ? `<button onclick="approveLine('${l.id}')" class="bg-emerald-600 text-white px-2 py-1 text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer rounded-lg">✅ อนุมัติ</button>` : ''}
-        ${canApprove ? `<button onclick="rejectLine('${l.id}')" class="bg-red-600 text-white px-2 py-1 text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer rounded-lg">❌ ปฏิเสธ</button>` : ''}
+        ${approveBtn}
+        ${rejectBtn}
         ${canMarkPaid ? `<button onclick="markLinePaid('${l.id}')" class="bg-kcblue text-white px-2 py-1 text-xs font-bold hover:bg-kcdark transition-colors cursor-pointer rounded-lg">💸 จ่ายแล้ว</button>` : ''}
     `;
 }
@@ -973,6 +1024,7 @@ async function loadPayrollLines(runId) {
             .order('emp_id', { ascending: true });
         if (error) throw error;
         currentLinesData = data || [];
+        await attachLineApprovalContexts(currentLinesData);
         await renderLinesView();
     } catch (err) {
         console.error(err);
