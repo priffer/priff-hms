@@ -199,8 +199,8 @@
     <script src="js/pages/admin-payroll.js"></script>
     <script>
     (async ()=>{
-      // Admin Portal: จำกัดเฉพาะ admin และ payroll เท่านั้น
-      const ok = await window.PriffAuthGuard.requireAuth(['admin','payroll']);
+      // Admin Portal: admin/payroll รันงวด; hr/accounting/executive เข้ามาอนุมัติราย line
+      const ok = await window.PriffAuthGuard.requireAuth(['admin','payroll','hr','accounting','executive']);
       if (!ok) return;
       document.body.style.visibility = 'visible';
     })();

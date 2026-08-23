@@ -5,7 +5,8 @@ const ADMIN_NAV_LINKS = [
     { href: 'admin-attendance.html', match: 'admin-attendance.html', label: 'เวลาทำงาน', icon: '⏱️', roles: ['admin', 'payroll'] },
     { href: 'admin-ot-benefits.html', match: 'admin-ot-benefits.html', label: 'โอที/สวัสดิการ', icon: '🛡️', roles: ['admin', 'payroll'] },
     { href: 'admin-approvals.html', match: 'admin-approvals.html', label: 'อนุมัติคำขอ', icon: '🗂️', roles: ['admin', 'payroll'] },
-    { href: 'admin-payroll.html', match: 'admin-payroll.html', label: 'เงินเดือน (Payroll)', icon: '💰', roles: ['admin', 'payroll'] },
+    { href: 'admin-payroll.html', match: 'admin-payroll.html', label: 'เงินเดือน (Payroll)', icon: '💰', roles: ['admin', 'payroll', 'hr', 'accounting', 'executive'] },
+    { href: 'admin-roles.html', match: 'admin-roles.html', label: 'สิทธิ์ผู้ใช้', icon: '🔑', roles: ['admin'] },
     { href: 'admin-reports.html', match: 'admin-reports.html', label: 'รายงาน/Dashboard', icon: '📊', roles: ['admin', 'payroll'] },
     { href: 'admin-announcements.html', match: 'admin-announcements.html', label: 'ประกาศ/วันหยุด', icon: '🗓️', roles: ['admin', 'payroll'] },
 ];
@@ -15,6 +16,9 @@ const ROLE_LABELS = {
     payroll: 'ฝ่ายบุคคล/เงินเดือน (Payroll)',
     supervisor: 'หัวหน้างาน (Supervisor)',
     employee: 'พนักงาน (Employee)',
+    hr: 'ฝ่ายบุคคล (HR)',
+    accounting: 'บัญชี (Accounting)',
+    executive: 'ผู้บริหาร (Executive)',
 };
 
 function renderGlobalNavbar() {
@@ -108,7 +112,7 @@ async function loadNavbarProfile() {
         if (!profile) return;
         window.currentUserProfile = profile;
 
-        const name = profile.display_name || profile.full_name || profile.email || 'ผู้ใช้งาน';
+        const name = profile.full_name || profile.email || 'ผู้ใช้งาน';
         const roleLabel = ROLE_LABELS[profile.role] || profile.role || '';
         const meta = [profile.email, roleLabel].filter(Boolean).join(' · ');
 
